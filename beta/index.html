@@ -23,49 +23,68 @@
         }
 
 
-        .marquee-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: -1; /* メインコンテンツの背後に配置 */
-        }
-        
-        .marquee, .marquee2 {
-            white-space: nowrap;
-            color: red;
-            font-family: 'Noto Serif JP', serif;
-            font-size: 50px;
-            animation-duration: 7s;
-            animation-iteration-count: infinite; /* アニメーションを無限に繰り返す */
-        }
+/* マーキーテキスト用のCSS */
+.marquee-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1; /* メインコンテンツの背後に配置 */
+}
 
-        .marquee {
-            animation-name: marquee;
-        }
+.marquee, .marquee2 {
+    white-space: nowrap;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 50px;
+    color: red;
+    animation-duration: 7s;
+    animation-iteration-count: infinite; /* アニメーションを無限に繰り返す */
+}
 
-        .marquee2 {
-            animation-name: marquee2;
-        }
+.marquee {
+    animation-name: marquee;
+}
 
-        @keyframes marquee {
-            0% {
-                transform: translateX(100%);
-            }
-            100% {
-                transform: translateX(-120%);
-            }
-        }
+.marquee2 {
+    animation-name: marquee2;
+}
 
-        @keyframes marquee2 {
-            0% {
-                transform: translateX(-100%);
-            }
-            100% {
-                transform: translateX(120%);
-            }
-        }
+@keyframes marquee {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-120%);
+    }
+}
+
+@keyframes marquee2 {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+/* ロゴ回転用のCSS */
+.logo {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    animation: rotate-anime 1s linear infinite;
+    margin: 10px;
+}
+
+@keyframes rotate-anime {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
        
                 .logo {
   width:200px;
@@ -78,7 +97,6 @@
   0%  {transform: rotate(0);}
   100%  {transform: rotate(360deg);}
 }
-
     </style>
 </head>
 <body>
