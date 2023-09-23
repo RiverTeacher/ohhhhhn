@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ohhhhhん公式サイト</title>
+    <style type="text/css">
+        /* ページ全体のスタイル */
+body {
+    font-family: Arial, sans-serif;
+    background-color: rgba(240, 240, 240, 0.9);
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* ヘッダーのスタイル */
+header {
+    background-color: #55a2e3;
+    padding: 20px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+nav ul {
+    list-style: none;
+    text-align: center;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #fff;
+}
+
+/* ヒーローセクションのスタイル */
+.hero {
+    text-align: center;
+    padding: 100px 0;
+}
+
+.hero h1 {
+    font-size: 36px;
+    color: #333;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #666;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #55a2e3;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+/* その他セクションのスタイル */
+.about, .features {
+    padding: 50px 0;
+}
+
+.about h2, .features h2 {
+    font-size: 24px;
+    color: #333;
+}
+
+.feature {
+    margin: 20px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.feature h3 {
+    font-size: 20px;
+    color: #333;
+}
+
+.feature p {
+    font-size: 16px;
+    color: #666;
+}
+
+/* ロゴ回転用のCSS */
+.logo {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    animation: rotate-anime 1s linear infinite;
+    margin: 10px;
+}
+
+@keyframes rotate-anime {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+       
+                .logo {
+  width:200px;
+  height:200px;
+  border-radius:50%;
+  animation: rotate-anime 1s linear infinite;
+  margin: 10px;
+}
+@keyframes rotate-anime {
+  0%  {transform: rotate(0);}
+  100%  {transform: rotate(360deg);}
+}
+
+/* フッターのスタイル */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">ホーム</a></li>
+                <li><a href="invite.html">招待</a></li>
+                <li><a href="commands.html">特徴</a></li>
+                <li><a href="https://discord.com/users/699230580071464982">お問い合わせ</a></li>
+            </ul>
+        </nav>
+    </header>
+    <section class="hero">
+        <img src="logo.png" class="logo">
+        <h1>ohhhhhん公式サイト</h1>
+        <p>基本余計なことしかしないDiscordBOTです。</p>
+        <a href="invite.html" class="cta-button">とりあえず招待</a>
+    </section>
+    <section class="about">
+        <h2>当BOTについて</h2>
+        <p>とりあえず趣味で作ったBOTです。需要ある機能から死ぬほどいらない機能までとりあえず詰め込んだ感じです。</p>
+    </section>
+    <section class="features">
+        <h2>特長</h2>
+        <div class="feature">
+            <h3>全機能はこちらから</h3>
+            <p><a style="color: red; font-size: 30px;" href="commands.html">こちらをクリック</a></p>
+        </div>
+    </section>
+    <footer>
+        <p>&copy; 2023 ohhhhhん</p>
+    </footer>
+</body>
+</html>

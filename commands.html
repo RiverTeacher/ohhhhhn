@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ohhhhhん公式サイト</title>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<style>
+        /* ページ全体のスタイル */
+body {
+    font-family: Arial, sans-serif;
+    background-color: rgba(240, 240, 240, 0.9);
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* ヘッダーのスタイル */
+header {
+    background-color: #55a2e3;
+    padding: 20px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+nav ul {
+    list-style: none;
+    text-align: center;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: #fff;
+}
+
+/* ヒーローセクションのスタイル */
+.hero {
+    text-align: center;
+    padding: 100px 0;
+}
+
+.hero h1 {
+    font-size: 36px;
+    color: #333;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #666;
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #55a2e3;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+/* その他セクションのスタイル */
+.about, .features {
+    padding: 50px 0;
+}
+
+.about h2, .features h2 {
+    font-size: 24px;
+    color: #333;
+}
+
+.feature {
+    margin: 20px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    text-align: center;
+}
+
+.feature-icon {
+    width: 200px; /* アイコンの幅を調整してください */
+    height: 200px; /* アイコンの高さを調整してください */
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.feature h3 {
+    font-size: 20px;
+    color: #333;
+}
+
+.feature p {
+    font-size: 16px;
+    color: #666;
+    size: 16px;
+}
+
+img.emoji {
+  height: 1.5em;
+  width: 1.5em;
+  margin: 0 .05em 0 .1em;
+  vertical-align: -0.1em;
+}
+
+
+/* フッターのスタイル */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+    </style>
+</head>
+<body>
+<script>
+twemoji.parse(document.body);
+</script> 
+
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">ホーム</a></li>
+                <li><a href="invite.html">招待</a></li>
+                <li><a href="commands.html">特徴</a></li>
+                <li><a href="https://discord.com/users/699230580071464982">お問い合わせ</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="about">
+        <h2>当BOTは何ができるん？</h2>
+        <p>主な特徴はこんな感じです。</p>
+        <a href="https://discord.com/api/oauth2/authorize?client_id=1061808757622984844&permissions=8&scope=bot" class="cta-button">とりあえず招待</a>
+    </section>
+    <section class="features">
+    <h2>特長</h2>
+    <div class="feature">
+  
+
+
+        <img src="1.png" alt="アイコン1" class="feature-icon">
+        <h3>ヤジ飛ばし</h3>
+        <p>普通に話しているだけでヤジを飛ばしてきます。ブロックしないで🤔</p>
+    </div>
+    <div style="" class="feature">
+
+        <img src="2.png" alt="アイコン2" class="feature-icon">
+        <h3>音楽再生</h3>
+        <p>多分一番有能。名前の通りボイスチャットで音楽を再生する機能です。<br>スラッシュコマンドを登録すると/play 等の直感敵に操作できるコマンドが追加されるので使いやすいかと。<br>基本的にはyoutubeですがspotifyとかも行けます。</p>
+        <p style="background-color: black; color: red;">使用例: /play [曲のURL]</p>
+    </div>
+    <div style="" class="feature">
+
+        <img src="3.png" alt="アイコン2" class="feature-icon">
+        <h3>勝手にAIが話す</h3>
+        <p>一定確率でAIがあなたの発言に返信してきます。だるいときは普通にだるい<br><font color="red" size="5">この機能は解除が可能です。<br>上記お問い合わせボタンより解除したいことをお伝えください。<br>（再有効化不可）</font></p>
+    </div>
+    <div style="" class="feature">
+
+        <img src="4.png" alt="アイコン2" class="feature-icon">
+        <h3>AIと会話</h3>
+        <p>もちろんですが手動でAIと会話することも可能です。</p><br>
+        <p style="background-color: black; color: red;">使用例: !ai [話したい内容]</p>
+    </div>
+        <div style="" class="feature">
+
+        <img src="5.png" alt="アイコン2" class="feature-icon">
+        <h3>イラスト生成</h3>
+        <p>Aiによるイラスト生成が可能です。あんま精度は高くないしほぼ英語必須</p><br>
+        <p style="background-color: black; color: red;">使用例: !imagegen [書いてほしい絵の内容をなるべく詳しく書く（英語推奨）]</p>
+    </div>
+            <div style="" class="feature">
+
+        <img src="6.png" alt="アイコン2" class="feature-icon">
+        <h3>返信による勝手に評価</h3>
+        <p>話してると勝手に評価してくる。これは実際に見たほうが早い😎</p><br>
+    </div>
+                <div style="" class="feature">
+
+        <img src="7.png" alt="アイコン2" class="feature-icon">
+        <h3>強制改名</h3>
+        <p>強制的に名前を変更します。名前は日本人の名前がランダムで割り当てられる。</p><br>
+        <p style="background-color: black; color: red;">使用例: !name [改名したい人をメンション]</p>
+    </div>
+    
+</section>
+    
+    <footer>
+        <p>&copy; 2023 ohhhhhん</p>
+    </footer>
+
+<script>
+twemoji.parse(document.body);
+</script> 
+</body>
+</html>
