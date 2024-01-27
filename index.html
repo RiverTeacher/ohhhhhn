@@ -129,6 +129,114 @@ footer {
     padding: 20px 0;
 }
 
+.news {
+  padding: 50px 0;
+  background: #FFF7EA;
+}
+
+
+.inner {
+  width: 80%;
+  background-color: #fff;
+  margin: 0 auto;
+  padding: 65px 0 100px;
+}
+
+
+.sub_ttl {
+  font-size: 30px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* ここからがニュース記事のCSS */
+
+.news_list {
+  margin: 0 5%;
+}
+
+.news_list_item {
+  padding: 25px 0;
+  border-bottom: 1px solid #E6E6E6;
+}
+
+.news_list_item:first-child {
+  border-top: 1px solid #E6E6E6;
+}
+.news_list_item a {
+ position: relative;
+ display: flex;
+ padding-right: 30px;
+}
+
+.news_list_date {
+  font-size: 15px;
+  display: flex;
+  margin-right: 15px;
+  align-items: center;
+}
+
+.news_item {
+  background: #F6C6A2;
+  border-radius: 14px;
+  width: 6em;
+  /* 親要素の文字サイズを基準 */
+  text-align: center;
+  margin-left: 20px;
+}
+
+.news_item_m {
+  background: red;
+  border-radius: 14px;
+  width: 6em;
+  /* 親要素の文字サイズを基準 */
+  text-align: center;
+  margin-left: 20px;
+}
+
+.arrow {
+  width: 25px;
+  height: 1px;
+  background: #707070;
+  position: absolute;
+  top: 50%;
+  right: 0;
+}
+
+.arrow::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 1px;
+  background: #707070;
+  transform: rotate(45deg);
+  position: absolute;
+  right: 0px;
+  bottom: 2px;
+}
+
+
+@media screen and (max-width: 1024px) {
+    .news_list_item a {
+        display: block;
+    }
+}
+
+@media screen and (max-width: 769px) {
+    .news_list_item a  {
+        font-size: 14px;
+    }
+
+
+}
+@media screen and (max-width: 480px) {
+    .arrow {
+        display: none;
+    }
+    .news_list_item a {
+        padding-right: 0;
+    }
+}
     </style>
 </head>
 <body>
@@ -159,6 +267,28 @@ footer {
             <p><a style="color: red; font-size: 30px;" href="commands.html">こちらをクリック</a></p>
         </div>
     </section>
+    <section class="news">
+        <div class="inner">
+          <h2 class="sub_ttl">NEWS</h2>
+    
+    <!-- ここからニュース記事 -->
+    
+          <ul class="news_list">
+              <li class="news_list_item">
+                <a href="news/20240122.html">
+                  <div class="news_list_date">
+                    <time>2020.05.12</time>
+                    <p class="news_item_m">メンテナンス</p>
+                  </div>
+                  <p>障害発生と復旧完了のお知らせ</p>
+                  <span class="arrow"></span>
+                </a>
+              </li>
+        </ul>
+    
+    
+        </div>
+</section>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2357565376168776"
      crossorigin="anonymous"></script>
     <footer>
