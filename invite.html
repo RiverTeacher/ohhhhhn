@@ -1,128 +1,187 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ohhhhhん公式サイト</title>
-    <style type="text/css">
-        /* ページ全体のスタイル */
-body {
-    font-family: Arial, sans-serif;
-    background-color: rgba(240, 240, 240, 0.9);
-    margin: 0;
-    padding: 0;
-    text-align: center;
-}
-
-/* ヘッダーのスタイル */
-header {
-    background-color: #55a2e3;
-    padding: 20px 0;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-nav ul {
-    list-style: none;
-    text-align: center;
-}
-
-nav ul li {
-    display: inline;
-    margin: 0 20px;
-}
-
-nav a {
-    text-decoration: none;
-    color: #fff;
-}
-
-/* ヒーローセクションのスタイル */
-.hero {
-    text-align: center;
-    padding: 100px 0;
-}
-
-.hero h1 {
-    font-size: 36px;
-    color: #333;
-}
-
-.hero p {
-    font-size: 18px;
-    color: #666;
-}
-
-.cta-button {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #55a2e3;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-}
-
-/* その他セクションのスタイル */
-.about, .features {
-    padding: 50px 0;
-}
-
-.about h2, .features h2 {
-    font-size: 24px;
-    color: #333;
-}
-
-.feature {
-    margin: 20px;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-}
-
-.feature h3 {
-    font-size: 20px;
-    color: #333;
-}
-
-.feature p {
-    font-size: 16px;
-    color: #666;
-}
-
-/* フッターのスタイル */
-footer {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 20px 0;
-}
-
-    </style>
-</head>
-<body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">ホーム</a></li>
-                <li><a href="invite.html">招待</a></li>
-                <li><a href="commands.html">特徴</a></li>
-                <li><a href="https://discord.com/users/699230580071464982">お問い合わせ</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <section class="about">
-        <h2>とりあえず招待大事</h2>
-        <p>使ってみないとわからないもんね。とりあえず下記ボタンからサーバーに呼んであげて</p>
-        <a href="https://discord.com/api/oauth2/authorize?client_id=1061808757622984844&permissions=8&scope=bot" class="cta-button">とりあえず招待</a>
-    </section>
-    
-    <footer>
-        <p>&copy; 2023 ohhhhhん</p>
-        <!-- admax -->
-<script src="https://adm.shinobi.jp/o/fe0f830206f6a814506c9f8f62d68b88"></script>
-<!-- admax -->
-    </footer>
-</body>
+<!DOCTYPE html> 
+<html lang="ja"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>ohhhhhん公式サイト | 招待ページ</title> 
+    <style> 
+        /* 全体スタイル */ 
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #000; 
+            color: #00ff00; 
+            font-family: 'Courier New', Courier, monospace; 
+            text-align: center; 
+            overflow-x: hidden; 
+        } 
+ 
+        /* ヘッダー */ 
+        header { 
+            background: #001f00; 
+            padding: 15px; 
+            border-bottom: 2px solid #00ff00; 
+        } 
+ 
+        nav ul { 
+            list-style: none; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            justify-content: center; 
+        } 
+ 
+        nav ul li { 
+            margin: 0 20px; 
+        } 
+ 
+        nav ul li a { 
+            text-decoration: none; 
+            color: #00ff00; 
+            font-weight: bold; 
+            transition: color 0.3s; 
+        } 
+ 
+        nav ul li a:hover { 
+            color: #008000; 
+        } 
+ 
+        /* メインセクション */ 
+        .about { 
+            padding: 30px 20px; 
+        } 
+ 
+        .about h2 { 
+            font-size: 36px; 
+            margin-bottom: 20px; 
+            color: #00ff00; 
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; 
+        } 
+ 
+        .about p { 
+            font-size: 18px; 
+            margin-bottom: 30px; 
+            line-height: 1.6; 
+        } 
+ 
+        .cta-button { 
+            display: inline-block; 
+            padding: 15px 30px; 
+            background: #00ff00; 
+            color: #000; 
+            text-decoration: none; 
+            font-weight: bold; 
+            border-radius: 5px; 
+            box-shadow: 0 0 10px #00ff00; 
+            transition: background 0.3s, box-shadow 0.3s; 
+        } 
+ 
+        .cta-button:hover { 
+            background: #008000; 
+            box-shadow: 0 0 20px #008000; 
+        } 
+ 
+        /* アニメーション用 */ 
+        .text { 
+            font-size: calc(2vw + 2vh); /* フォントサイズをレスポンシブに設定 */
+            margin-top: 20px; 
+            font-weight: bold; 
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; 
+            word-wrap: break-word; /* テキストがはみ出さないように折り返し */
+            white-space: normal; /* テキストの折り返しを有効にする */
+        } 
+ 
+        .green { 
+            color: #00ff00; 
+        } 
+ 
+        .gray { 
+            color: #808080; 
+        } 
+ 
+        /* フッター */ 
+        footer { 
+            background: #001f00; 
+            color: #00ff00; 
+            padding: 20px; 
+            border-top: 2px solid #00ff00; 
+            text-shadow: 0 0 5px #00ff00; 
+        } 
+    </style> 
+</head> 
+<body> 
+    <header> 
+        <nav> 
+            <ul> 
+                <li><a href="index.html">ホーム</a></li> 
+                <li><a href="invite.html">招待</a></li> 
+                <li><a href="commands.html">特徴</a></li> 
+                <li><a href="https://discord.com/users/699230580071464982">お問い合わせ</a></li> 
+            </ul> 
+        </nav> 
+    </header> 
+ 
+    <section class="about"> 
+        <!-- アニメーション表示の部分 --> 
+        <div id="animation-text" class="text gray">A</div> 
+        <p>BOTをご自身のサーバーに招待するには、下記ボタンをクリックしてください。<br>
+        遷移先の情報を確認した後に必要な権限を与え、入れるサーバーを選択してください。</p> 
+ 
+        <!-- 招待ボタン --> 
+        <a href="https://discord.com/api/oauth2/authorize?client_id=1061808757622984844&permissions=8&scope=bot" class="cta-button">INVITE</a> 
+    </section> 
+ 
+    <footer> 
+        <p>&copy; 2023 ohhhhhん</p> 
+        <!-- admax --> 
+        <script src="https://adm.shinobi.jp/o/fe0f830206f6a814506c9f8f62d68b88"></script> 
+        <!-- admax --> 
+    </footer> 
+ 
+    <script> 
+        const targetText = "TOINVITEABOTPLEASECLICKTHEBUTTONBELOW";  // 目標の文字列 
+        let currentText = "";  // 現在の表示文字列 
+        let index = 0;  // 現在のインデックス 
+        let animationInProgress = false;  // アニメーション中かどうかのフラグ 
+ 
+        // アニメーションを開始する関数 
+        function animateText() { 
+            if (animationInProgress) return;  // アニメーションが進行中なら何もしない 
+ 
+            animationInProgress = true;  // アニメーション開始 
+            let interval = setInterval(() => { 
+                // 次に表示する文字を決める（A～Zおよび空白を含む） 
+                let currentChar = String.fromCharCode(65 + (index % 26)); // A～Z 
+                let textToShow = currentText + currentChar; 
+ 
+                // 目標文字列と一致するか確認 
+                if (targetText.startsWith(textToShow)) { 
+                    document.getElementById('animation-text').innerHTML = textToShow; 
+ 
+                    // 一致した場合、現在の文字を緑色にする 
+                    if (currentChar !== " ") { 
+                        document.getElementById('animation-text').classList.add("green"); 
+                        document.getElementById('animation-text').classList.remove("gray"); 
+                    } 
+ 
+                    currentText = textToShow; 
+                    index++; 
+ 
+                    // 一致した場合、次の文字に進む 
+                    if (currentText === targetText) { 
+                        clearInterval(interval);  // アニメーション終了 
+                        animationInProgress = false; 
+                    } 
+                } else { 
+                    document.getElementById('animation-text').innerHTML = textToShow; 
+                    document.getElementById('animation-text').classList.remove("green"); 
+                    document.getElementById('animation-text').classList.add("gray"); 
+                    index++; 
+                } 
+            }, 6);  // 文字の切り替えの間隔（100ms） 
+        } 
+ 
+        animateText();  // ページ読み込み時にアニメーション開始 
+    </script> 
+</body> 
 </html>

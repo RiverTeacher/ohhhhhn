@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="【メンテナンス】2024年4月23日『ohhhhhん』のメンテナンスについてお知らせいたします。"/>
+  <title>メンテナンスお知らせ</title>
+  <style>
+    /* 全体の背景とフォント設定 */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* コンテナスタイル */
+    .container {
+      text-align: center;
+      padding: 20px;
+      background: #001f00;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00ff00;
+      max-width: 600px;
+      animation: fadeIn 1s forwards;
+    }
+
+    /* 伝達事項タイトル */
+    .title {
+      font-size: 48px;
+      margin-bottom: 20px;
+      color: gray; /* 初期状態をグレーに設定 */
+      text-shadow: 0 0 10px gray, 0 0 20px gray;
+      animation: glow 0.2s ease-in-out 5, setGreen 0.1s linear 1.0s forwards; /* 点滅後緑に固定 */
+    }
+
+    @keyframes glow {
+      0%, 100% { opacity: 1; text-shadow: 0 0 10px gray, 0 0 20px gray; }
+      50% { opacity: 0.5; text-shadow: 0 0 5px #606060, 0 0 10px #606060; }
+    }
+
+    @keyframes setGreen {
+      to { color: #00ff00; text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; }
+    }
+
+    /* 画像 */
+    .container img {
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
+
+    /* 本文 */
+    .container h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #00ff00;
+    }
+
+    .container p {
+      margin: 10px 0;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* トップページリンク */
+    .container a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #00ff00;
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #00ff00;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .container a:hover {
+      background: #008000;
+      box-shadow: 0 0 20px #008000;
+    }
+
+    /* フェードインアニメーション */
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(-20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">伝達事項</div>
+    <img src="https://ohhhhhn.mirm0000.f5.si/logo.png" width="150px" alt="Logo">
+    <h1>サイトリニューアルのお知らせ</h1>
+    <p>ユーザーの皆様へ</p>
+    <p>当botをご利用いただき誠にありがとうございます。</p>
+    <p>この度1年ぶりにホームページをリニューアルいたしました。</p>
+    <a href="https://ohhhhhn.mirm0000.f5.si/">トップページへ戻る</a>
+  </div>
+</body>
+</html>

@@ -3,247 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ohhhhhん公式サイト</title>
-    <link rel="canonical" href="https://ohhhhhn.mirm0000.f5.si/index.html">
-    <meta name="google-site-verification" content="cr902lqvcDPoeRekS92dDs7oDibDFCmmoMlAfsOCX-k" />
-    <meta name="google-site-verification" content="XO82mMCmPOsFNLZBC2wrbIwDUiwY4ABg3Xhf4Wuewg8" />
-    <style type="text/css">
-        /* ページ全体のスタイル */
-body {
-    font-family: Arial, sans-serif;
-    background-color: rgba(240, 240, 240, 0.9);
-    margin: 0;
-    padding: 0;
-    text-align: center;
-}
+    <title>サイバーデザイン</title>
+    <style>
+        /* 全体の背景 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+        }
 
-/* ヘッダーのスタイル */
-header {
-    background-color: #55a2e3;
-    padding: 20px 0;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
+        /* ヘッダー */
+        header {
+            background: #000;
+            border-bottom: 2px solid #00ff00;
+            padding: 10px 20px;
+            text-align: center;
+        }
 
-nav ul {
-    list-style: none;
-    text-align: center;
-}
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
 
-nav ul li {
-    display: inline;
-    margin: 0 20px;
-}
+        nav ul li {
+            margin: 0 15px;
+        }
 
-nav a {
-    text-decoration: none;
-    color: #fff;
-}
+        nav ul li a {
+            text-decoration: none;
+            color: #00ff00;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
 
-/* ヒーローセクションのスタイル */
-.hero {
-    text-align: center;
-    padding: 100px 0;
-}
+        nav ul li a:hover {
+            background: #00ff00;
+            color: #000;
+        }
 
-.hero h1 {
-    font-size: 36px;
-    color: #333;
-}
+        /* ヒーローセクション */
+        .hero {
+            text-align: center;
+            padding: 100px 0;
+        }
 
-.hero p {
-    font-size: 18px;
-    color: #666;
-}
+        .hero h1 {
+            font-size: 50px;
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #008000;
+            animation: flicker 1.5s infinite;
+        }
 
-.cta-button {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #55a2e3;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-}
+        .hero p {
+            font-size: 18px;
+            margin-top: 20px;
+        }
 
-/* その他セクションのスタイル */
-.about, .features {
-    padding: 50px 0;
-}
+        .cta-button {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            color: #000;
+            background: #00ff00;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
 
-.about h2, .features h2 {
-    font-size: 24px;
-    color: #333;
-}
+        .cta-button:hover {
+            background: #008000;
+            box-shadow: 0 0 20px #008000, 0 0 30px #008000;
+        }
 
-.feature {
-    margin: 20px;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-}
+        /* フリッカーアニメーション */
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            75% { opacity: 0.6; }
+        }
 
-.feature h3 {
-    font-size: 20px;
-    color: #333;
-}
+        /* ニュースセクション */
+        .news {
+            padding: 50px 20px;
+            background: #001f00;
+            color: #00ff00;
+        }
 
-.feature p {
-    font-size: 16px;
-    color: #666;
-}
+        .news h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 5px #00ff00;
+        }
 
-/* ロゴ回転用のCSS */
-.logo {
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    animation: rotate-anime 1s linear infinite;
-    margin: 10px;
-}
+        .news_list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
 
-@keyframes rotate-anime {
-    0% {
-        transform: rotate(0);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-       
-                .logo {
-  width:200px;
-  height:200px;
-  border-radius:50%;
-  animation: rotate-anime 1s linear infinite;
-  margin: 10px;
-}
-@keyframes rotate-anime {
-  0%  {transform: rotate(0);}
-  100%  {transform: rotate(360deg);}
-}
+        .news_list_item {
+            border-bottom: 1px solid #00ff00;
+            padding: 20px 0;
+            position: relative;
+        }
 
-/* フッターのスタイル */
-footer {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 20px 0;
-}
+        .news_list_item a {
+            text-decoration: none;
+            color: #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.news {
-  padding: 50px 0;
-  background: #FFF7EA;
-}
+        .news_list_date {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
 
+        .news_list_date time {
+            margin-right: 10px;
+        }
 
-.inner {
-  width: 80%;
-  background-color: #fff;
-  margin: 0 auto;
-  padding: 65px 0 100px;
-}
+        .news_item {
+            background: #008000;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
 
+        .news_item_m {
+            background: red;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
 
-.sub_ttl {
-  font-size: 30px;
-  text-align: center;
-  margin-bottom: 40px;
-}
+        .news_list_item p {
+            margin: 0;
+        }
 
-/* ここからがニュース記事のCSS */
+        .arrow {
+            display: block;
+            width: 15px;
+            height: 15px;
+            border-right: 2px solid #00ff00;
+            border-top: 2px solid #00ff00;
+            transform: rotate(45deg);
+            margin-left: 10px;
+        }
 
-.news_list {
-  margin: 0 5%;
-}
-
-.news_list_item {
-  padding: 25px 0;
-  border-bottom: 1px solid #E6E6E6;
-}
-
-.news_list_item:first-child {
-  border-top: 1px solid #E6E6E6;
-}
-.news_list_item a {
- position: relative;
- display: flex;
- padding-right: 30px;
-}
-
-.news_list_date {
-  font-size: 15px;
-  display: flex;
-  margin-right: 15px;
-  align-items: center;
-}
-
-.news_item {
-  background: #F6C6A2;
-  border-radius: 14px;
-  color: white;
-  width: 6em;
-  /* 親要素の文字サイズを基準 */
-  text-align: center;
-  margin-left: 20px;
-}
-
-.news_item_m {
-  background: red;
-  color: white;
-  border-radius: 14px;
-  width: 6em;
-  /* 親要素の文字サイズを基準 */
-  text-align: center;
-  margin-left: 20px;
-}
-
-.arrow {
-  width: 25px;
-  height: 1px;
-  background: #707070;
-  position: absolute;
-  top: 50%;
-  right: 0;
-}
-
-.arrow::after {
-  content: "";
-  display: block;
-  width: 6px;
-  height: 1px;
-  background: #707070;
-  transform: rotate(45deg);
-  position: absolute;
-  right: 0px;
-  bottom: 2px;
-}
-
-
-@media screen and (max-width: 1024px) {
-    .news_list_item a {
-        display: block;
-    }
-}
-
-@media screen and (max-width: 769px) {
-    .news_list_item a  {
-        font-size: 14px;
-    }
-
-
-}
-@media screen and (max-width: 480px) {
-    .arrow {
-        display: none;
-    }
-    .news_list_item a {
-        padding-right: 0;
-    }
-}
+        .news_list_item:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
     </style>
 </head>
 <body>
+    <!-- ヘッダー -->
     <header>
         <nav>
             <ul>
@@ -254,72 +182,64 @@ footer {
             </ul>
         </nav>
     </header>
+
+    <!-- ヒーローセクション -->
     <section class="hero">
-        <img src="logo.png" class="logo">
         <h1>ohhhhhん公式サイト</h1>
         <p>基本余計なことしかしないDiscordBOTです。</p>
-        <a href="invite.html" class="cta-button">とりあえず招待</a>
+        <a href="https://ohhhhhn.mirm0000.f5.si/invite.html" class="cta-button">アクセス</a>
     </section>
-    <section class="about">
-        <h2>当BOTについて</h2>
-        <p>とりあえず趣味で作ったBOTです。需要ある機能から死ぬほどいらない機能までとりあえず詰め込んだ感じです。</p>
-    </section>
-    <section class="features">
-        <h2>特長</h2>
-        <div class="feature">
-            <h3>全機能はこちらから</h3>
-            <p><a style="color: red; font-size: 30px;" href="commands.html">こちらをクリック</a></p>
-        </div>
-    </section>
+
+    <!-- ニュースセクション -->
     <section class="news">
-        <div class="inner">
-          <h2 class="sub_ttl">NEWS</h2>
-    
-    <!-- ここからニュース記事 -->
-    
-          <ul class="news_list">
-              <li class="news_list_item">
+        <h2>ニュース</h2>
+        <ul class="news_list">
+                        <li class="news_list_item">
+                <a href="news/20241229.html">
+                    <div class="news_list_date">
+                        <time>2024.12.29</time>
+                        <p class="news_item">おしらせ</p>
+                    </div>
+                    <p>サイトリニューアルのおしらせ</p>
+                    <span class="arrow"></span>
+                </a>
+            </li>
+            <!--
+            <li class="news_list_item">
                 <a href="news/20240423.html">
-                  <div class="news_list_date">
-                    <time>2024.04.23</time>
-                    <p class="news_item_m">メンテナンス</p>
-                  </div>
-                  <p>メンテナンスのお知らせ</p>
-                  <span class="arrow"></span>
+                    <div class="news_list_date">
+                        <time>2024.04.23</time>
+                        <p class="news_item_m">メンテナンス</p>
+                    </div>
+                    <p>メンテナンスのお知らせ</p>
+                    <span class="arrow"></span>
                 </a>
-              </li>
-              <li class="news_list_item">
+            </li>
+            <li class="news_list_item">
                 <a href="news/20240127.html">
-                  <div class="news_list_date">
-                    <time>2024.01.27</time>
-                    <p class="news_item">おしらせ</p>
-                  </div>
-                  <p>翻訳機能実装のお知らせ</p>
-                  <span class="arrow"></span>
+                    <div class="news_list_date">
+                        <time>2024.01.27</time>
+                        <p class="news_item">おしらせ</p>
+                    </div>
+                    <p>翻訳機能実装のお知らせ</p>
+                    <span class="arrow"></span>
                 </a>
-              </li>
-              <li class="news_list_item">
+            </li>
+            <li class="news_list_item">
                 <a href="news/20240122.html">
-                  <div class="news_list_date">
-                    <time>2024.01.22</time>
-                    <p class="news_item_m">メンテナンス</p>
-                  </div>
-                  <p>障害発生と復旧完了のお知らせ</p>
-                  <span class="arrow"></span>
+                    <div class="news_list_date">
+                        <time>2024.01.22</time>
+                        <p class="news_item_m">メンテナンス</p>
+                    </div>
+                    <p>障害発生と復旧完了のお知らせ</p>
+                    <span class="arrow"></span>
                 </a>
-              </li>
+            </li>
+        -->
         </ul>
-    
-    
-        </div>
-</section>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2357565376168776"
-     crossorigin="anonymous"></script>
-    <footer>
-        <p>&copy; 2023 ohhhhhん</p>
-        <!-- admax -->
+    </section>
+            <!-- admax -->
 <script src="https://adm.shinobi.jp/o/fe0f830206f6a814506c9f8f62d68b88"></script>
 <!-- admax -->
-    </footer>
 </body>
 </html>
