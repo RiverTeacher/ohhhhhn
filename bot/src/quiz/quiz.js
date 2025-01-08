@@ -62,7 +62,7 @@ client.on('messageCreate', async (message) => {
         }  
   
         try {  
-            const response = await fetch('https://api-ohhhhhn-quiz.glitch.me/quiz');  
+            const response = await fetch('PLEASE_ENTER_HERE_YOUR_API_URL');  //こちらにAPIのリンクを挿入してください。
             const quizData = await response.json();  
   
             const { topicLink, quiz, answer, explanation, image } = quizData;  
