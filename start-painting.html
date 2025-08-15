@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>クッションページ</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --fg: #e6ecf2;
+      --muted: #9aa5b1;
+      --accent: #6aa1ff;
+      --error: #ff5d7a;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue",
+                   Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    }
+    .wrap {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .card {
+      display: grid;
+      gap: 14px;
+      padding: 28px 32px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+      min-width: min(92vw, 440px);
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 4px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; border-top-color: var(--muted); border-right-color: var(--muted); }
+    }
+    .title {
+      font-size: 1.05rem;
+      letter-spacing: .02em;
+    }
+    .hint {
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    .error {
+      color: var(--error);
+      font-weight: 600;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <div class="card" id="card" aria-live="polite" aria-atomic="true">
+      <div class="spinner" id="spinner" aria-hidden="true"></div>
+      <div class="title" id="message">お待ちください…</div>
+      <div class="hint" id="hint">自動的に移動します。</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const idParam = params.get('id');
+
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const currentHHmm = hh + mm;
+
+      const spinner = document.getElementById('spinner');
+      const msg = document.getElementById('message');
+      const hint = document.getElementById('hint');
+
+      const showError = () => {
+        spinner.classList.add('hidden');
+        msg.textContent = 'リンクの有効期限が切れました。もう一度リンクを生成してください。';
+        msg.classList.add('error');
+        hint.textContent = '';
+      };
+
+      // バリデーション：id が 4 桁の数字で現在時刻(HHmm)と一致
+      if (!idParam || !/^\d{4}$/.test(idParam) || idParam !== currentHHmm) {
+        showError();
+        return;
+      }
+
+      // 正常：0.3～3.0 秒のランダムでリダイレクト
+      const min = 300;    // ms
+      const max = 3000;   // ms
+      const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+
+      msg.textContent = 'お待ちください…';
+      hint.textContent = 'まもなく自動で移動します。';
+
+      setTimeout(() => {
+        // 履歴を汚さない場合は replace、戻れるようにしたいなら assign に変更
+        location.replace('https://ohhhhhn.neetowebpage.com/paint');
+      }, delay);
+    })();
+  </script>
+</body>
+</html>
