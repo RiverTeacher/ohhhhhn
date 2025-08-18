@@ -73,46 +73,45 @@
     </div>
   </div>
 
-  <script>
-    (function () {
-      const params = new URLSearchParams(location.search);
-      const idParam = params.get('id');
+<script>
+  (function () {
+    const params = new URLSearchParams(location.search);
+    const idParam = params.get('id');
 
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const currentHHmm = hh + mm;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const currentHHmm = hh + mm;
 
-      const spinner = document.getElementById('spinner');
-      const msg = document.getElementById('message');
-      const hint = document.getElementById('hint');
+    const spinner = document.getElementById('spinner');
+    const msg = document.getElementById('message');
+    const hint = document.getElementById('hint');
 
-      const showError = () => {
-        spinner.classList.add('hidden');
-        msg.textContent = 'リンクの有効期限が切れました。もう一度リンクを生成してください。';
-        msg.classList.add('error');
-        hint.textContent = '';
-      };
+    const showError = () => {
+      spinner.classList.add('hidden');
+      msg.textContent = '不明なリンクです。IDが誤っている、またはリンクの有効期限が失効した可能性があります。\n御手数ですが、再度ペイントコマンドを実行してください。';
+      msg.classList.add('error');
+      hint.textContent = '';
+    };
 
-      // バリデーション：id が 4 桁の数字で現在時刻(HHmm)と一致
-      if (!idParam || !/^\d{4}$/.test(idParam) || idParam !== currentHHmm) {
-        showError();
-        return;
-      }
+    // ✅ バリデーション修正：id の先頭4桁が現在時刻(HHmm)と一致
+    if (!idParam || !/^\d{4,}$/.test(idParam) || idParam.slice(0, 4) !== currentHHmm) {
+      showError();
+      return;
+    }
 
-      // 正常：0.3～3.0 秒のランダムでリダイレクト
-      const min = 300;    // ms
-      const max = 3000;   // ms
-      const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+    // 正常：0.3～3.0 秒のランダムでリダイレクト
+    const min = 300;    // ms
+    const max = 3000;   // ms
+    const delay = Math.floor(Math.random() * (max - min + 1)) + min;
 
-      msg.textContent = 'お待ちください…';
-      hint.textContent = 'まもなく自動で移動します。';
+    msg.textContent = 'お待ちください…';
+    hint.textContent = 'リンクを認証しています…';
 
-      setTimeout(() => {
-        // 履歴を汚さない場合は replace、戻れるようにしたいなら assign に変更
-        location.replace('https://ohhhhhn.neetowebpage.com/paint');
-      }, delay);
-    })();
-  </script>
+    setTimeout(() => {
+      location.replace('https://ohhhhhn.neetowebpage.com/paint');
+    }, delay);
+  })();
+</script>
 </body>
 </html>
