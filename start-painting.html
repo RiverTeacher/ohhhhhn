@@ -11,11 +11,20 @@
       --muted: #9aa5b1;
       --accent: #6aa1ff;
       --error: #ff5d7a;
+      /* --bg-image はJSでランダムに設定されます */
     }
     html, body {
       height: 100%;
       margin: 0;
-      background: var(--bg);
+      /* JSで設定された背景画像を使用。設定されていない場合はnone（透明） */
+      background-image: var(--bg-image, none);
+      /* background-imageが読み込めない場合のフォールバック（既存の--bg） */
+      background-color: var(--bg);
+      background-size: cover; /* 画面全体に画像を拡大/縮小 */
+      background-position: center; /* 画像を中央に配置 */
+      background-repeat: no-repeat; /* 画像を繰り返さない */
+      background-attachment: fixed; /* スクロールしても背景を固定 */
+
       color: var(--fg);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue",
                    Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
@@ -32,9 +41,11 @@
       gap: 14px;
       padding: 28px 32px;
       border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+      /* 背景画像の上でも読みやすいように、カードの背景は半透明のまま維持 */
+      background: rgba(255,255,255,0.08); 
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
       min-width: min(92vw, 440px);
+      /* 背景画像を透過させるため、box-shadowを強めにしてコントラストを確保 */
     }
     .spinner {
       width: 44px; height: 44px;
@@ -63,6 +74,18 @@
     }
     .hidden { display: none; }
   </style>
+
+  <!-- 追加した背景画像設定スクリプト -->
+  <script>
+    // 1から19までのランダムな整数を生成
+    const maxImages = 19;
+    const randomIndex = Math.floor(Math.random() * maxImages) + 1;
+    // URLを構築
+    const imageUrl = `url('https://ohhhhhn.mirm0000.f5.si/emoji/paint${randomIndex}.png')`;
+
+    // 生成したURLをCSSカスタムプロパティ（変数）として<html>要素に設定
+    document.documentElement.style.setProperty('--bg-image', imageUrl);
+  </script>
 </head>
 <body>
   <div class="wrap" role="main">
@@ -74,6 +97,7 @@
   </div>
 
 <script>
+  // この処理（ロジック）は一切変更されていません
   (function () {
     const params = new URLSearchParams(location.search);
     const idParam = params.get('id');
@@ -115,3 +139,4 @@
 </script>
 </body>
 </html>
+
