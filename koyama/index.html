@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- 検索エンジン除外設定 -->
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    
+    <!-- キャッシュ無効化設定 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- Google tag (gtag.js) - 既存コードより継承 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GFVGV2P5MQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GFVGV2P5MQ');
+    </script>
+    
+    <meta charset="UTF-8">
+    <!-- 1. 拡大・縮小の禁止 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>進撃の小山 - Koyama Attack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a202c;
+            color: white;
+            overflow: hidden; 
+            touch-action: none; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #gameCanvas {
+            background-color: #87CEEB;
+            border-bottom: 4px solid #2d3748;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 80vh;
+        }
+        /* Mobile Controls */
+        .controls-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 25vh;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        .d-pad {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .action-pad {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .btn:active, .btn.pressed {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .btn-rect {
+            width: 80px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .btn-beam {
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+        
+        #loadingScreen, #errorScreen, #startScreen, #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a202c;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .hidden { display: none !important; }
+        .text-shadow { text-shadow: 2px 2px 0 #000; }
+        
+        /* ボス戦警告用 */
+        #bossWarning {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: red;
+            font-weight: bold;
+            text-shadow: 4px 4px 0 #000;
+            pointer-events: none;
+            display: none;
+            z-index: 5;
+            animation: flash 0.5s infinite alternate;
+        }
+        @keyframes flash { from { opacity: 1; } to { opacity: 0.2; } }
+    </style>
+</head>
+<body>
+
+    <!-- Game Canvas -->
+    <div class="w-full h-full flex flex-col items-center justify-center relative">
+        <div id="scoreBoard" class="absolute top-2 left-4 text-xl font-bold text-shadow z-0 pointer-events-none">SCORE: 0</div>
+        <!-- SAVE UI -->
+        <div id="saveState" class="absolute top-2 left-72 text-sm font-bold text-yellow-300">SAVE: NONE</div>
+        <button id="saveBtn" class="absolute top-10 left-72 px-2 py-1 bg-green-600 text-white rounded text-sm pointer-events-auto cursor-pointer">中断する</button>
+
+        <div id="hpBoard" class="absolute top-2 right-4 text-xl font-bold text-shadow z-0 pointer-events-none text-green-400">HP: 100</div>
+        <!-- ステータス表示エリア -->
+        <div id="statusBoard" class="absolute top-12 right-4 text-sm font-bold text-shadow z-0 pointer-events-none text-yellow-300 text-right">
+            PUNCH DMG: 1<br>
+            BEAM MULTI: x1
+        </div>
+        
+        <!-- ボス警告テキスト -->
+        <div id="bossWarning">WARNING!!<br><span style="font-size:2rem">KOYAMA APPROACHING</span></div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="controls-area" id="mobileControls">
+        <div class="d-pad">
+            <div class="btn" id="btnLeft">←</div>
+            <div class="btn" id="btnRight">→</div>
+        </div>
+        <div class="action-pad">
+            <div class="btn btn-rect btn-beam" id="btnBeam">BEAM<br><span id="cdText" style="font-size:10px">(OK)</span></div>
+            <div class="btn" id="btnPunch">👊</div>
+            <div class="btn" id="btnJump">JUMP</div>
+        </div>
+    </div>
+
+    <!-- Screens -->
+    <div id="loadingScreen">
+        <h2 class="text-2xl mb-4">読み込み中...</h2>
+        <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div id="errorScreen" class="hidden bg-red-900">
+        <h2 class="text-3xl mb-2">エラー</h2>
+        <p id="errorMessage" class="text-center px-4">不明なエラー</p>
+        <button onclick="location.reload()" class="mt-6 px-4 py-2 bg-white text-red-900 rounded font-bold">リロード</button>
+    </div>
+
+    <div id="startScreen" class="hidden">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6 text-yellow-400 text-shadow">進撃の小山</h1>
+        <p class="mb-8 text-center px-4">
+            迫りくる「小山」を倒せ！<br>
+            移動: 矢印 / タップ<br>
+            攻撃: Z (パンチ), X (ビーム)<br>
+            ジャンプ: Space (2段ジャンプ可)<br>
+            <span class="text-red-400 font-bold">9ステージごとに強力なフロアボスが出現！</span><br>
+            フロアボスは浮遊して攻撃を回避してくるぞ！
+        </p>
+        <button id="startBtn" class="px-8 py-4 bg-green-600 text-white rounded-lg text-2xl font-bold hover:bg-green-500 shadow-lg transition">GAME START</button>
+        <button id="loadBtn" class="hidden mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-xl font-bold hover:bg-blue-500 shadow-lg">LOAD CONTINUE</button>
+    </div>
+
+    <div id="gameOverScreen" class="hidden bg-black bg-opacity-90">
+        <h1 class="text-5xl text-red-500 font-bold mb-4">GAME OVER</h1>
+        <p class="text-2xl mb-6">SCORE: <span id="finalScore">0</span></p>
+        <button onclick="location.reload()" class="px-6 py-3 bg-white text-black rounded font-bold hover:bg-gray-200">もう一度遊ぶ</button>
+    </div>
+
+    <script>
+        // --- Constants & Config ---
+        const ASSETS = {
+            ENEMY_IMG: 'https://riverteacher.github.io/ohhhhhn/koyama/normal.png',
+            RANGE_ENEMY_IMG: 'https://riverteacher.github.io/ohhhhhn/koyama/range.png',
+            FLOOR_BOSS_IMG: 'https://riverteacher.github.io/ohhhhhn/koyama/boss.png',
+            API_URL: 'https://riverteacher.github.io/ohhhhhn/koyama/status.html'
+        };
+
+        const SOUNDS = {
+            BEAM: [
+                'https://riverteacher.github.io/ohhhhhn/koyama/beam1.mp3',
+                'https://riverteacher.github.io/ohhhhhn/koyama/beam2.mp3'
+            ],
+            DAMAGE: [
+                'https://riverteacher.github.io/ohhhhhn/koyama/damage1.mp3',
+                'https://riverteacher.github.io/ohhhhhn/koyama/damage2.mp3'
+            ],
+            BOSS_KILLED: [
+                'https://riverteacher.github.io/ohhhhhn/koyama/killed1.mp3',
+                'https://riverteacher.github.io/ohhhhhn/koyama/killed2.mp3'
+            ],
+            BOSS_SUMMON: 'https://riverteacher.github.io/ohhhhhn/koyama/summon.mp3',
+            GAME_OVER: 'https://riverteacher.github.io/ohhhhhn/koyama/dead.mp3'
+        };
+
+        const GAME_CONFIG = {
+            PLAYER_SPEED: 5,
+            JUMP_FORCE: 12,
+            GRAVITY: 0.6,
+            GROUND_Y: 0, // Calculated dynamically
+            BEAM_COOLDOWN: 180,
+            SPAWN_RATE: 100,
+            PLAYER_MAX_HP: 10,
+            PUNCH_DMG: 1,
+            BASE_BEAM_DMG: 10,
+            INVINCIBILITY_FRAMES: 60,
+            
+            ENEMY_SEEK_DURATION_ZAKO: 120,
+            ENEMY_SEEK_DURATION_BOSS: 420,
+
+            BASE_ZAKO_HP: 1,
+            BASE_BOSS_HP: 10,
+            BASE_RANGE_HP: 9,
+            HP_INCREASE_PER_STAGE: 1, 
+            STAGE_FRAME_DURATION: 1200, 
+            IMAGE_SCALE: 1.25, 
+            
+            MAX_ENEMIES: 10,
+            HEAL_AMOUNT: 2,
+
+            // Floor Boss Config
+            FLOOR_BOSS_STAGE_INTERVAL: 8, // 9ステージごとに登場 (8の倍数でボス出現)
+            FLOOR_BOSS_BASE_HP: 300,
+            FLOOR_BOSS_HP_INCREASE_PERCENT: 0.5, // 50% increase per encounter
+            FLOOR_BOSS_FLOAT_INTERVAL: 600, // 10 seconds (60fps * 10)
+            FLOOR_BOSS_FLOAT_DURATION: 120, // 2 seconds
+            FLOOR_BOSS_ACTION_INTERVAL: 180, // ~3 seconds between attacks
+            FLOOR_BOSS_MOVE_SPEED: 0.5, // ボスの移動速度
+            
+            BOSS_BEAM_HEIGHT: 40, // 床ギリギリのビームの高さ
+            BOSS_CEILING_BEAM_WIDTH: 30, // 上からの光線の幅
+            BOSS_ATTACK_WARNING_FRAMES: 60, // 攻撃予兆時間
+            BOSS_ATTACK_ACTIVE_FRAMES: 30, // 攻撃持続時間
+            BOSS_BEAM_DAMAGE: 3, // ビーム・光線のダメージ
+        };
+
+        // --- Game State ---
+        let canvas, ctx;
+        let gameState = 'INIT'; 
+        let frameCount = 0;
+        let score = 0;
+        
+        let maedaImage = new Image();
+        let rangeMaedaImage = new Image();
+        let floorBossImage = new Image();
+
+        let currentStage = 1; 
+        
+        // Floor Boss State
+        let isFloorBossActive = false; // 現在フロアボス戦中か
+        let floorBossCount = 0; // 何回目のフロアボスか（HP計算用）
+
+        // Input State
+        const keys = {
+            ArrowLeft: false, ArrowRight: false, ArrowUp: false, 
+            KeyZ: false, KeyX: false, Space: false
+        };
+        const touchInput = {
+            left: false, right: false, jump: false, punch: false, beam: false
+        };
+
+        // Entities
+        let player = {
+            x: 100, y: 0, w: 30, h: 60,
+            vx: 0, vy: 0,
+            hp: GAME_CONFIG.PLAYER_MAX_HP,
+            facing: 1,
+            beamCooldown: 0,
+            invincibility: 0,
+            color: 'white',
+            punching: 0, 
+            jumps: 2, 
+            maxJumps: 2,
+            punchDamage: GAME_CONFIG.PUNCH_DMG,
+            beamMultiplier: 1, 
+        };
+
+        let enemies = [];
+        let particles = [];
+        let damageTexts = [];
+        let projectiles = []; 
+
+        // Sound System
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffers = {};
+
+        // --- Initialization ---
+        window.onload = async () => {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const errorScreen = document.getElementById('errorScreen');
+            const startScreen = document.getElementById('startScreen');
+            const errMsg = document.getElementById('errorMessage');
+
+            try {
+                // 1. Check API Status for 'allow'
+                const apiResponse = await fetch(ASSETS.API_URL);
+                if (!apiResponse.ok) throw new Error(`API Status Error: ${apiResponse.status}`);
+                const statusText = await apiResponse.text();
+                
+                if (statusText.trim().toLowerCase() !== 'allow') {
+                    // API応答が'allow'でない場合、ゲームの続行をブロック
+                    throw new Error(`ゲームの実行が許可されていません。ステータス: ${statusText.trim()}`); 
+                }
+
+                // 2. Load Images
+                await new Promise((resolve, reject) => {
+                    let loaded = 0;
+                    const total = 3;
+                    const checkLoaded = () => { loaded++; if (loaded === total) resolve(); };
+
+                    maedaImage.src = ASSETS.ENEMY_IMG;
+                    maedaImage.onload = checkLoaded;
+                    maedaImage.onerror = () => reject(new Error("ノーマル敵画像の読み込み失敗"));
+
+                    rangeMaedaImage.src = ASSETS.RANGE_ENEMY_IMG;
+                    rangeMaedaImage.onload = checkLoaded;
+                    rangeMaedaImage.onerror = () => reject(new Error("遠距離敵画像の読み込み失敗"));
+
+                    floorBossImage.src = ASSETS.FLOOR_BOSS_IMG;
+                    floorBossImage.onload = checkLoaded;
+                    floorBossImage.onerror = () => reject(new Error("ボス画像の読み込み失敗"));
+                });
+
+                loadingScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+                initGame();
+
+            } catch (err) {
+                // エラーが発生した場合（APIチェック失敗または画像ロード失敗）
+                loadingScreen.classList.add('hidden');
+                errorScreen.classList.remove('hidden');
+                errMsg.textContent = `エラー: ${err.message}`;
+            }
+        };
+
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            const resize = () => {
+                canvas.width = Math.min(window.innerWidth, 800);
+                canvas.height = Math.min(window.innerHeight * 0.75, 500);
+                GAME_CONFIG.GROUND_Y = canvas.height - 40;
+                player.y = GAME_CONFIG.GROUND_Y - player.h;
+            };
+            window.addEventListener('resize', resize);
+            resize();
+
+            setupInputs();
+            document.getElementById('startBtn').addEventListener('click', () => {
+                // ユーザーアクションをトリガーにAudioContextをResume
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                document.getElementById('startScreen').classList.add('hidden');
+                gameState = 'PLAYING';
+                gameLoop();
+            });
+        }
+
+        // Sound Functions
+        function playSound(type) {
+            let src = '';
+            if (Array.isArray(SOUNDS[type])) {
+                const idx = Math.floor(Math.random() * SOUNDS[type].length);
+                src = SOUNDS[type][idx];
+            } else {
+                src = SOUNDS[type];
+            }
+
+            if (!src) return;
+
+            // シンプルなAudioオブジェクト再生
+            const audio = new Audio(src);
+            audio.volume = 0.5; // 音量調整
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+
+        let isSpacePressed = false; 
+        function setupInputs() {
+            window.addEventListener('keydown', e => {
+                if(e.code === 'Space' && !isSpacePressed) { 
+                    keys.Space = true; 
+                    isSpacePressed = true;
+                    attemptJump(); 
+                }
+                if(e.code === 'ArrowLeft') keys.ArrowLeft = true;
+                if(e.code === 'ArrowRight') keys.ArrowRight = true;
+                if(e.code === 'KeyZ') { keys.KeyZ = true; attemptPunch(); }
+                if(e.code === 'KeyX') { keys.KeyX = true; attemptBeam(); }
+            });
+            window.addEventListener('keyup', e => {
+                if(e.code === 'Space') { keys.Space = false; isSpacePressed = false; }
+                if(e.code === 'ArrowLeft') keys.ArrowLeft = false;
+                if(e.code === 'ArrowRight') keys.ArrowRight = false;
+                if(e.code === 'KeyZ') keys.KeyZ = false;
+                if(e.code === 'KeyX') keys.KeyX = false;
+            });
+
+            // Touch Inputs
+            const bindTouch = (id, key) => {
+                const el = document.getElementById(id);
+                el.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    touchInput[key] = true; 
+                    el.classList.add('pressed'); 
+                    if(key==='punch') attemptPunch(); 
+                    if(key==='beam') attemptBeam(); 
+                    if(key==='jump') attemptJump(); 
+                }, {passive: false});
+                el.addEventListener('touchend', (e) => { e.preventDefault(); touchInput[key] = false; el.classList.remove('pressed'); });
+            };
+
+            bindTouch('btnLeft', 'left');
+            bindTouch('btnRight', 'right');
+            bindTouch('btnJump', 'jump');
+            bindTouch('btnPunch', 'punch');
+            bindTouch('btnBeam', 'beam');
+
+            document.addEventListener('touchstart', function(e) {
+                if (e.target.closest('#mobileControls') || e.target.closest('#gameCanvas')) {
+                    e.preventDefault();
+                }
+            }, {passive: false});
+        }
+
+        function attemptJump() {
+            if (gameState !== 'PLAYING') return;
+
+            if (player.y + player.h >= GAME_CONFIG.GROUND_Y - 1) { // 許容誤差追加
+                player.vy = -GAME_CONFIG.JUMP_FORCE;
+                player.jumps = player.maxJumps - 1;
+            } else if (player.jumps > 0) {
+                player.vy = -GAME_CONFIG.JUMP_FORCE * 0.8; 
+                player.jumps--;
+                
+                for(let i=0; i<3; i++) {
+                    particles.push({
+                        type: 'pixel',
+                        x: player.x + player.w/2, y: player.y + player.h,
+                        vx: (Math.random()-0.5)*4, vy: Math.random() * -3,
+                        life: 15, color: '#ffff00'
+                    });
+                }
+            }
+        }
+
+        // --- Player Actions ---
+
+        function attemptPunch() {
+            if (gameState !== 'PLAYING') return;
+            player.punching = 10; 
+            
+            const punchRange = 60;
+            const punchX = player.facing === 1 ? player.x + player.w : player.x - punchRange;
+            
+            enemies.forEach(enemy => {
+                const hitOffsetX = enemy.isBoss ? enemy.w * 0.2 : 0; 
+                const hitOffsetY = enemy.isBoss ? enemy.h * 0.2 : 0; 
+
+                // 浮遊中のフロアボスには当たらない
+                if (enemy.type === 'floor_boss' && enemy.isFloating) {
+                    return;
+                }
+
+                // 高さ判定の緩和（フロアボスが大きいので）
+                let heightTolerance = enemy.type === 'floor_boss' ? 100 : 50;
+
+                if (
+                    enemy.x + hitOffsetX < punchX + punchRange &&
+                    enemy.x + enemy.w - hitOffsetX > punchX &&
+                    Math.abs((enemy.y + enemy.h/2) - (player.y + player.h/2)) < (heightTolerance - hitOffsetY)
+                ) {
+                    hitEnemy(enemy, player.punchDamage);
+                }
+            });
+        }
+
+        function attemptBeam() {
+            if (gameState !== 'PLAYING') return;
+            if (player.beamCooldown > 0) return;
+
+            // 効果音再生
+            playSound('BEAM');
+
+            player.beamCooldown = GAME_CONFIG.BEAM_COOLDOWN;
+            let baseDamage = GAME_CONFIG.BASE_BEAM_DMG + (player.punchDamage * 2);
+            const finalBeamDamage = baseDamage * player.beamMultiplier;
+
+            enemies.forEach(enemy => {
+                // 浮遊中のフロアボスには当たらない
+                if (enemy.type === 'floor_boss' && enemy.isFloating) {
+                    return;
+                }
+
+                let hit = false;
+                if (player.facing === 1 && enemy.x > player.x) hit = true;
+                if (player.facing === -1 && enemy.x < player.x) hit = true;
+                
+                if (hit) {
+                    hitEnemy(enemy, finalBeamDamage);
+                }
+            });
+
+            if (player.beamMultiplier > 1) {
+                damageTexts.push({
+                    x: player.x, y: player.y - 40, text: `Beam Power Reset!`, life: 60, vy: -1, color: '#00ffff'
+                });
+            }
+            player.beamMultiplier = 1;
+
+            particles.push({
+                type: 'beam',
+                x: player.facing === 1 ? player.x + player.w : 0,
+                y: player.y + player.h/2 - 10,
+                w: player.facing === 1 ? canvas.width - player.x : player.x,
+                h: 20,
+                life: 15,
+                color: '#00ffff'
+            });
+        }
+        
+        function applyHealEffect() {
+            const healAmount = GAME_CONFIG.HEAL_AMOUNT; 
+            player.hp = Math.min(GAME_CONFIG.PLAYER_MAX_HP, player.hp + healAmount);
+            damageTexts.push({
+                x: player.x, y: player.y - 10, text: `+${healAmount} HP`, life: 40, vy: -1, color: '#00ff00'
+            });
+        }
+
+        function applyPunchBuff() {
+            player.punchDamage += 1;
+            damageTexts.push({
+                x: player.x, y: player.y - 20, text: `PUNCH +1 DMG`, life: 40, vy: -1.5, color: '#ffaa00'
+            });
+        }
+
+        function applyBeamBuff() {
+            player.beamMultiplier = 2;
+            damageTexts.push({
+                x: player.x, y: player.y - 30, text: `BEAM x2 NEXT!`, life: 60, vy: -2, color: '#00ffff'
+            });
+        }
+
+        function hitEnemy(enemy, dmg) {
+            enemy.hp -= dmg;
+            damageTexts.push({
+                x: enemy.x, y: enemy.y, text: Math.floor(dmg), life: 30, vy: -2, color: 'white'
+            });
+
+            if (enemy.hp <= 0) {
+                if (enemy.type === 'heal') {
+                    // Heal Logic
+                    const r = Math.random();
+                    if (r < 0.5) applyHealEffect();
+                    else if (r < 0.75) applyPunchBuff();
+                    else applyBeamBuff();
+                } else if (enemy.type === 'floor_boss') {
+                    // フロアボス撃破時
+                    playSound('BOSS_KILLED'); // ボス撃破音
+
+                    score += 500 * (floorBossCount + 1);
+                    isFloorBossActive = false; // ボスモード終了
+                    currentStage++; // ステージを進める
+                    
+                    // ボス撃破演出
+                    for(let i=0; i<30; i++) {
+                        particles.push({
+                            type: 'pixel',
+                            x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
+                            vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                            life: 60, color: 'purple'
+                        });
+                    }
+                } else {
+                    score += enemy.isBoss ? 100 : (enemy.type === 'range' ? 30 : 10); 
+                }
+                
+                // Death effect
+                const particleColor = enemy.type === 'heal' ? 'pink' : (enemy.type === 'range' ? 'blue' : 'red');
+                if (enemy.type !== 'floor_boss') {
+                    for(let i=0; i<5; i++) {
+                        particles.push({
+                            type: 'pixel',
+                            x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
+                            vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+                            life: 20, color: particleColor
+                        });
+                    }
+                }
+            } else {
+                if (enemy.type !== 'floor_boss') {
+                    enemy.x += (player.facing * 10); // Knockback (ボス以外)
+                }
+            }
+        }
+
+        // --- Enemy Spawning & Logic ---
+
+        function spawnEnemy() {
+            // フロアボス出現中は他の敵を出さない
+            if (isFloorBossActive) return;
+
+            // ステージ進行チェック（9ステージごとにボス）
+            // currentStageが8の倍数、かつ まだボスが出ていない場合
+            if (currentStage > 0 && currentStage % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0) {
+                spawnFloorBoss();
+                return;
+            }
+
+            if (enemies.length >= GAME_CONFIG.MAX_ENEMIES) return;
+
+            // 通常のスポーンロジック
+            const r = Math.random();
+            let enemyType = 'zako';
+            
+            if (r < 0.1) enemyType = 'boss';
+            else if (r < 0.25) enemyType = 'range';
+            else if (r < 0.35) enemyType = 'heal';
+            
+            const finalIsBoss = enemyType === 'boss';
+            const finalIsRange = enemyType === 'range';
+
+            if (finalIsBoss || finalIsRange) {
+                const specialEnemyExists = enemies.some(e => e.isBoss || e.type === 'range');
+                if (specialEnemyExists) {
+                    enemyType = (Math.random() < 0.3) ? 'heal' : 'zako';
+                }
+            }
+
+            const hpIncrease = (currentStage - 1) * GAME_CONFIG.HP_INCREASE_PER_STAGE;
+            
+            let size, hp, speed, img;
+
+            if (enemyType === 'boss') {
+                size = 100;
+                hp = Math.floor(Math.random() * 31) + GAME_CONFIG.BASE_BOSS_HP + hpIncrease;
+                speed = 1; img = maedaImage;
+            } else if (enemyType === 'heal') {
+                size = 40;
+                hp = Math.floor(Math.random() * 2) + 1; 
+                speed = 3; img = maedaImage;
+            } else if (enemyType === 'range') {
+                size = 80; 
+                hp = Math.floor(Math.random() * 4) + GAME_CONFIG.BASE_RANGE_HP + hpIncrease;
+                speed = 0.5; img = rangeMaedaImage;
+            } else { // Zako
+                size = 40;
+                hp = Math.floor(Math.random() * 3) + GAME_CONFIG.BASE_ZAKO_HP + hpIncrease;
+                speed = 2; img = maedaImage;
+            }
+
+            const side = Math.random() < 0.5 ? -1 : 1;
+            enemies.push({
+                x: side === -1 ? -size : canvas.width + size,
+                y: GAME_CONFIG.GROUND_Y - size,
+                w: size, h: size,
+                vx: speed,
+                hp: hp, maxHp: hp,
+                isBoss: enemyType === 'boss',
+                type: enemyType,
+                img: img,
+                moveTimer: 0, 
+                currentDirection: side === -1 ? 1 : -1,
+                
+                rangeAttackTimer: finalIsRange ? 0 : null,
+                spikeState: finalIsRange ? 'idle' : null, 
+                spikeWarningPos: finalIsRange ? 0 : null
+            });
+        }
+
+        function spawnFloorBoss() {
+            isFloorBossActive = true;
+            floorBossCount++;
+
+            playSound('BOSS_SUMMON'); // ボス出現音
+            
+            // 警告表示
+            const warningEl = document.getElementById('bossWarning');
+            warningEl.style.display = 'block';
+            setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
+
+            // HP計算: ベース + (50% * 回数)
+            const maxHp = Math.floor(GAME_CONFIG.FLOOR_BOSS_BASE_HP * (1 + (GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT * (floorBossCount - 1))));
+
+            const size = 150; // かなりでかい
+            enemies.push({
+                type: 'floor_boss',
+                x: canvas.width + 100, // 右から登場
+                y: GAME_CONFIG.GROUND_Y - size,
+                w: size, h: size,
+                vx: GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED, // 初期移動速度
+                hp: maxHp, maxHp: maxHp,
+                isBoss: true,
+                img: floorBossImage,
+                
+                // Floor Boss Specifics
+                floatTimer: 0,
+                isFloating: false,
+                attackTimer: 0,
+                attackState: 'idle', // idle, warning, active
+                attackType: null, // 'beam', 'area', 'ceilingBeam'
+                
+                moveTimer: 0,
+                currentDirection: -1,
+                
+                // 攻撃時のターゲット/位置情報
+                targetX: 0 
+            });
+        }
+
+        // --- Floor Boss Logic ---
+        function updateFloorBoss(e) {
+            // 1. 出現演出（画面外から定位置へ）
+            const entryPositionX = canvas.width - 200;
+            if (e.x > entryPositionX) {
+                e.x -= 2;
+                return; // 定位置に来るまで攻撃しない
+            }
+
+            // 2. 浮遊ロジック (10秒ごとに2秒浮遊)
+            e.floatTimer++;
+            const floatCycle = GAME_CONFIG.FLOOR_BOSS_FLOAT_INTERVAL; // 600
+            const floatDuration = GAME_CONFIG.FLOOR_BOSS_FLOAT_DURATION; // 120
+
+            if (e.floatTimer % floatCycle > (floatCycle - floatDuration)) {
+                if (!e.isFloating) {
+                    // 浮遊開始
+                    e.isFloating = true;
+                    // 上昇アニメーション
+                    e.targetY = 50; // 空中
+                }
+                // 目標Y座標へスムース移動
+                e.y += (e.targetY - e.y) * 0.1;
+            } else {
+                if (e.isFloating) {
+                    // 浮遊終了（降下）
+                    e.isFloating = false;
+                    e.targetY = GAME_CONFIG.GROUND_Y - e.h;
+                }
+                // 地面へ戻る
+                let groundY = GAME_CONFIG.GROUND_Y - e.h;
+                if (Math.abs(e.y - groundY) > 1) {
+                    e.y += (groundY - e.y) * 0.1;
+                } else {
+                    e.y = groundY;
+                }
+            }
+
+            // 3. 移動ロジック（浮遊中でない場合）
+            if (!e.isFloating) {
+                const centerBoss = e.x + e.w / 2;
+                const centerPlayer = player.x + player.w / 2;
+                
+                // プレイヤーにゆっくり近づく (左右50pxの許容範囲)
+                if (Math.abs(centerBoss - centerPlayer) > 50) { 
+                    const moveDir = centerBoss < centerPlayer ? 1 : -1;
+                    e.x += GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED * moveDir;
+
+                    // 画面端の制限
+                    if (e.x < 0) e.x = 0;
+                    if (e.x + e.w > canvas.width) e.x = canvas.width - e.w;
+                }
+            }
+
+            // 4. 攻撃ロジック
+            if (e.isFloating) return; // 浮遊中は攻撃しない
+
+            e.attackTimer++;
+            
+            // 攻撃サイクル管理
+            if (e.attackState === 'idle') {
+                if (e.attackTimer > GAME_CONFIG.FLOOR_BOSS_ACTION_INTERVAL) {
+                    // 攻撃開始：タイプ決定
+                    e.attackState = 'warning';
+                    e.attackTimer = 0;
+                    
+                    // 3種類の攻撃をランダムに選択
+                    const r = Math.random();
+                    if (r < 0.33) e.attackType = 'beam'; // 地面すれすれ横ビーム
+                    else if (r < 0.66) e.attackType = 'area'; // 地面範囲攻撃
+                    else e.attackType = 'ceilingBeam'; // 上からの縦ビーム
+                    
+                    if (e.attackType === 'area' || e.attackType === 'ceilingBeam') {
+                        // プレイヤーの現在位置をロックオン
+                        e.targetX = player.x + player.w/2;
+                    }
+                }
+            } else if (e.attackState === 'warning') {
+                // 警告時間経過 (60f)
+                if (e.attackTimer > GAME_CONFIG.BOSS_ATTACK_WARNING_FRAMES) {
+                    e.attackState = 'active';
+                    e.attackTimer = 0;
+                    
+                    // 攻撃判定発生
+                    if (e.attackType === 'beam') {
+                        // 横ビーム発射（床ギリギリに修正）
+                        projectiles.push({
+                            type: 'bossBeam',
+                            x: canvas.width, // 右端からスタート
+                            y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2, // 地面より上にビームの中心がくるように
+                            w: canvas.width, // 初期幅（描画用）
+                            h: GAME_CONFIG.BOSS_BEAM_HEIGHT,
+                            vx: -25, vy: 0, // 高速で左に移動
+                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE, // 3ダメージ
+                            life: canvas.width / 25, // 持続時間（画面を横切るのに必要な時間）
+                            color: 'purple'
+                        });
+                    } else if (e.attackType === 'area') {
+                        // 範囲攻撃爆発
+                        projectiles.push({
+                            type: 'explosion',
+                            x: e.targetX, y: GAME_CONFIG.GROUND_Y,
+                            w: 100, h: 150, // 縦に長い爆発
+                            damage: 4, // 接触ダメージ
+                            life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES,
+                            color: 'orange'
+                        });
+                    } else if (e.attackType === 'ceilingBeam') {
+                        // 上からの縦ビーム
+                        projectiles.push({
+                            type: 'ceilingBeam',
+                            x: e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH / 2, 
+                            y: 0, 
+                            w: GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, 
+                            h: GAME_CONFIG.GROUND_Y, 
+                            vx: 0, vy: 0,
+                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE, // 3ダメージ (修正)
+                            life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES, 
+                            color: 'red'
+                        });
+                    }
+                }
+            } else if (e.attackState === 'active') {
+                // 硬直時間経過後にidleに戻る
+                if (e.attackTimer > GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES) {
+                    e.attackState = 'idle';
+                    e.attackTimer = 0;
+                }
+            }
+        }
+        
+        function handleRangedAttacks(e) {
+            if (e.type !== 'range') return;
+
+            e.rangeAttackTimer = (e.rangeAttackTimer + 1) % (60 * 60); 
+
+            // Short Beam (3s)
+            if (e.rangeAttackTimer % 180 === 0) {
+                const startX = e.x + e.w / 2;
+                const startY = e.y + e.h * 0.7; 
+                const targetX = player.x + player.w / 2;
+                let dir = targetX > startX ? 1 : -1;
+                projectiles.push({
+                    type: 'shortBeam',
+                    x: startX, y: startY, w: 10, h: 5,
+                    vx: dir * 5, vy: 0,
+                    damage: 1, color: 'rgba(255, 165, 0, 0.8)',
+                    life: 180 // 持続時間
+                });
+            }
+
+            // Spike (5s)
+            if (e.rangeAttackTimer % 300 === 0) {
+                e.spikeState = 'warning';
+                e.spikeWarningPos = player.x + player.w / 2;
+                projectiles.push({
+                    type: 'spike',
+                    x: e.spikeWarningPos, y: GAME_CONFIG.GROUND_Y, 
+                    w: 40, h: 0, damage: 2,
+                    state: 'warning', life: 60, maxLife: 60,
+                    owner: e 
+                });
+            }
+        }
+
+        function handlePlayerDamage(damage) {
+            if (player.invincibility > 0) return;
+            
+            player.hp -= damage;
+            player.invincibility = GAME_CONFIG.INVINCIBILITY_FRAMES;
+            
+            // ダメージ音再生
+            playSound('DAMAGE');
+
+            if (player.hp <= 0) {
+                playSound('GAME_OVER'); // ゲームオーバー音
+
+                gameState = 'GAMEOVER';
+                document.getElementById('finalScore').textContent = score;
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+            }
+        }
+
+        function updateProjectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+
+                if (p.type === 'bossBeam') {
+                    p.x += p.vx;
+                    p.life--;
+                    
+                    // Hit Check (Floor Boss Beam)
+                    if (player.invincibility <= 0) {
+                        // ビームの座標は中心yなので、判定はy - h/2 から y + h/2
+                        const beamY_top = p.y - p.h / 2;
+                        const beamY_bottom = p.y + p.h / 2;
+                        
+                        if (
+                            player.x < p.x && player.x + player.w > (p.x + p.vx) && // X軸の範囲内
+                            player.y + player.h > beamY_top && player.y < beamY_bottom
+                        ) {
+                            handlePlayerDamage(p.damage);
+                            damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
+                        }
+                    }
+                    if (p.x + p.h < 0) p.life = 0; // 画面左端を過ぎたら消滅
+                    
+                } else if (p.type === 'explosion') {
+                    p.life--;
+                    // Hit Check (Center based)
+                    if (player.invincibility <= 0 &&
+                        player.x < p.x + p.w/2 && player.x + player.w > p.x - p.w/2 &&
+                        player.y + player.h > GAME_CONFIG.GROUND_Y - p.h) {
+                        handlePlayerDamage(p.damage);
+                        damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
+                    }
+                } else if (p.type === 'ceilingBeam') {
+                    p.life--;
+                    // Hit Check (Ceiling Beam)
+                    if (player.invincibility <= 0 &&
+                        player.x < p.x + p.w && player.x + player.w > p.x && // X軸の範囲
+                        player.y < p.y + p.h && player.y + player.h > p.y) { // Y軸の範囲
+                        handlePlayerDamage(p.damage);
+                        damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
+                    }
+                } else if (p.type === 'shortBeam') {
+                    p.x += p.vx;
+                    p.life--;
+                    if (player.invincibility <= 0 &&
+                        player.x < p.x + p.w && player.x + player.w > p.x &&
+                        player.y < p.y + p.h && player.y + player.h > p.y) {
+                        handlePlayerDamage(p.damage);
+                        damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
+                        p.life = 0; // Destroy
+                    }
+                    if (p.x < 0 || p.x > canvas.width) p.life = 0;
+                } else if (p.type === 'spike') {
+                    p.life--;
+                    if (p.state === 'warning') {
+                        if (p.life <= 0) {
+                            p.state = 'active';
+                            p.life = 30; // Active duration
+                            p.h = 40; 
+                        }
+                    } else if (p.state === 'active') {
+                        if (player.invincibility <= 0 &&
+                            player.x < p.x + p.w / 2 && player.x + player.w > p.x - p.w / 2 && 
+                            player.y + player.h > p.y - p.h) { 
+                            handlePlayerDamage(p.damage);
+                            damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
+                        }
+                    }
+                }
+                
+                if (p.life <= 0) {
+                     projectiles.splice(i, 1);
+                }
+            }
+        }
+
+
+        function update() {
+            if (gameState === 'GAMEOVER') return;
+
+            frameCount++;
+
+            // ステージ進行管理
+            if (!isFloorBossActive) {
+                if (frameCount % GAME_CONFIG.STAGE_FRAME_DURATION === 0) {
+                    currentStage++;
+                }
+            }
+
+            // Player Physics
+            if (keys.ArrowLeft || touchInput.left) {
+                player.vx = -GAME_CONFIG.PLAYER_SPEED;
+                player.facing = -1;
+            } else if (keys.ArrowRight || touchInput.right) {
+                player.vx = GAME_CONFIG.PLAYER_SPEED;
+                player.facing = 1;
+            } else {
+                player.vx = 0;
+            }
+
+            player.vy += GAME_CONFIG.GRAVITY;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+            if (player.y + player.h > GAME_CONFIG.GROUND_Y) {
+                player.y = GAME_CONFIG.GROUND_Y - player.h;
+                player.vy = 0;
+                player.jumps = player.maxJumps; 
+            }
+
+            if (player.beamCooldown > 0) player.beamCooldown--;
+            if (player.punching > 0) player.punching--;
+            if (player.invincibility > 0) player.invincibility--;
+
+            // Enemies
+            if (frameCount % GAME_CONFIG.SPAWN_RATE === 0) spawnEnemy();
+            // ボス戦中以外はスポーンレートを上げる
+            if (!isFloorBossActive && frameCount % 600 === 0 && GAME_CONFIG.SPAWN_RATE > 30) GAME_CONFIG.SPAWN_RATE -= 1;
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                
+                if (e.type === 'floor_boss') {
+                    updateFloorBoss(e);
+                } else {
+                    handleRangedAttacks(e); 
+                    // 通常の移動AI
+                    e.moveTimer++; 
+                    const seekLimit = e.isBoss ? GAME_CONFIG.ENEMY_SEEK_DURATION_BOSS : GAME_CONFIG.ENEMY_SEEK_DURATION_ZAKO;
+                    
+                    if (e.type === 'range') {
+                        if (Math.abs(e.x - player.x) > 300) {
+                            e.currentDirection = (e.x + e.w/2 < player.x + player.w/2) ? 1 : -1;
+                            e.x += e.vx * e.currentDirection;
+                        }
+                    } else if (e.moveTimer < seekLimit) {
+                        e.currentDirection = (e.x + e.w/2 < player.x + player.w/2) ? 1 : -1;
+                        e.x += e.vx * e.currentDirection;
+                    } else {
+                        if (e.x <= 0) e.currentDirection = 1;
+                        else if (e.x + e.w >= canvas.width) e.currentDirection = -1;
+                        e.x += e.vx * e.currentDirection;
+                        if (e.x < 0) e.x = 0;
+                        if (e.x + e.w > canvas.width) e.x = canvas.width - e.w;
+                    }
+                }
+
+                // Melee Collision
+                // 浮遊中のボスには接触ダメージなし
+                if (e.type === 'floor_boss' && e.isFloating) {
+                    // no collision
+                } else {
+                    const offsetX = e.isBoss ? e.w * 0.2 : 10;
+                    const offsetY = e.isBoss ? e.h * 0.2 : 0;
+                    
+                    if (player.invincibility <= 0 && 
+                        player.x < e.x + e.w - offsetX &&
+                        player.x + player.w > e.x + offsetX &&
+                        player.y < e.y + e.h - offsetY &&
+                        player.y + player.h > e.y + offsetY
+                    ) {
+                        // ボスは接触ダメージでかい
+                        const dmg = e.type === 'floor_boss' ? 2 : 1;
+                        
+                        handlePlayerDamage(dmg);
+
+                        player.vy = -5;
+                        player.vx = (player.x < e.x) ? -10 : 10;
+                    }
+                }
+
+                if (e.hp <= 0) enemies.splice(i, 1);
+            }
+
+            updateProjectiles();
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.life--;
+                if(p.type === 'pixel') { p.x += p.vx; p.y += p.vy; }
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            
+            for (let i = damageTexts.length - 1; i >= 0; i--) {
+                damageTexts[i].life--;
+                damageTexts[i].y += damageTexts[i].vy;
+                if (damageTexts[i].life <= 0) damageTexts.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // ボス戦背景効果（暗くなる）
+            if (isFloorBossActive) {
+                ctx.fillStyle = 'rgba(0, 0, 50, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(0, GAME_CONFIG.GROUND_Y, canvas.width, canvas.height - GAME_CONFIG.GROUND_Y);
+
+            // Player
+            if (player.invincibility % 4 < 2) { 
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(player.x + player.w/2, player.y + 10, 10, 0, Math.PI*2);
+                ctx.moveTo(player.x + player.w/2, player.y + 20);
+                ctx.lineTo(player.x + player.w/2, player.y + 45);
+                ctx.moveTo(player.x + player.w/2, player.y + 45);
+                ctx.lineTo(player.x + 5, player.y + player.h);
+                ctx.moveTo(player.x + player.w/2, player.y + 45);
+                ctx.lineTo(player.x + player.w - 5, player.y + player.h);
+                ctx.moveTo(player.x + player.w/2, player.y + 30);
+                if (player.punching > 0) {
+                    ctx.lineTo(player.facing === 1 ? player.x + player.w + 15 : player.x - 15, player.y + 30);
+                } else {
+                    ctx.lineTo(player.x + (player.facing===1?25:5), player.y + 40);
+                }
+                ctx.stroke();
+                
+                if (player.punching > 0) {
+                    const effectColor = player.punchDamage > GAME_CONFIG.PUNCH_DMG ? 'rgba(255, 100, 0, 0.7)' : 'rgba(255, 255, 0, 0.5)';
+                    const effectRadius = player.punchDamage > GAME_CONFIG.PUNCH_DMG ? 20 : 15;
+                    ctx.fillStyle = effectColor;
+                    ctx.beginPath();
+                    ctx.arc(player.facing === 1 ? player.x + player.w + 15 : player.x - 15, player.y + 30, effectRadius, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+
+            // Enemies
+            enemies.forEach(e => {
+                const baseScale = e.isBoss ? 2 : (e.type === 'range' ? 1.6 : 1);
+                // フロアボスはさらにでかい
+                const scale = e.type === 'floor_boss' ? 1 : baseScale * GAME_CONFIG.IMAGE_SCALE;
+                
+                const drawW = e.w * (e.type === 'floor_boss' ? 1 : GAME_CONFIG.IMAGE_SCALE);
+                const drawH = e.h * (e.type === 'floor_boss' ? 1 : GAME_CONFIG.IMAGE_SCALE);
+                
+                const drawX = e.x + (e.w - drawW) / 2; 
+                const drawY = e.y + e.h - drawH; 
+                
+                if (e.type === 'heal') {
+                    ctx.filter = 'hue-rotate(300deg) saturate(200%)'; 
+                    if (frameCount % 20 < 10) {} else ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
+                } else if (e.type === 'range') {
+                    ctx.filter = 'hue-rotate(180deg) saturate(150%) brightness(120%)';
+                    ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
+                } else if (e.type === 'floor_boss') {
+                    ctx.filter = 'none'; // 画像そのまま
+                    if (e.isFloating) {
+                        // 浮遊中は半透明＆少し揺れる
+                        ctx.globalAlpha = 0.7;
+                        ctx.drawImage(e.img, drawX, drawY + Math.sin(frameCount * 0.1) * 10, drawW, drawH);
+                        ctx.globalAlpha = 1.0;
+                    } else {
+                        ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
+                    }
+                    
+                    // ボスの攻撃予兆
+                    if (e.attackState === 'warning') {
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                        ctx.strokeStyle = 'red';
+                        ctx.lineWidth = 2;
+                        
+                        if (e.attackType === 'beam') {
+                            // 横ビームライン (床ギリギリに描画)
+                            // 警告はボスから左端まで
+                            const beamY_center = GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2;
+                            ctx.fillRect(0, beamY_center - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2, canvas.width, GAME_CONFIG.BOSS_BEAM_HEIGHT);
+                        } else if (e.attackType === 'area') {
+                            // 範囲円
+                            ctx.beginPath();
+                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 50, 50, 0, Math.PI, true);
+                            ctx.fill();
+                            ctx.stroke();
+                        } else if (e.attackType === 'ceilingBeam') {
+                            // 縦ビーム警告ライン
+                            ctx.fillRect(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0, GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, GAME_CONFIG.GROUND_Y); 
+                        }
+                    }
+
+                } else if (e.isBoss) {
+                    ctx.filter = 'saturate(150%) brightness(120%)';
+                    ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
+                } else {
+                    ctx.filter = 'none';
+                    ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
+                }
+                ctx.filter = 'none'; 
+
+                // HP Bar
+                if (e.isBoss || e.type === 'range' || e.hp < e.maxHp) {
+                    const barY = drawY - 10; 
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(e.x, barY, e.w, 5); 
+                    
+                    let barColor = '#00ff00';
+                    if (e.type === 'heal') barColor = 'pink';
+                    else if (e.type === 'range') barColor = 'blue';
+                    else if (e.type === 'floor_boss') barColor = 'purple';
+                    
+                    ctx.fillStyle = barColor;
+                    ctx.fillRect(e.x, barY, e.w * (e.hp / e.maxHp), 5);
+                }
+            });
+
+            // Projectiles
+            projectiles.forEach(p => {
+                if (p.type === 'shortBeam') {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                } else if (p.type === 'spike') {
+                    if (p.state === 'warning') {
+                        if (p.life % 10 < 5) {
+                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                             ctx.fillRect(p.x - 20, GAME_CONFIG.GROUND_Y - 5, 40, 5);
+                        }
+                    } else if (p.state === 'active') {
+                        ctx.fillStyle = 'black';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x - p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x + p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - p.h);
+                        ctx.fill();
+                    }
+                } else if (p.type === 'bossBeam') {
+                    // 極太ビーム (地面ギリギリ)
+                    if (p.life > 0) { // アクティブなビームのみ描画
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = 0.9;
+                        // p.yは中心の高さ
+                        // p.xは右端からの距離（ビームの右端）
+                        ctx.fillRect(0, p.y - p.h/2, p.x, p.h); 
+                        ctx.globalAlpha = 1.0;
+                    }
+                } else if (p.type === 'explosion') {
+                    // 爆発エフェクト
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life / GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES;
+                    ctx.beginPath();
+                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, p.w/2 + (GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES-p.life)*2, 0, Math.PI, true);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                } else if (p.type === 'ceilingBeam') {
+                    // 上からのビーム
+                    if (p.life > 0) { // アクティブなビームのみ描画
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = 0.9;
+                        ctx.fillRect(p.x, p.y, p.w, p.h);
+                        ctx.globalAlpha = 1.0;
+                    }
+                }
+            });
+
+            // Particles
+            particles.forEach(p => {
+                if (p.type === 'beam') {
+                    const beamColor = player.beamMultiplier > 1 ? `rgba(255, 255, 0, ${p.life/15})` : `rgba(0, 255, 255, ${p.life/15})`;
+                    ctx.fillStyle = beamColor;
+                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                } else if (p.type === 'pixel') {
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                }
+            });
+
+            ctx.font = "bold 20px Arial";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+            damageTexts.forEach(t => {
+                ctx.fillStyle = t.color || "white";
+                ctx.fillText(t.text, t.x, t.y);
+                ctx.strokeText(t.text, t.x, t.y);
+            });
+
+            // UI
+            document.getElementById('scoreBoard').innerText = `SCORE: ${score} (Stage: ${currentStage})`;
+            const hpEl = document.getElementById('hpBoard');
+            hpEl.innerText = `HP: ${player.hp}`;
+            hpEl.style.color = player.hp < 4 ? 'red' : 'lightgreen';
+
+            const currentBaseBeamDmg = GAME_CONFIG.BASE_BEAM_DMG + (player.punchDamage * 2);
+            document.getElementById('statusBoard').innerHTML = 
+                `PUNCH DMG: ${player.punchDamage}<br>` +
+                `BEAM DMG: ${currentBaseBeamDmg}<br>` +
+                `BEAM MULTI: x${player.beamMultiplier}`;
+            
+            const cdText = document.getElementById('cdText');
+            if (player.beamCooldown > 0) {
+                cdText.innerText = Math.ceil(player.beamCooldown / 60);
+                cdText.style.color = 'gray';
+                document.getElementById('btnBeam').style.borderColor = 'gray';
+            } else {
+                cdText.innerText = 'OK';
+                cdText.style.color = '#00ffff';
+                document.getElementById('btnBeam').style.borderColor = '#00ffff';
+            }
+        }
+
+        function gameLoop() {
+            if (gameState === 'PLAYING') {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        /* Save/Load Logic (Cookie) */
+        // セーブデータ名も「koyama」に変更
+        function _saveCookie(name, value) { document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + (60*60*24*30) + '; path=/'; }
+        function _loadCookie(name) { const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; }
+        function _deleteCookie(name) { document.cookie = name + '=; max-age=0; path=/'; }
+        
+        function updateSaveStateUI(stateText) { const el = document.getElementById('saveState'); if (el) el.innerText = 'SAVE: ' + stateText; }
+
+        function saveGameManual() {
+            if (gameState !== 'PLAYING') return;
+
+            try {
+                const data = {
+                    score: score,
+                    playerHP: player.hp,
+                    stage: currentStage,
+                    punch: player.punchDamage,
+                    beamMulti: player.beamMultiplier,
+                    bossCount: floorBossCount
+                };
+                _saveCookie('koyamaSave', JSON.stringify(data));
+                updateSaveStateUI('SAVED');
+                
+                // Custom alert logic (not using window.alert)
+                const tempMessage = document.createElement('div');
+                tempMessage.textContent = 'セーブ完了！タイトルに戻ります...';
+                tempMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #48bb78; color: white; padding: 15px 30px; border-radius: 8px; z-index: 1000; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                document.body.appendChild(tempMessage);
+                
+                // 1.5秒後にメッセージを消してリロード
+                setTimeout(() => {
+                    document.body.removeChild(tempMessage);
+                    // ページをリロードしてタイトル画面に戻る
+                    location.reload(); 
+                }, 1500);
+
+            } catch (e) { 
+                const tempMessage = document.createElement('div');
+                tempMessage.textContent = 'セーブ失敗: ' + e.message;
+                tempMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e53e3e; color: white; padding: 15px 30px; border-radius: 8px; z-index: 1000; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                document.body.appendChild(tempMessage);
+                setTimeout(() => {
+                    document.body.removeChild(tempMessage);
+                }, 3000);
+            }
+        }
+
+        function loadGameData() {
+            const raw = _loadCookie('koyamaSave');
+            if (!raw) return false;
+            try {
+                const data = JSON.parse(raw);
+                score = Number(data.score) || 0;
+                player.hp = Number(data.playerHP) || player.hp;
+                currentStage = Number(data.stage) || 1;
+                player.punchDamage = Number(data.punch) || 1;
+                player.beamMultiplier = Number(data.beamMulti) || 1;
+                floorBossCount = Number(data.bossCount) || 0;
+                updateSaveStateUI('LOADED');
+                return true;
+            } catch (e) { return false; }
+        }
+
+        function deleteSaveData() { _deleteCookie('koyamaSave'); updateSaveStateUI('NONE'); }
+
+        window.addEventListener('load', () => {
+            const raw = _loadCookie('koyamaSave');
+            const loadBtn = document.getElementById('loadBtn');
+            if (raw && loadBtn) loadBtn.classList.remove('hidden');
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) saveBtn.addEventListener('click', () => saveGameManual());
+            if (loadBtn) loadBtn.addEventListener('click', () => {
+                // ユーザーアクションをトリガーにAudioContextをResume
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                loadGameData();
+                document.getElementById('startScreen').classList.add('hidden');
+                gameState = 'PLAYING';
+                gameLoop();
+            });
+            if (raw) updateSaveStateUI('SAVED'); else updateSaveStateUI('NONE');
+        });
+
+        (function(){
+            let handled = false;
+            setInterval(() => {
+                // ゲームオーバー時にセーブデータを削除
+                if (!handled && gameState === 'GAMEOVER') {
+                    deleteSaveData();
+                    handled = true;
+                }
+                if (handled && gameState !== 'GAMEOVER') handled = false;
+            }, 250);
+        })();
+
+    </script>
+</body>
+</html>
+
