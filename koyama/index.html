@@ -9,14 +9,6 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <!-- Google tag (gtag.js) - 既存コードより継承 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GFVGV2P5MQ"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-GFVGV2P5MQ');
-    </script>
     
     <meta charset="UTF-8">
     <!-- 1. 拡大・縮小の禁止 -->
@@ -142,7 +134,7 @@
         </div>
         
         <!-- ボス警告テキスト -->
-        <div id="bossWarning">WARNING!!<br><span style="font-size:2rem">KOYAMA APPROACHING</span></div>
+        <div id="bossWarning">エリアボスが出現！<br><span style="font-size:2rem">ゴースト小山を討伐せよ！！</span></div>
 
         <canvas id="gameCanvas"></canvas>
     </div>
@@ -182,8 +174,8 @@
             <span class="text-red-400 font-bold">9ステージごとに強力なフロアボスが出現！</span><br>
             フロアボスは浮遊して攻撃を回避してくるぞ！
         </p>
-        <button id="startBtn" class="px-8 py-4 bg-green-600 text-white rounded-lg text-2xl font-bold hover:bg-green-500 shadow-lg transition">GAME START</button>
-        <button id="loadBtn" class="hidden mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-xl font-bold hover:bg-blue-500 shadow-lg">LOAD CONTINUE</button>
+        <button id="startBtn" class="px-8 py-4 bg-green-600 text-white rounded-lg text-2xl font-bold hover:bg-green-500 shadow-lg transition">ゲーム開始</button>
+        <button id="loadBtn" class="hidden mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg text-xl font-bold hover:bg-blue-500 shadow-lg">セーブデータをロード</button>
     </div>
 
     <div id="gameOverScreen" class="hidden bg-black bg-opacity-90">
