@@ -522,7 +522,7 @@
 
             if (player.beamMultiplier > 1) {
                 damageTexts.push({
-                    x: player.x, y: player.y - 40, text: `Beam Power Reset!`, life: 60, vy: -1, color: '#00ffff'
+                    x: player.x, y: player.y - 40, text: `ビームの威力が戻りました`, life: 60, vy: -1, color: '#00ffff'
                 });
             }
             player.beamMultiplier = 1;
@@ -549,14 +549,14 @@
         function applyPunchBuff() {
             player.punchDamage += 1;
             damageTexts.push({
-                x: player.x, y: player.y - 20, text: `PUNCH +1 DMG`, life: 40, vy: -1.5, color: '#ffaa00'
+                x: player.x, y: player.y - 20, text: `パンチの威力が上がりました！`, life: 40, vy: -1.5, color: '#ffaa00'
             });
         }
 
         function applyBeamBuff() {
             player.beamMultiplier = 2;
             damageTexts.push({
-                x: player.x, y: player.y - 30, text: `BEAM x2 NEXT!`, life: 60, vy: -2, color: '#00ffff'
+                x: player.x, y: player.y - 30, text: `次のビームの威力が倍に！`, life: 60, vy: -2, color: '#00ffff'
             });
         }
 
