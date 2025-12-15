@@ -1,0 +1,106 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トークン認証ゲート</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: #f9fafb; /* white base */
+        }
+        #result {
+            min-height: 100vh;
+        }
+        /* ローディング用スピナー */
+        .spinner {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="result" class="flex items-center justify-center min-h-screen bg-gray-50">
+    <!-- 初期ロード演出 -->
+    <div class="text-center bg-white p-8 rounded-xl shadow-xl border">
+        <div class="spinner mx-auto mb-6"></div>
+        <h1 class="text-xl font-bold text-gray-800 mb-2">認証を確認中です</h1>
+        <p class="text-gray-600">しばらくお待ちください…</p>
+    </div>
+</div>
+
+<script>
+    function checkTokenAfterDelay() {
+        const delay = Math.floor(Math.random() * 4000) + 2000; // 2〜6秒
+
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const resultDiv = document.getElementById('result');
+
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const requiredPrefix = hours + minutes;
+
+            let isAuthenticated = false;
+
+            if (token && /^\d{20}$/.test(token)) {
+                const tokenPrefix = token.substring(0, 4);
+                if (tokenPrefix === requiredPrefix) {
+                    isAuthenticated = true;
+                }
+            }
+
+            if (isAuthenticated) {
+                document.body.className = 'p-0 m-0 overflow-hidden bg-white';
+                resultDiv.className = 'w-screen h-screen';
+                resultDiv.innerHTML = `
+                    <iframe
+                        src="https://riverteacher.github.io/ohhhhhn/koyama/game"
+                        title="Koyama Game"
+                        class="w-full h-full"
+                        frameborder="0"
+                        allowfullscreen>
+                    </iframe>
+                `;
+            } else {
+                resultDiv.className = 'flex items-center justify-center min-h-screen bg-gray-50 p-4';
+                resultDiv.innerHTML = `
+                    <div class="text-center p-8 bg-white shadow-2xl rounded-xl max-w-md w-full border-t-4 border-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-600 mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <h1 class="text-2xl font-extrabold text-gray-800 mb-2">認証に失敗しました</h1>
+                        <p class="text-gray-600 mb-4">トークンが無効、または期限切れです。</p>
+                        <div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 font-mono">
+                            <p>リンクを再生成してもう一度お試しください</p>
+                        </div>
+                        
+                    </div>
+                `;
+            }
+        }, delay);
+    }
+
+    window.onload = checkTokenAfterDelay;
+</script>
+
+</body>
+</html>
+```
