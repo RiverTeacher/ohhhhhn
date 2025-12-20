@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Version Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .modal-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status-container" class="modal-card">
+        <div id="loading-spinner" class="mb-4">
+            <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-4 text-gray-600">バージョンを確認中...</p>
+        </div>
+
+        <div id="error-content" class="hidden">
+            <div class="text-red-500 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold text-gray-800 mb-2">アップデートが必要です</h1>
+            <p class="text-gray-600 mb-6">最新バージョンが公開されています。<br>アプリを更新してください。</p>
+            <a href="https://riverteacher.github.io/ohhhhhn/koyama/app-download.html" 
+               class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                最新版をダウンロード
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // 設定: 最新バージョン
+        const LATEST_VERSION = "1.01";
+        const MENU_URL = "https://riverteacher.github.io/ohhhhhn/koyama/menu.html";
+
+        window.onload = function() {
+            // URLパラメータの取得
+            const params = new URLSearchParams(window.location.search);
+            const currentVersion = params.get('version');
+
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorContent = document.getElementById('error-content');
+
+            // 1秒ほどの待機時間を設けて「確認中」を演出（即座にリダイレクトされると不自然なため）
+            setTimeout(() => {
+                if (currentVersion === LATEST_VERSION) {
+                    // バージョンが一致する場合
+                    window.location.href = MENU_URL;
+                } else {
+                    // 一致しない、またはパラメータがない場合
+                    loadingSpinner.classList.add('hidden');
+                    errorContent.classList.remove('hidden');
+                }
+            }, 800);
+        };
+    </script>
+</body>
+</html>
