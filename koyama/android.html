@@ -237,8 +237,8 @@
           const appVersion = urlParams.get("version")?.trim();
 
           if (appVersion && appVersion === latestVersion) {
-            // 最新版 → リダイレクト（バージョン情報をパラメータとして付与）
-            const redirectUrl = `https://riverteacher.github.io/ohhhhhn/koyama/menu/?version=${encodeURIComponent(appVersion)}`;
+            // 最新版 → リダイレクト（メニュー側もキャッシュ回避のためタイムスタンプ付与）
+            const redirectUrl = `https://riverteacher.github.io/ohhhhhn/koyama/menu/?t=${timestamp}`;
             window.location.replace(redirectUrl);
           } else {
             // 古い版 or バージョン不明 → 警告
