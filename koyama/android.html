@@ -1,82 +1,254 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Version Check</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .modal-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>アプリ起動</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9fbff;
+      color: #000000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .start-screen {
+      position: relative;
+      text-align: center;
+      padding: 50px 20px;
+      max-width: 90%;
+      z-index: 2;
+    }
+    h1 {
+      font-size: 3.6rem;
+      font-weight: 700;
+      color: #000000;
+      margin: 0;
+      line-height: 1.1;
+    }
+    h1::before {
+      content: "> ";
+      font-size: 0.8em;
+      vertical-align: middle;
+    }
+    h1::after {
+      content: " <";
+      font-size: 0.8em;
+      vertical-align: middle;
+    }
+    .subtitle {
+      font-size: 1.5rem;
+      color: #000000;
+      margin: 1.2em 0 2.5em;
+      opacity: 0.9;
+    }
+    .tap-hint {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #000000;
+      background: rgba(0,0,0,0.05);
+      padding: 16px 40px;
+      border-radius: 60px;
+      border: 3px solid #007bff;
+      display: inline-block;
+      animation: pulse 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.8; }
+    }
+    /* 背景の遊び心（青い小さな粒子） */
+    .bg-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      background: #007bff;
+      border-radius: 50%;
+      opacity: 0.2;
+      animation: float 10s infinite ease-in-out;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(0.4); opacity: 0; }
+      20% { opacity: 0.5; }
+      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+    }
+    /* ローディング */
+    .loader-container {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.98);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s;
+      z-index: 10;
+    }
+    .loader-container.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .loader {
+      width: 80px;
+      height: 80px;
+      border: 10px solid #e0e0e0;
+      border-top: 10px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-text {
+      margin-top: 2em;
+      font-size: 1.5rem;
+      color: #000000;
+      font-weight: 600;
+    }
+    .loading-dots::after {
+      content: "...";
+      animation: dots 1.5s steps(4) infinite;
+    }
+    @keyframes dots {
+      0% { content: "."; }
+      25% { content: ".."; }
+      50% { content: "..."; }
+      75% { content: "...."; }
+    }
+    /* 警告メッセージ */
+    .message {
+      font-size: 1.4rem;
+      background: #ffffff;
+      color: #000000;
+      padding: 2.5em 1.5em;
+      border: 3px solid #007bff;
+      border-radius: 24px;
+      margin: 1.5em 0;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 2em;
+      padding: 16px 40px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 60px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: #0056b3;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,123,255,0.5);
+    }
+    .version-info {
+      color: #000000;
+      font-size: 1.2rem;
+      margin: 1.5em 0;
+      opacity: 0.9;
+    }
+  </style>
 </head>
 <body>
 
-    <div id="status-container" class="modal-card">
-        <div id="loading-spinner" class="mb-4">
-            <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="mt-4 text-gray-600">バージョンを確認中...</p>
-        </div>
+<!-- 背景の遊び心粒子 -->
+<div class="bg-particles" id="particles"></div>
 
-        <div id="error-content" class="hidden">
-            <div class="text-red-500 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+<!-- スタート画面 -->
+<div class="start-screen" id="startScreen">
+  <h1>START</h1>
+  <p class="subtitle">Ohhhhhん　アプリ版</p>
+  <div class="tap-hint">画面をタップしてください</div>
+</div>
+
+<!-- ローディング画面 -->
+<div class="loader-container" id="loader">
+  <div class="loader"></div>
+  <p class="loading-text">バージョン確認中です<span class="loading-dots"></span></p>
+</div>
+
+<!-- 結果エリア -->
+<div id="result" style="display:none; width:90%; max-width:500px;">
+  <div id="messageArea"></div>
+</div>
+
+<script>
+  // 最新バージョン（ここを更新）
+  const LATEST_VERSION = "1.01";
+
+  const startScreen = document.getElementById("startScreen");
+  const loader = document.getElementById("loader");
+  const result = document.getElementById("result");
+  const messageArea = document.getElementById("messageArea");
+  const particles = document.getElementById("particles");
+
+  // 背景にふわふわ粒子をランダム生成（青）
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    p.style.width = `${Math.random() * 10 + 5}px`;
+    p.style.height = p.style.width;
+    p.style.left = `${Math.random() * 100}vw`;
+    p.style.animationDelay = `${Math.random() * 8}s`;
+    p.style.animationDuration = `${Math.random() * 5 + 10}s`;
+    particles.appendChild(p);
+  }
+
+  // タップで開始（1回だけ）
+  document.body.addEventListener("click", () => {
+    if (startScreen.style.display !== "none") {
+      startScreen.style.display = "none";
+      loader.classList.add("active");
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const appVersion = urlParams.get("version");
+
+      const delay = Math.floor(Math.random() * 3000) + 1000;
+
+      setTimeout(() => {
+        loader.classList.remove("active");
+
+        if (appVersion && appVersion === LATEST_VERSION) {
+          window.location.replace("https://riverteacher.github.io/ohhhhhn/koyama/menu/");
+        } else {
+          result.style.display = "block";
+          messageArea.innerHTML = `
+            <div class="message">
+              最新バージョンが公開されています。<br>
+              アプリの更新をお願いいたします。
             </div>
-            <h1 class="text-xl font-bold text-gray-800 mb-2">アップデートが必要です</h1>
-            <p class="text-gray-600 mb-6">最新バージョンが公開されています。<br>アプリを更新してください。</p>
-            <a href="https://riverteacher.github.io/ohhhhhn/koyama/app-download.html" 
-               class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
-                最新版をダウンロード
+            <p class="version-info">
+              現在のバージョン：${appVersion ? appVersion : "不明"}<br>
+              最新バージョン：${LATEST_VERSION}
+            </p>
+            <a href="https://riverteacher.github.io/ohhhhhn/koyama/app-download.html" class="btn">
+              最新版をダウンロードする
             </a>
-        </div>
-    </div>
+          `;
+        }
+      }, delay);
+    }
+  }, { once: true });
+</script>
 
-    <script>
-        // 設定: 最新バージョン
-        const LATEST_VERSION = "1.01";
-        const MENU_URL = "https://riverteacher.github.io/ohhhhhn/koyama/menu/";
-
-        window.onload = function() {
-            // URLパラメータの取得
-            const params = new URLSearchParams(window.location.search);
-            const currentVersion = params.get('version');
-
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const errorContent = document.getElementById('error-content');
-
-            // 1秒ほどの待機時間を設けて「確認中」を演出（即座にリダイレクトされると不自然なため）
-            setTimeout(() => {
-                if (currentVersion === LATEST_VERSION) {
-                    // バージョンが一致する場合
-                    window.location.href = MENU_URL;
-                } else {
-                    // 一致しない、またはパラメータがない場合
-                    loadingSpinner.classList.add('hidden');
-                    errorContent.classList.remove('hidden');
-                }
-            }, 800);
-        };
-    </script>
 </body>
 </html>
