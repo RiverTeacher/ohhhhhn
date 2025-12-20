@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
   <title>アプリ起動</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,7 +65,7 @@
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.06); opacity: 0.8; }
     }
-    /* 背景の遊び心（青い小さな粒子） */
+    /* 背景粒子 */
     .bg-particles {
       position: absolute;
       inset: 0;
@@ -173,13 +170,13 @@
 </head>
 <body>
 
-<!-- 背景の遊び心粒子 -->
+<!-- 背景粒子 -->
 <div class="bg-particles" id="particles"></div>
 
 <!-- スタート画面 -->
 <div class="start-screen" id="startScreen">
   <h1>START</h1>
-  <p class="subtitle">Ohhhhhん　アプリ版</p>
+  <p class="subtitle">Ohhhhhん アプリ版</p>
   <div class="tap-hint">画面をタップしてください</div>
 </div>
 
@@ -195,8 +192,8 @@
 </div>
 
 <script>
-  // 最新バージョン（ここを更新）
-  const LATEST_VERSION = "1.01";
+  // 最新バージョンの取得元URL（タイムスタンプでキャッシュ回避）
+  const VERSION_URL = "https://riverteacher.github.io/ohhhhhn/koyama/menu/version.html";
 
   const startScreen = document.getElementById("startScreen");
   const loader = document.getElementById("loader");
@@ -204,7 +201,7 @@
   const messageArea = document.getElementById("messageArea");
   const particles = document.getElementById("particles");
 
-  // 背景にふわふわ粒子をランダム生成（青）
+  // 背景粒子生成
   for (let i = 0; i < 20; i++) {
     const p = document.createElement("div");
     p.className = "particle";
@@ -216,37 +213,64 @@
     particles.appendChild(p);
   }
 
-  // タップで開始（1回だけ）
+  // タップで開始
   document.body.addEventListener("click", () => {
     if (startScreen.style.display !== "none") {
       startScreen.style.display = "none";
       loader.classList.add("active");
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const appVersion = urlParams.get("version");
-
+      // 1〜4秒のランダム遅延（演出用）
       const delay = Math.floor(Math.random() * 3000) + 1000;
 
-      setTimeout(() => {
-        loader.classList.remove("active");
+      setTimeout(async () => {
+        try {
+          // タイムスタンプ付きで最新バージョンを取得
+          const timestamp = Date.now();
+          const response = await fetch(`${VERSION_URL}?t=${timestamp}`);
+          
+          if (!response.ok) throw new Error("ネットワークエラー");
 
-        if (appVersion && appVersion === LATEST_VERSION) {
-          window.location.replace("https://riverteacher.github.io/ohhhhhn/koyama/menu/");
-        } else {
+          const latestVersion = (await response.text()).trim();
+
+          // 現在のアプリバージョン（URLパラメータから取得）
+          const urlParams = new URLSearchParams(window.location.search);
+          const appVersion = urlParams.get("version")?.trim();
+
+          if (appVersion && appVersion === latestVersion) {
+            // 最新版 → リダイレクト
+            window.location.replace("https://riverteacher.github.io/ohhhhhn/koyama/menu/");
+          } else {
+            // 古い版 or バージョン不明 → 警告
+            result.style.display = "block";
+            messageArea.innerHTML = `
+              <div class="message">
+                最新バージョンが公開されています。<br>
+                アプリの更新をお願いいたします。
+              </div>
+              <p class="version-info">
+                現在のバージョン：${appVersion ? appVersion : "不明"}<br>
+                最新バージョン：${latestVersion}
+              </p>
+              <a href="https://riverteacher.github.io/ohhhhhn/koyama/app-download.html" class="btn">
+                最新版をダウンロードする
+              </a>
+            `;
+          }
+        } catch (error) {
+          // 取得失敗時も警告表示（安全のため）
           result.style.display = "block";
           messageArea.innerHTML = `
             <div class="message">
-              最新バージョンが公開されています。<br>
-              アプリの更新をお願いいたします。
+              バージョンの確認に失敗しました。<br>
+              インターネット接続をご確認いただくか、<br>
+              最新版をダウンロードしてください。
             </div>
-            <p class="version-info">
-              現在のバージョン：${appVersion ? appVersion : "不明"}<br>
-              最新バージョン：${LATEST_VERSION}
-            </p>
             <a href="https://riverteacher.github.io/ohhhhhn/koyama/app-download.html" class="btn">
               最新版をダウンロードする
             </a>
           `;
+        } finally {
+          loader.classList.remove("active");
         }
       }, delay);
     }
