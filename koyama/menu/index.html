@@ -1,1 +1,93 @@
-<center><h1>仮メニュー こんにちは</h1></center>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アプリメニュー</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #content {
+            flex: 1;
+            overflow: auto;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+        nav button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        nav button.active {
+            color: #007bff;
+        }
+        nav button span {
+            margin-top: 5px;
+        }
+        /* アイコンはテキストで代用、実際にはimgやfont-awesomeなどを使う */
+    </style>
+</head>
+<body>
+    <div id="content">
+        <iframe id="main-frame" src="home.html"></iframe>
+    </div>
+    <nav>
+        <button onclick="loadPage('home.html')" class="active">
+            <!-- ホームアイコン: 実際には<img src="home-icon.png">など -->
+            🏠 <span>ホーム</span>
+        </button>
+        <button onclick="loadPage('list.html')">
+            <!-- アプリ一覧アイコン -->
+            📋 <span>アプリ一覧</span>
+        </button>
+        <button onclick="loadPage('announce.html')">
+            <!-- おしらせアイコン -->
+            📢 <span>おしらせ</span>
+        </button>
+        <button onclick="loadPage('appinfo.html')">
+            <!-- アプリ情報アイコン -->
+            ℹ️ <span>アプリ情報</span>
+        </button>
+    </nav>
+
+    <script>
+        function loadPage(url) {
+            const timestamp = new Date().getTime();
+            document.getElementById('main-frame').src = url + '?t=' + timestamp;
+            // アクティブクラスを切り替え
+            const buttons = document.querySelectorAll('nav button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // 初期ロード時にタイムスタンプを追加
+        window.onload = function() {
+            loadPage('home.html');
+        };
+    </script>
+</body>
+</html>
