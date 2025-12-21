@@ -12,14 +12,21 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
-    }
+<script>
+  const params = new URLSearchParams(location.search);
+  const isInstallPage = params.get('install') === 'true';
 
-    // 自動で android.html に遷移
-    location.href = './android.html?version=1.01';
-  </script>
+  const isPWA =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  // PWA起動時 or 通常アクセス時の分岐
+  if (!isInstallPage && !isPWA) {
+    // 通常アクセス → wpa.html へ
+    location.replace('./wpa.html');
+  }
+</script>
+
 </head>
 <body>
   起動中…
