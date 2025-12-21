@@ -4,5 +4,18 @@
   "start_url": "/ohhhhhn/koyama/wpa.html",
   "scope": "/ohhhhhn/koyama/",
   "display": "standalone",
-  "theme_color": "#ffffff"
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/ohhhhhn/koyama/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/ohhhhhn/koyama/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
