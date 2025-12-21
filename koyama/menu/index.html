@@ -2,91 +2,162 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>アプリメニュー</title>
     <style>
-        body {
+        /* 画面全体のスクロールを禁止し、100%の高さに固定 */
+        html, body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f7;
+        }
+
+        /* Flexboxで縦に並べる（コンテンツ + ナビ） */
+        .app-container {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
+
+        /* iframeを表示するエリア */
         #content {
-            flex: 1;
-            overflow: auto;
+            flex: 1; /* 余ったスペースをすべて使う */
+            position: relative;
+            background-color: #f5f5f7;
+            overflow: hidden;
         }
+
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            display: block;
+            /* 切り替え時のアニメーション */
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
         }
+
+        /* フェードアウト用クラス */
+        iframe.fade-out {
+            opacity: 0;
+        }
+
+        /* ナビゲーションバー：高さを固定 */
         nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background-color: #f8f9fa;
+            height: 65px;
+            background-color: #ffffff;
             border-top: 1px solid #dee2e6;
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom); /* iPhoneのホームバー対策 */
+            box-sizing: content-box;
+            z-index: 10;
         }
+
         nav button {
             background: none;
             border: none;
-            font-size: 16px;
+            font-size: 10px;
             cursor: pointer;
-            color: #333;
+            color: #888;
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 25%;
+            padding: 8px 0;
+            transition: transform 0.2s;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
+
+        /* 押した時に少しだけ沈むアニメーション */
+        nav button:active {
+            transform: scale(0.9);
+        }
+
         nav button.active {
             color: #007bff;
         }
-        nav button span {
-            margin-top: 5px;
+
+        nav button .icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        /* アイコンはテキストで代用、実際にはimgやfont-awesomeなどを使う */
+
+        /* アクティブなアイコンを少し大きくする */
+        nav button.active .icon {
+            transform: scale(1.2);
+        }
+
+        nav button span {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
-    <div id="content">
-        <iframe id="main-frame" src="home.html"></iframe>
+
+    <div class="app-container">
+        <!-- コンテンツエリア -->
+        <div id="content">
+            <iframe id="main-frame" src="about:blank"></iframe>
+        </div>
+
+        <!-- ナビゲーションバー -->
+        <nav id="bottom-nav">
+            <button onclick="loadPage('home.html', this)" id="default-tab">
+                <span class="icon">🏠</span>
+                <span>ホーム</span>
+            </button>
+            <button onclick="loadPage('list.html', this)">
+                <span class="icon">📋</span>
+                <span>アプリ一覧</span>
+            </button>
+            <button onclick="loadPage('announce.html', this)">
+                <span class="icon">📢</span>
+                <span>おしらせ</span>
+            </button>
+            <button onclick="loadPage('appinfo.html', this)">
+                <span class="icon">ℹ️</span>
+                <span>アプリ情報</span>
+            </button>
+        </nav>
     </div>
-    <nav>
-        <button onclick="loadPage('home.html')" class="active">
-            <!-- ホームアイコン: 実際には<img src="home-icon.png">など -->
-            🏠 <span>ホーム</span>
-        </button>
-        <button onclick="loadPage('list.html')">
-            <!-- アプリ一覧アイコン -->
-            📋 <span>アプリ一覧</span>
-        </button>
-        <button onclick="loadPage('announce.html')">
-            <!-- おしらせアイコン -->
-            📢 <span>おしらせ</span>
-        </button>
-        <button onclick="loadPage('appinfo.html')">
-            <!-- アプリ情報アイコン -->
-            ℹ️ <span>アプリ情報</span>
-        </button>
-    </nav>
 
     <script>
-        function loadPage(url) {
-            const timestamp = new Date().getTime();
-            document.getElementById('main-frame').src = url + '?t=' + timestamp;
-            // アクティブクラスを切り替え
+        function loadPage(url, btn) {
+            const frame = document.getElementById('main-frame');
+            
+            // 1. フェードアウト開始
+            frame.classList.add('fade-out');
+
+            // 2. ボタンのactiveクラスを切り替え
             const buttons = document.querySelectorAll('nav button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            buttons.forEach(b => b.classList.remove('active'));
+            if (btn) {
+                btn.classList.add('active');
+            }
+
+            // 3. 少し待ってからURLを切り替えてフェードイン
+            setTimeout(() => {
+                const timestamp = new Date().getTime();
+                frame.src = url + '?t=' + timestamp;
+                
+                // iframeの読み込み完了を待ってからフェードインさせるのが理想的
+                frame.onload = () => {
+                    frame.classList.remove('fade-out');
+                };
+            }, 150); // 0.15秒の待ち時間
         }
 
-        // 初期ロード時にタイムスタンプを追加
+        // 初期ロード
         window.onload = function() {
-            loadPage('home.html');
+            const defaultTab = document.getElementById('default-tab');
+            loadPage('home.html', defaultTab);
         };
     </script>
 </body>
