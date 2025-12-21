@@ -8,35 +8,70 @@
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#ffffff">
 
-  <!-- iOS対応 -->
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+  <style>
+    #installBtn {
+      display: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      background: #000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+
   <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('SW OK'))
-      .catch(e => console.error(e));
-  }
-</script>
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('SW OK'))
+        .catch(console.error);
+    }
 
-<script>
-  const params = new URLSearchParams(location.search);
-  const isInstallPage = params.get('install') === 'true';
+    const params = new URLSearchParams(location.search);
+    const isInstallPage = params.get('install') === 'true';
 
-  const isPWA =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true;
+    const isPWA =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
 
-  // PWA起動時 or 通常アクセス時の分岐
-  if (!isInstallPage && !isPWA) {
-    // 通常アクセス → wpa.html へ
-    location.replace('./wpa.html');
-  }
-</script>
+    // ▶ PWA起動時は即アプリ本体へ
+    if (isPWA && !isInstallPage) {
+      location.replace('./android.html?version=1.01');
+    }
 
+    let deferredPrompt = null;
+
+    // ▶ install=true のときだけ捕まえる
+    if (isInstallPage) {
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installBtn').style.display = 'inline-block';
+      });
+    }
+  </script>
 </head>
 <body>
-  起動中…
+  <h2>アプリをインストール</h2>
+
+  <button id="installBtn">インストールする</button>
+
+  <script>
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      console.log('Install result:', result.outcome);
+
+      deferredPrompt = null;
+    });
+  </script>
 </body>
 </html>
