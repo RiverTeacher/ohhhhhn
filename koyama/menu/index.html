@@ -2,32 +2,44 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>アプリメニュー</title>
     <style>
-        /* 画面全体のスクロールを禁止し、100%の高さに固定 */
-        html, body {
+        /* PWA/Mobileでの高さ100%問題を解決するための設定 */
+        html {
+            height: -webkit-fill-available;
+        }
+
+        body {
             margin: 0;
             padding: 0;
-            height: 100%;
+            /* 100vhの代わりに動的な高さを指定 */
+            height: 100vh;
+            height: -webkit-fill-available;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f5f5f7;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Flexboxで縦に並べる（コンテンツ + ナビ） */
+        /* 全体を包むコンテナ */
         .app-container {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            flex: 1;
+            height: 100%;
+            width: 100%;
+            position: relative;
         }
 
         /* iframeを表示するエリア */
         #content {
-            flex: 1; /* 余ったスペースをすべて使う */
+            flex: 1;
             position: relative;
             background-color: #f5f5f7;
             overflow: hidden;
+            width: 100%;
         }
 
         iframe {
@@ -35,25 +47,25 @@
             height: 100%;
             border: none;
             display: block;
-            /* 切り替え時のアニメーション */
             transition: opacity 0.3s ease-in-out;
             opacity: 1;
         }
 
-        /* フェードアウト用クラス */
         iframe.fade-out {
             opacity: 0;
         }
 
-        /* ナビゲーションバー：高さを固定 */
+        /* ナビゲーションバー：PWAのセーフエリアに対応 */
         nav {
-            height: 65px;
+            flex-shrink: 0; /* 潰れないように固定 */
+            min-height: 65px;
             background-color: #ffffff;
             border-top: 1px solid #dee2e6;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: env(safe-area-inset-bottom); /* iPhoneのホームバー対策 */
+            /* iPhoneの下部バーの余白を確保 */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
             box-sizing: content-box;
             z-index: 10;
         }
@@ -74,7 +86,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 押した時に少しだけ沈むアニメーション */
         nav button:active {
             transform: scale(0.9);
         }
@@ -89,7 +100,6 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* アクティブなアイコンを少し大きくする */
         nav button.active .icon {
             transform: scale(1.2);
         }
@@ -129,33 +139,48 @@
     </div>
 
     <script>
+        // 高さを正しく再計算する関数
+        function setFullHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            // bodyの高さに反映させる（CSS側で変数を使っても良いですが、PWAでは固定値の方が安定します）
+            document.body.style.height = window.innerHeight + 'px';
+        }
+
+        window.addEventListener('resize', setFullHeight);
+        window.addEventListener('orientationchange', setFullHeight);
+        setFullHeight();
+
         function loadPage(url, btn) {
             const frame = document.getElementById('main-frame');
             
             // 1. フェードアウト開始
             frame.classList.add('fade-out');
 
-            // 2. ボタンのactiveクラスを切り替え
+            // 2. アクティブクラス切り替え
             const buttons = document.querySelectorAll('nav button');
             buttons.forEach(b => b.classList.remove('active'));
             if (btn) {
                 btn.classList.add('active');
             }
 
-            // 3. 少し待ってからURLを切り替えてフェードイン
+            // 3. ロード
             setTimeout(() => {
                 const timestamp = new Date().getTime();
-                frame.src = url + '?t=' + timestamp;
+                // 既にパラメータがあるかチェックして付与
+                const separator = url.includes('?') ? '&' : '?';
+                frame.src = url + separator + 't=' + timestamp;
                 
-                // iframeの読み込み完了を待ってからフェードインさせるのが理想的
                 frame.onload = () => {
                     frame.classList.remove('fade-out');
+                    // ページ読み込み完了時にも高さを再確認（念のため）
+                    setFullHeight();
                 };
-            }, 150); // 0.15秒の待ち時間
+            }, 150);
         }
 
-        // 初期ロード
         window.onload = function() {
+            setFullHeight();
             const defaultTab = document.getElementById('default-tab');
             loadPage('home.html', defaultTab);
         };
