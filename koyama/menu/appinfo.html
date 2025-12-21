@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アプリ情報</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 30px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+            text-align: center;
+        }
+        .info-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 20px auto;
+        }
+        h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .info-section {
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        .info-value {
+            font-size: 1.2rem;
+        }
+        .discord-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            background-color: #5865F2; /* Discord Color */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .discord-link:hover {
+            background-color: #4752c4;
+        }
+        .discord-id-note {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>設定・情報</h2>
+
+    <div class="info-container">
+        <div class="info-section">
+            <span class="info-label">現在のバージョン</span>
+            <span class="info-value">1.01</span>
+        </div>
+
+        <div class="info-section" style="border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+            <span class="info-label" style="margin-bottom: 15px;">お問い合わせ</span>
+            
+            <a href="https://discord.com/users/699230580071464982" target="_blank" class="discord-link">
+                👾 Discordで問い合わせる
+            </a>
+            <span class="discord-id-note">ユーザー名: mirm0000 (ID: 699230580071464982)</span>
+        </div>
+    </div>
+
+</body>
+</html>

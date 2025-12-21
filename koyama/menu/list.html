@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アプリ一覧</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+        }
+        h2 {
+            text-align: center;
+            color: #444;
+        }
+        .app-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        .app-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .app-card:active {
+            transform: scale(0.98);
+            background-color: #f0f0f0;
+        }
+        .app-icon {
+            font-size: 3rem;
+            margin-right: 20px;
+        }
+        .app-details {
+            flex: 1;
+        }
+        .app-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+        .app-desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>提供中のアプリ</h2>
+
+    <ul class="app-list">
+        <li class="app-card" onclick="launchGame('https://riverteacher.github.io/ohhhhhn/koyama/game/')">
+            <div class="app-icon">🏔️</div>
+            <div class="app-details">
+                <h3 class="app-title">進撃の小山</h3>
+                <p class="app-desc">横画面推奨のアクションゲームです。タップしてプレイ！</p>
+            </div>
+        </li>
+        </ul>
+
+    <script>
+        function launchGame(url) {
+            // 現在のウィンドウの幅と高さを取得して向きを判定
+            // 幅 > 高さ なら横長(ランドスケープ)とみなす
+            const isLandscape = window.innerWidth > window.innerHeight;
+
+            if (isLandscape) {
+                // 横画面なら新しいタブで開く
+                window.open(url, '_blank');
+            } else {
+                // 縦画面ならアラートを表示してリダイレクトしない
+                alert("このゲームは横画面でのプレイを推奨しています。\n端末を横向きにしてから再度タップしてください。");
+            }
+        }
+    </script>
+
+</body>
+</html>
