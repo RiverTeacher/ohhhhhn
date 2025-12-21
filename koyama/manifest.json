@@ -1,0 +1,8 @@
+{
+  "name": "Ohhhhhん アプリ",
+  "short_name": "Ohhhhhん",
+  "start_url": "/ohhhhhn/koyama/wpa.html",
+  "scope": "/ohhhhhn/koyama/",
+  "display": "standalone",
+  "theme_color": "#ffffff"
+}
