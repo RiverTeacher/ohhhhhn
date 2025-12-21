@@ -5,85 +5,216 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>アプリ一覧</title>
     <style>
+        :root {
+            --bg-color: #f5f5f7;
+            --card-bg: #ffffff;
+            --primary-color: #007bff;
+            --text-main: #333333;
+            --text-sub: #666666;
+        }
+
         body {
             margin: 0;
             padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, sans-serif;
-            background-color: #f5f5f7;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Yu Gothic", YuGothic, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
         }
+
         h2 {
             text-align: center;
-            color: #444;
+            color: var(--text-main);
+            margin-bottom: 25px;
         }
+
+        /* アプリリストのスタイル */
         .app-list {
             list-style: none;
             padding: 0;
             margin: 0 auto;
             max-width: 600px;
         }
+
         .app-card {
-            background: #fff;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
+
         .app-card:active {
-            transform: scale(0.98);
+            transform: scale(0.97);
             background-color: #f0f0f0;
         }
+
         .app-icon {
-            font-size: 3rem;
-            margin-right: 20px;
+            font-size: 2.5rem;
+            margin-right: 16px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fdfdfd;
+            border-radius: 12px;
         }
+
         .app-details {
             flex: 1;
         }
+
         .app-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            margin: 0 0 5px 0;
+            margin: 0 0 4px 0;
         }
+
         .app-desc {
-            font-size: 0.9rem;
-            color: #666;
+            font-size: 0.85rem;
+            color: var(--text-sub);
             margin: 0;
+            line-height: 1.4;
+        }
+
+        /* カスタムモーダル（アラート）のスタイル */
+        #custom-alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+
+        #custom-alert.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            width: 85%;
+            max-width: 320px;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #custom-alert.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .modal-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+
+        .modal-text {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .modal-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-button:active {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
 
-    <h2>提供中のアプリ</h2>
+    <h2>アプリ一覧</h2>
 
     <ul class="app-list">
-        <li class="app-card" onclick="launchGame('https://riverteacher.github.io/ohhhhhn/koyama/game/')">
+        <li class="app-card" onclick="checkAndLaunch('https://riverteacher.github.io/ohhhhhn/koyama/game/')">
             <div class="app-icon">🏔️</div>
             <div class="app-details">
                 <h3 class="app-title">進撃の小山</h3>
-                <p class="app-desc">横画面推奨のアクションゲームです。タップしてプレイ！</p>
+                <p class="app-desc">横画面専用アクション。山を越え、進み続けろ！</p>
             </div>
         </li>
-        </ul>
+    </ul>
+
+    <!-- カスタムアラート構造 -->
+    <div id="custom-alert" onclick="closeAlert()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-icon">📱</span>
+            <div class="modal-title">画面の向きを確認</div>
+            <div class="modal-text">
+                このゲームは横画面専用です。<br>
+                端末の自動回転をオンにして、横向きにしてからプレイしてください。
+            </div>
+            <button class="modal-button" onclick="closeAlert()">了解</button>
+        </div>
+    </div>
 
     <script>
-        function launchGame(url) {
-            // 現在のウィンドウの幅と高さを取得して向きを判定
-            // 幅 > 高さ なら横長(ランドスケープ)とみなす
+        const alertEl = document.getElementById('custom-alert');
+
+        function checkAndLaunch(url) {
+            // 幅 > 高さ なら横長(ランドスケープ)
             const isLandscape = window.innerWidth > window.innerHeight;
 
             if (isLandscape) {
-                // 横画面なら新しいタブで開く
-                window.open(url, '_blank');
+                // テスト用：現在のタブで移動
+                window.location.href = url;
             } else {
-                // 縦画面ならアラートを表示してリダイレクトしない
-                alert("このゲームは横画面でのプレイを推奨しています。\n端末を横向きにしてから再度タップしてください。");
+                // カスタムアラートを表示
+                showAlert();
             }
         }
+
+        function showAlert() {
+            alertEl.classList.add('active');
+        }
+
+        function closeAlert() {
+            alertEl.classList.remove('active');
+        }
+
+        // 画面が回転した時に自動で閉じる（親切設計）
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > window.innerHeight) {
+                closeAlert();
+            }
+        });
     </script>
 
 </body>
