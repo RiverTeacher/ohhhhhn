@@ -40,9 +40,12 @@
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
 
-    // ▶ PWA起動時は即アプリ本体へ
+    // ▶ PWA起動時は即アプリ本体へ（★絶対URL + t付与）
     if (isPWA && !isInstallPage) {
-      location.replace('./android.html?version=1.01');
+      const t = Date.now(); // ★ キャッシュ完全回避
+      location.replace(
+        'https://riverteacher.github.io/ohhhhhn/koyama/android.html?version=1.01&t=' + t
+      );
     }
 
     let deferredPrompt = null;

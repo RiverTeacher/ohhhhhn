@@ -1,6 +1,6 @@
 // sw.js（オンライン専用）
 // SW_VERSION を変えるだけで確実に更新される
-const SW_VERSION = '2025-12-23';
+const SW_VERSION = '2025-12-23-02';
 
 self.addEventListener('install', event => {
   console.log('[SW] install', SW_VERSION);
