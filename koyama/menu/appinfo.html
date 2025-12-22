@@ -18,7 +18,7 @@
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 500px;
+            max-width: 550px;
             margin: 20px auto;
         }
         h2 {
@@ -26,7 +26,7 @@
             color: #444;
         }
         .info-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             text-align: left;
         }
         .info-label {
@@ -37,15 +37,21 @@
             font-size: 0.9rem;
         }
         .info-value {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            word-break: break-all;
+        }
+        hr.section-divider {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 35px 0;
         }
         .discord-link {
             display: inline-flex;
             align-items: center;
             text-decoration: none;
-            background-color: #5865F2; /* Discord Color */
+            background-color: #5865F2;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 50px;
             font-weight: bold;
             transition: background-color 0.3s;
@@ -55,7 +61,7 @@
         }
         .discord-id-note {
             display: block;
-            margin-top: 10px;
+            margin-top: 12px;
             font-size: 0.85rem;
             color: #888;
         }
@@ -64,16 +70,83 @@
 <body>
 
     <h2>設定・情報</h2>
-
     <div class="info-container">
         <div class="info-section">
             <span class="info-label">現在のバージョン</span>
             <span class="info-value">1.01</span>
         </div>
 
-        <div class="info-section" style="border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+        <div class="info-section">
+            <span class="info-label">ブラウザ言語</span>
+            <span class="info-value" id="lang">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">OS / ユーザーエージェント</span>
+            <span class="info-value" id="os">-</span>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- バッテリー詳細 -->
+        <div class="info-section">
+            <span class="info-label">バッテリー残量</span>
+            <span class="info-value" id="battery-level">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">充電状態</span>
+            <span class="info-value" id="battery-charging">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">充電/放電完了までの推定時間</span>
+            <span class="info-value" id="battery-time">-</span>
+        </div>
+
+        <div class="info-section">
+            <span class="info-label">CPUコア数 (論理コア)</span>
+            <span class="info-value" id="cores">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">搭載メモリ (おおよそ)</span>
+            <span class="info-value" id="memory">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">画面サイズ</span>
+            <span class="info-value" id="screen">-</span>
+        </div>
+
+        <!-- ネットワーク詳細 -->
+        <div class="info-section">
+            <span class="info-label">ネットワークタイプ</span>
+            <span class="info-value" id="net-type">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">有効な接続タイプ</span>
+            <span class="info-value" id="net-effective">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">下り速度</span>
+            <span class="info-value" id="net-downlink">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">ラウンドトリップ時間 (RTT)</span>
+            <span class="info-value" id="net-rtt">-</span>
+        </div>
+
+        <hr class="section-divider">
+
+        <div class="info-section">
+            <span class="info-label">ユーザー固有ID (on_app_userid)</span>
+            <span class="info-value" id="userid">-</span>
+        </div>
+        <div class="info-section">
+            <span class="info-label">初回利用からの経過時間</span>
+            <span class="info-value" id="since">-</span>
+        </div>
+
+        <hr class="section-divider">
+
+        <div class="info-section" style="text-align: center;">
             <span class="info-label" style="margin-bottom: 15px;">お問い合わせ</span>
-            
             <a href="https://discord.com/users/699230580071464982" target="_blank" class="discord-link">
                 👾 Discordで問い合わせる
             </a>
@@ -81,5 +154,137 @@
         </div>
     </div>
 
+    <script>
+        // 基本情報
+        document.getElementById('lang').textContent = navigator.language || navigator.userLanguage || '不明';
+        document.getElementById('os').textContent = navigator.userAgent;
+        document.getElementById('cores').textContent = navigator.hardwareConcurrency 
+            ? navigator.hardwareConcurrency + ' コア' 
+            : '取得不可';
+        document.getElementById('memory').textContent = navigator.deviceMemory 
+            ? navigator.deviceMemory + ' GB (おおよそ)' 
+            : '取得不可';
+        document.getElementById('screen').textContent = 
+            `${window.screen.width} × ${window.screen.height} (ピクセル)`;
+
+        // バッテリー詳細情報
+        if (navigator.getBattery) {
+            navigator.getBattery().then(battery => {
+                function updateBattery() {
+                    const level = (battery.level * 100).toFixed(1) + '%';
+                    const charging = battery.charging ? '充電中' : '放電中';
+
+                    document.getElementById('battery-level').textContent = level;
+                    document.getElementById('battery-charging').textContent = charging;
+
+                    const chargingTime = battery.chargingTime;
+                    const dischargingTime = battery.dischargingTime;
+
+                    if (battery.charging) {
+                        if (chargingTime !== Infinity && chargingTime > 0) {
+                            const hours = Math.floor(chargingTime / 3600);
+                            const minutes = Math.floor((chargingTime % 3600) / 60);
+                            document.getElementById('battery-time').textContent = 
+                                `${hours}時間${minutes}分 で満充電予定`;
+                        } else {
+                            document.getElementById('battery-time').textContent = '推定不可（満充電に近い）';
+                        }
+                    } else {
+                        if (dischargingTime !== Infinity && dischargingTime > 0) {
+                            const hours = Math.floor(dischargingTime / 3600);
+                            const minutes = Math.floor((dischargingTime % 3600) / 60);
+                            document.getElementById('battery-time').textContent = 
+                                `残り ${hours}時間${minutes}分 程度`;
+                        } else {
+                            document.getElementById('battery-time').textContent = '推定不可';
+                        }
+                    }
+                }
+                updateBattery();
+
+                // リアルタイム更新
+                battery.addEventListener('levelchange', updateBattery);
+                battery.addEventListener('chargingchange', updateBattery);
+            }).catch(() => {
+                document.getElementById('battery-level').textContent = '取得できません';
+                document.getElementById('battery-charging').textContent = '-';
+                document.getElementById('battery-time').textContent = '-';
+            });
+        } else {
+            document.getElementById('battery-level').textContent = '非対応ブラウザ';
+            document.getElementById('battery-charging').textContent = '-';
+            document.getElementById('battery-time').textContent = '-';
+        }
+
+        // ネットワーク詳細情報
+        if (navigator.connection) {
+            const conn = navigator.connection;
+            function updateNetwork() {
+                document.getElementById('net-type').textContent = 
+                    conn.type || '不明（Wi-Fi/モバイルなど）';
+                document.getElementById('net-effective').textContent = 
+                    conn.effectiveType || '不明';
+                document.getElementById('net-downlink').textContent = 
+                    conn.downlink ? conn.downlink.toFixed(1) + ' Mbps' : '不明';
+                document.getElementById('net-rtt').textContent = 
+                    conn.rtt ? conn.rtt.toFixed(0) + ' ms' : '不明';
+            }
+            updateNetwork();
+
+            // リアルタイム更新
+            conn.addEventListener('change', updateNetwork);
+        } else {
+            document.getElementById('net-type').textContent = '取得不可';
+            document.getElementById('net-effective').textContent = '-';
+            document.getElementById('net-downlink').textContent = '-';
+            document.getElementById('net-rtt').textContent = '-';
+        }
+
+        // ユーザーID (Cookie管理)
+        const COOKIE_NAME = 'on_app_userid';
+        const COOKIE_DAYS = 365 * 2; // 2年間
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+        }
+
+        let userId = getCookie(COOKIE_NAME);
+        const now = Date.now();
+
+        if (!userId) {
+            userId = 'uid_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            setCookie(COOKIE_NAME, userId, COOKIE_DAYS);
+        }
+
+        document.getElementById('userid').textContent = userId;
+
+        // 初回利用からの経過時間
+        const createdAt = parseInt(userId.split('_').pop(), 10);
+        if (!isNaN(createdAt)) {
+            const diffMs = now - createdAt;
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            if (days > 0) {
+                document.getElementById('since').textContent = `${days}日と${hours}時間`;
+            } else if (hours > 0) {
+                document.getElementById('since').textContent = `${hours}時間${minutes}分`;
+            } else {
+                document.getElementById('since').textContent = `${minutes}分`;
+            }
+        } else {
+            document.getElementById('since').textContent = '取得不可';
+        }
+    </script>
 </body>
 </html>
