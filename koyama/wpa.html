@@ -2,34 +2,128 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ダウンロード</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アプリをインストール</title>
 
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#3b82f6">
 
   <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="My App">
 
   <style>
+    :root {
+      --primary-color: #3b82f6;
+      --bg-color: #f8fafc;
+      --text-color: #1e293b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .app-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--primary-color);
+      border-radius: 1.2rem;
+      margin: 0 auto 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    p {
+      color: #64748b;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    /* ボタンのデザイン */
     #installBtn {
       display: none;
-      padding: 12px 20px;
+      width: 100%;
+      padding: 14px;
       font-size: 16px;
-      border-radius: 8px;
-      background: #000;
+      font-weight: 600;
+      border-radius: 12px;
+      background: var(--primary-color);
       color: #fff;
       border: none;
       cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    #installBtn:active {
+      transform: scale(0.98);
+      background: #2563eb;
+    }
+
+    /* iOS用ガイド */
+    #iosGuide {
+      display: none;
+      background: #f1f5f9;
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .icon-inline {
+      width: 24px;
+      height: 24px;
+      margin: 0 4px;
+      vertical-align: middle;
+    }
+
+    .highlight {
+      font-weight: bold;
+      color: var(--primary-color);
     }
   </style>
 
   <script>
-    // Service Worker
+    // Service Worker 登録
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('SW OK'))
+        .then(() => console.log('SW Registered'))
         .catch(console.error);
     }
 
@@ -40,9 +134,10 @@
       window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true;
 
-    // ▶ PWA起動時は即アプリ本体へ（★絶対URL + t付与）
-    if (isPWA && !isInstallPage) {
-      const t = Date.now(); // ★ キャッシュ完全回避
+    // ▶ リダイレクトのメインロジック
+    // 「install=true」ではない場合は、PWA起動であってもブラウザ起動であっても即座にリダイレクト
+    if (!isInstallPage) {
+      const t = Date.now();
       location.replace(
         'https://riverteacher.github.io/ohhhhhn/koyama/android.html?version=1.01&t=' + t
       );
@@ -50,20 +145,51 @@
 
     let deferredPrompt = null;
 
-    // ▶ install=true のときだけ捕まえる
-    if (isInstallPage) {
-      window.addEventListener('beforeinstallprompt', e => {
-        e.preventDefault();
-        deferredPrompt = e;
-        document.getElementById('installBtn').style.display = 'inline-block';
-      });
-    }
+    window.addEventListener('DOMContentLoaded', () => {
+      // ここに到達するのは isInstallPage === true の場合のみ
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const installBtn = document.getElementById('installBtn');
+      const iosGuide = document.getElementById('iosGuide');
+
+      if (isiOS) {
+        // iOSの場合はガイドを表示
+        iosGuide.style.display = 'block';
+      } else {
+        // Android/Desktopなどでインストール可能な場合を待機
+        window.addEventListener('beforeinstallprompt', e => {
+          e.preventDefault();
+          deferredPrompt = e;
+          installBtn.style.display = 'block';
+        });
+      }
+    });
   </script>
 </head>
 <body>
-  <h2>アプリをインストール</h2>
 
-  <button id="installBtn">インストールする</button>
+  <div class="container">
+    <div class="app-icon">A</div>
+    <h2>アプリをインストール</h2>
+    <p>このアプリをホーム画面に追加して、いつでもすぐに利用できるようにしましょう。</p>
+
+    <!-- Android / Desktop Chrome 用ボタン -->
+    <button id="installBtn">インストールする</button>
+
+    <!-- iOS Safari 用ガイド -->
+    <div id="iosGuide">
+      <div class="step">
+        1. ブラウザ下部の共有アイコン 
+        <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+        をタップ
+      </div>
+      <div class="step">
+        2. メニューをスクロールして
+      </div>
+      <div class="step">
+        3. <span class="highlight">「ホーム画面に追加」</span>を選択
+      </div>
+    </div>
+  </div>
 
   <script>
     document.getElementById('installBtn').addEventListener('click', async () => {
@@ -73,6 +199,9 @@
       const result = await deferredPrompt.userChoice;
       console.log('Install result:', result.outcome);
 
+      if (result.outcome === 'accepted') {
+        document.getElementById('installBtn').style.display = 'none';
+      }
       deferredPrompt = null;
     });
   </script>
