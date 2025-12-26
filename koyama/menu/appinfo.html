@@ -1,374 +1,297 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アプリ情報</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 30px 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", YuGothic, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f0 100%);
-            color: #1d1d1f;
-            text-align: center;
-            min-height: 100vh;
-        }
-        .info-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 35px 30px;
-            border-radius: 24px;
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.08),
-                0 2px 8px rgba(0, 0, 0, 0.04),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            max-width: 550px;
-            margin: 20px auto;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        h2 {
-            margin-top: 0;
-            color: #1d1d1f;
-            font-weight: 600;
-            font-size: 1.6rem;
-            background: linear-gradient(135deg, #007aff, #5856d6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .info-section {
-            margin-bottom: 25px;
-            text-align: left;
-            padding: 12px 0;
-            transition: all 0.2s ease;
-        }
-        .info-section:hover {
-            background: rgba(0, 122, 255, 0.03);
-            border-radius: 12px;
-            padding-left: 8px;
-            transform: translateX(2px);
-        }
-        .info-label {
-            font-weight: 600;
-            color: #6e6e73;
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.92rem;
-            letter-spacing: 0.3px;
-        }
-        .info-value {
-            font-size: 1.12rem;
-            word-break: break-all;
-            color: #1d1d1f;
-            font-weight: 500;
-        }
-        .info-value::before {
-            content: '→ ';
-            color: #007aff;
-            font-weight: bold;
-            margin-right: 4px;
-        }
-        hr.section-divider {
-            border: none;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #e5e5e7, transparent);
-            margin: 35px 0;
-            position: relative;
-        }
-        hr.section-divider::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, #007aff, #5856d6);
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-        }
-        .discord-link {
-            display: inline-flex;
-            align-items: center;
-            text-decoration: none;
-            background: linear-gradient(135deg, #5865f2, #4752c4);
-            color: white;
-            padding: 14px 28px;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 
-                0 4px 16px rgba(88, 101, 242, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        .discord-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s;
-        }
-        .discord-link:hover::before {
-            left: 100%;
-        }
-        .discord-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 8px 24px rgba(88, 101, 242, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-        .discord-id-note {
-            display: block;
-            margin-top: 14px;
-            font-size: 0.87rem;
-            color: #86868b;
-            font-weight: 500;
-        }
-        
-        /* バッテリー残量バーのアクセント */
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 5px rgba(0, 122, 255, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(0, 122, 255, 0.8); }
-        }
-        .info-value:has(#battery-level):after {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #34c759;
-            margin-left: 8px;
-            animation: glow 2s infinite;
-        }
-        
-        /* スマホ対応微調整 */
-        @media (max-width: 480px) {
-            body { padding: 20px 15px; }
-            .info-container { padding: 28px 20px; border-radius: 20px; }
-            h2 { font-size: 1.4rem; }
-            .info-value { font-size: 1.05rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アプリ一覧</title>
+
+<style>
+/* ===== 基本 ===== */
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic", sans-serif;
+    background: #f5f5f7;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+/* ===== カード ===== */
+.app-list {
+    list-style: none;
+    padding: 0;
+    max-width: 620px;
+    margin: auto;
+}
+.app-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: transform .2s, opacity .2s;
+}
+.app-card:active {
+    transform: scale(.97);
+}
+.app-card.disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+
+.app-icon {
+    font-size: 2.6rem;
+    width: 56px;
+    text-align: center;
+}
+.app-title {
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+.app-desc {
+    font-size: .85rem;
+    color: #666;
+    margin: 0;
+}
+
+/* ===== ステータスバッジ ===== */
+.app-status {
+    margin-left: auto;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.status-locked {
+    color: #c62828;
+    background: #fdeaea;
+}
+
+.status-unlocked {
+    color: #558b2f;
+    background: #eef7e6;
+}
+
+.status-disabled {
+    color: #757575;
+    background: #eeeeee;
+}
+
+/* ===== モーダル ===== */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal.active {
+    display: flex;
+}
+.modal-box {
+    background: #fff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 340px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    animation: pop .25s ease;
+}
+@keyframes pop {
+    from { transform: scale(.9); opacity: 0 }
+    to   { transform: scale(1); opacity: 1 }
+}
+.modal-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.modal-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    margin-bottom: 12px;
+}
+.modal-error {
+    color: #c62828;
+    font-size: .8rem;
+    margin-bottom: 10px;
+    display: none;
+}
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+.modal-btn {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-cancel {
+    background: #eee;
+}
+.btn-ok {
+    background: #007bff;
+    color: #fff;
+}
+</style>
 </head>
+
 <body>
 
-    <h2>設定・情報</h2>
-    <div class="info-container">
-        <div class="info-section">
-            <span class="info-label">現在のバージョン</span>
-            <span class="info-value">1.01</span>
-        </div>
+<h2>アプリ一覧</h2>
+<ul id="appList" class="app-list"></ul>
 
-        <div class="info-section">
-            <span class="info-label">ブラウザ言語</span>
-            <span class="info-value" id="lang">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">OS / ユーザーエージェント</span>
-            <span class="info-value" id="os">-</span>
-        </div>
-
-        <hr class="section-divider">
-
-        <!-- バッテリー詳細 -->
-        <div class="info-section">
-            <span class="info-label">バッテリー残量</span>
-            <span class="info-value" id="battery-level">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">充電状態</span>
-            <span class="info-value" id="battery-charging">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">充電/放電完了までの推定時間</span>
-            <span class="info-value" id="battery-time">-</span>
-        </div>
-
-        <div class="info-section">
-            <span class="info-label">CPUコア数 (論理コア)</span>
-            <span class="info-value" id="cores">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">搭載メモリ (おおよそ)</span>
-            <span class="info-value" id="memory">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">画面サイズ</span>
-            <span class="info-value" id="screen">-</span>
-        </div>
-
-        <!-- ネットワーク詳細 -->
-        <div class="info-section">
-            <span class="info-label">ネットワークタイプ</span>
-            <span class="info-value" id="net-type">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">有効な接続タイプ</span>
-            <span class="info-value" id="net-effective">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">下り速度</span>
-            <span class="info-value" id="net-downlink">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">ラウンドトリップ時間 (RTT)</span>
-            <span class="info-value" id="net-rtt">-</span>
-        </div>
-
-        <hr class="section-divider">
-
-        <div class="info-section">
-            <span class="info-label">ユーザー固有ID (on_app_userid)</span>
-            <span class="info-value" id="userid">-</span>
-        </div>
-        <div class="info-section">
-            <span class="info-label">初回利用からの経過時間</span>
-            <span class="info-value" id="since">-</span>
-        </div>
-
-        <hr class="section-divider">
-
-        <div class="info-section" style="text-align: center;">
-            <span class="info-label" style="margin-bottom: 18px;">お問い合わせ</span>
-            <a href="https://discord.com/users/699230580071464982" target="_blank" class="discord-link">
-                👾 Discordで問い合わせる
-            </a>
-            <span class="discord-id-note">ユーザー名: mirm0000 (ID: 699230580071464982)</span>
-        </div>
+<!-- パスワードモーダル -->
+<div id="passwordModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">パスワード入力</div>
+    <input id="passwordInput" type="password" class="modal-input" placeholder="パスワード">
+    <div id="passwordError" class="modal-error">パスワードが違います</div>
+    <div class="modal-buttons">
+      <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="modal-btn btn-ok" onclick="submitPassword()">解禁</button>
     </div>
+  </div>
+</div>
 
-    <script>
-        // 基本情報
-        document.getElementById('lang').textContent = navigator.language || navigator.userLanguage || '不明';
-        document.getElementById('os').textContent = navigator.userAgent;
-        document.getElementById('cores').textContent = navigator.hardwareConcurrency 
-            ? navigator.hardwareConcurrency + ' コア' 
-            : '取得不可';
-        document.getElementById('memory').textContent = navigator.deviceMemory 
-            ? navigator.deviceMemory + ' GB (おおよそ)' 
-            : '取得不可';
-        document.getElementById('screen').textContent = 
-            `${window.screen.width} × ${window.screen.height} (ピクセル)`;
+<script>
+/* ===== アプリ定義 ===== */
+const appsConfig = [
+  {
+    id: "chat",
+    icon: "💬",
+    name: "チャット",
+    description: "縦画面専用チャット",
+    url: "https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx",
+    orientation: "portrait",
+    password: null,
+    version: null,
+    enabled: false
+  },
+  {
+    id: "koyama",
+    icon: "🏔️",
+    name: "進撃の小山",
+    description: "無限に迫ってくる小山をパンチやビームを使って倒すゲームです",
+    url: "https://riverteacher.github.io/ohhhhhn/koyama/game/",
+    orientation: "landscape",
+    password: "koyama2025",
+    version: "3",
+    enabled: true
+  }
+];
 
-        // バッテリー詳細情報
-        if (navigator.getBattery) {
-            navigator.getBattery().then(battery => {
-                function updateBattery() {
-                    const level = (battery.level * 100).toFixed(1) + '%';
-                    const charging = battery.charging ? '充電中' : '放電中';
+/* ===== Cookie ===== */
+const setC = (n,v,d)=>document.cookie=`${n}=${v};expires=${new Date(Date.now()+d*864e5).toUTCString()};path=/`;
+const getC = n => (document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'))||[])[2];
+const delC = n => document.cookie=`${n}=;Max-Age=0;path=/`;
 
-                    document.getElementById('battery-level').textContent = level;
-                    document.getElementById('battery-charging').textContent = charging;
+/* ===== 描画 ===== */
+const list = document.getElementById("appList");
 
-                    const chargingTime = battery.chargingTime;
-                    const dischargingTime = battery.dischargingTime;
+function render() {
+    list.innerHTML = "";
+    appsConfig.forEach(app => {
+        const u = `unlock_${app.id}`;
+        const v = `ver_${app.id}`;
+        if (getC(u) && getC(v) !== app.version) {
+            delC(u); delC(v);
+        }
 
-                    if (battery.charging) {
-                        if (chargingTime !== Infinity && chargingTime > 0) {
-                            const hours = Math.floor(chargingTime / 3600);
-                            const minutes = Math.floor((chargingTime % 3600) / 60);
-                            document.getElementById('battery-time').textContent = 
-                                `${hours}時間${minutes}分 で満充電予定`;
-                        } else {
-                            document.getElementById('battery-time').textContent = '推定不可（満充電に近い）';
-                        }
-                    } else {
-                        if (dischargingTime !== Infinity && dischargingTime > 0) {
-                            const hours = Math.floor(dischargingTime / 3600);
-                            const minutes = Math.floor((dischargingTime % 3600) / 60);
-                            document.getElementById('battery-time').textContent = 
-                                `残り ${hours}時間${minutes}分 程度`;
-                        } else {
-                            document.getElementById('battery-time').textContent = '推定不可';
-                        }
-                    }
-                }
-                updateBattery();
-                battery.addEventListener('levelchange', updateBattery);
-                battery.addEventListener('chargingchange', updateBattery);
-            }).catch(() => {
-                document.getElementById('battery-level').textContent = '取得できません';
-                document.getElementById('battery-charging').textContent = '-';
-                document.getElementById('battery-time').textContent = '-';
-            });
+        let status, cls;
+        if (!app.enabled) {
+            status = "アプリ使用不可"; cls = "status-disabled";
+        } else if (app.password && !getC(u)) {
+            status = "ロックされています"; cls = "status-locked";
         } else {
-            document.getElementById('battery-level').textContent = '非対応ブラウザ';
-            document.getElementById('battery-charging').textContent = '-';
-            document.getElementById('battery-time').textContent = '-';
+            status = "解放済"; cls = "status-unlocked";
         }
 
-        // ネットワーク詳細情報
-        if (navigator.connection) {
-            const conn = navigator.connection;
-            function updateNetwork() {
-                document.getElementById('net-type').textContent = 
-                    conn.type || '不明（Wi-Fi/モバイルなど）';
-                document.getElementById('net-effective').textContent = 
-                    conn.effectiveType || '不明';
-                document.getElementById('net-downlink').textContent = 
-                    conn.downlink ? conn.downlink.toFixed(1) + ' Mbps' : '不明';
-                document.getElementById('net-rtt').textContent = 
-                    conn.rtt ? conn.rtt.toFixed(0) + ' ms' : '不明';
-            }
-            updateNetwork();
-            conn.addEventListener('change', updateNetwork);
-        } else {
-            document.getElementById('net-type').textContent = '取得不可';
-            document.getElementById('net-effective').textContent = '-';
-            document.getElementById('net-downlink').textContent = '-';
-            document.getElementById('net-rtt').textContent = '-';
-        }
+        const li = document.createElement("li");
+        li.className = "app-card" + (app.enabled ? "" : " disabled");
+        li.innerHTML = `
+            <div class="app-icon">${app.icon}</div>
+            <div>
+                <p class="app-title">${app.name}</p>
+                <p class="app-desc">${app.description}</p>
+            </div>
+            <div class="app-status ${cls}">${status}</div>
+        `;
+        li.onclick = () => launchApp(app);
+        list.appendChild(li);
+    });
+}
 
-        // ユーザーID & 経過時間
-        const COOKIE_NAME = 'on_app_userid';
-        const COOKIE_DAYS = 365 * 2;
+/* ===== 起動 ===== */
+let currentApp = null;
 
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
+function launchApp(app) {
+    if (!app.enabled) return;
 
-        function setCookie(name, value, days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = `expires=${date.toUTCString()}`;
-            document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
-        }
+    if (app.password && !getC(`unlock_${app.id}`)) {
+        currentApp = app;
+        openModal();
+        return;
+    }
+    openApp(app);
+}
 
-        let userId = getCookie(COOKIE_NAME);
-        const now = Date.now();
+function openApp(app) {
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    const isLandscape = innerWidth > innerHeight;
+    if (!isMobile ||
+        (app.orientation === "landscape" && isLandscape) ||
+        (app.orientation === "portrait" && !isLandscape)) {
+        location.href = app.url;
+    } else {
+        alert(app.orientation === "landscape" ? "横画面にしてください" : "縦画面にしてください");
+    }
+}
 
-        if (!userId) {
-            userId = 'uid_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-            setCookie(COOKIE_NAME, userId, COOKIE_DAYS);
-        }
+/* ===== モーダル ===== */
+const modal = document.getElementById("passwordModal");
+const input = document.getElementById("passwordInput");
+const error = document.getElementById("passwordError");
 
-        document.getElementById('userid').textContent = userId;
+function openModal() {
+    input.value = "";
+    error.style.display = "none";
+    modal.classList.add("active");
+    input.focus();
+}
+function closeModal() {
+    modal.classList.remove("active");
+}
+function submitPassword() {
+    if (input.value === currentApp.password) {
+        setC(`unlock_${currentApp.id}`, "true", 7);
+        setC(`ver_${currentApp.id}`, currentApp.version, 7);
+        closeModal();
+        render();
+        openApp(currentApp);
+    } else {
+        error.style.display = "block";
+    }
+}
 
-        const createdAt = parseInt(userId.split('_').pop(), 10);
-        if (!isNaN(createdAt)) {
-            const diffMs = now - createdAt;
-            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            if (days > 0) {
-                document.getElementById('since').textContent = `${days}日と${hours}時間`;
-            } else if (hours > 0) {
-                document.getElementById('since').textContent = `${hours}時間${minutes}分`;
-            } else {
-                document.getElementById('since').textContent = `${minutes}分`;
-            }
-        } else {
-            document.getElementById('since').textContent = '取得不可';
-        }
-    </script>
+render();
+</script>
+
 </body>
 </html>
