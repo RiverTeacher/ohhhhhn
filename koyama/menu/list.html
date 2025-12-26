@@ -6,149 +6,101 @@
 <title>アプリ一覧</title>
 
 <style>
-/* ===== 基本 ===== */
-body {
-    margin: 0;
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic", sans-serif;
-    background: #f5f5f7;
+body{
+    margin:0;
+    padding:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic",sans-serif;
+    background:#f5f5f7;
 }
-h2 {
-    text-align: center;
-    margin-bottom: 24px;
+h2{text-align:center;margin-bottom:24px}
+
+.app-list{list-style:none;padding:0;max-width:620px;margin:auto}
+
+.app-card{
+    background:#fff;
+    border-radius:18px;
+    padding:16px 18px;
+    margin-bottom:16px;
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
+    display:flex;
+    gap:16px;
+    cursor:pointer;
+    transition:transform .2s,opacity .2s;
+}
+.app-card:active{transform:scale(.97)}
+
+.app-icon{font-size:2.6rem;width:56px;text-align:center}
+.app-title{font-weight:600;margin:0 0 4px}
+.app-desc{font-size:.85rem;color:#666;margin:0}
+
+.app-right{
+    margin-left:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:6px;
 }
 
-/* ===== カード ===== */
-.app-list {
-    list-style: none;
-    padding: 0;
-    max-width: 620px;
-    margin: auto;
+.app-status{
+    font-size:.75rem;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:999px;
 }
-.app-card {
-    background: #fff;
-    border-radius: 18px;
-    padding: 16px 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 6px 16px rgba(0,0,0,.06);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    cursor: pointer;
-    transition: transform .2s, opacity .2s;
-}
-.app-card:active {
-    transform: scale(.97);
-}
-.app-card.disabled {
-    opacity: .5;
-    pointer-events: none;
+.status-locked{color:#c62828;background:#fdeaea}
+.status-unlocked{color:#558b2f;background:#eef7e6}
+.status-disabled{color:#757575;background:#eee}
+
+.relock-btn{
+    font-size:.7rem;
+    border:none;
+    padding:4px 10px;
+    border-radius:999px;
+    background:#f1f1f1;
+    cursor:pointer;
 }
 
-.app-icon {
-    font-size: 2.6rem;
-    width: 56px;
-    text-align: center;
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.4);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
 }
-.app-title {
-    font-weight: 600;
-    margin: 0 0 4px;
+.modal.active{display:flex}
+.modal-box{
+    background:#fff;
+    border-radius:20px;
+    width:90%;
+    max-width:340px;
+    padding:24px;
+    text-align:center;
 }
-.app-desc {
-    font-size: .85rem;
-    color: #666;
-    margin: 0;
+.modal-input{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
 }
-
-/* ===== ステータスバッジ ===== */
-.app-status {
-    margin-left: auto;
-    font-size: .75rem;
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 999px;
-    white-space: nowrap;
+.modal-error{
+    color:#c62828;
+    font-size:.8rem;
+    display:none;
 }
-
-.status-locked {
-    color: #c62828;
-    background: #fdeaea;
+.modal-buttons{display:flex;gap:10px;margin-top:12px}
+.modal-btn{
+    flex:1;
+    border:none;
+    padding:10px;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
 }
-
-.status-unlocked {
-    color: #558b2f;
-    background: #eef7e6;
-}
-
-.status-disabled {
-    color: #757575;
-    background: #eeeeee;
-}
-
-/* ===== モーダル ===== */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.4);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-.modal.active {
-    display: flex;
-}
-.modal-box {
-    background: #fff;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 340px;
-    padding: 24px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    animation: pop .25s ease;
-}
-@keyframes pop {
-    from { transform: scale(.9); opacity: 0 }
-    to   { transform: scale(1); opacity: 1 }
-}
-.modal-title {
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-.modal-input {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 1rem;
-    margin-bottom: 12px;
-}
-.modal-error {
-    color: #c62828;
-    font-size: .8rem;
-    margin-bottom: 10px;
-    display: none;
-}
-.modal-buttons {
-    display: flex;
-    gap: 10px;
-}
-.modal-btn {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-}
-.btn-cancel {
-    background: #eee;
-}
-.btn-ok {
-    background: #007bff;
-    color: #fff;
-}
+.btn-ok{background:#007bff;color:#fff}
+.btn-cancel{background:#eee}
+.btn-danger{background:#c62828;color:#fff}
 </style>
 </head>
 
@@ -157,141 +109,164 @@ h2 {
 <h2>アプリ一覧</h2>
 <ul id="appList" class="app-list"></ul>
 
-<!-- パスワードモーダル -->
+<!-- パスワード -->
 <div id="passwordModal" class="modal">
-  <div class="modal-box">
-    <div class="modal-title">パスワード入力</div>
-    <input id="passwordInput" type="password" class="modal-input" placeholder="パスワード">
-    <div id="passwordError" class="modal-error">パスワードが違います</div>
+<div class="modal-box">
+    <h3>パスワード入力</h3>
+    <input id="pwInput" type="password" class="modal-input">
+    <div id="pwError" class="modal-error">パスワードが違います</div>
     <div class="modal-buttons">
-      <button class="modal-btn btn-cancel" onclick="closeModal()">キャンセル</button>
-      <button class="modal-btn btn-ok" onclick="submitPassword()">解禁</button>
+        <button class="modal-btn btn-cancel" onclick="closePassword()">キャンセル</button>
+        <button class="modal-btn btn-ok" onclick="submitPassword()">解禁</button>
     </div>
-  </div>
+</div>
+</div>
+
+<!-- 再ロック -->
+<div id="relockModal" class="modal">
+<div class="modal-box">
+    <h3>再ロック確認</h3>
+    <p>次回起動時にパスワードが必要になります</p>
+    <div class="modal-buttons">
+        <button class="modal-btn btn-cancel" onclick="closeRelock()">キャンセル</button>
+        <button class="modal-btn btn-danger" onclick="confirmRelock()">OK</button>
+    </div>
+</div>
 </div>
 
 <script>
 /* ===== アプリ定義 ===== */
-const appsConfig = [
-  {
-    id: "chat",
-    icon: "💬",
-    name: "チャット",
-    description: "縦画面専用チャット",
-    url: "https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx",
-    orientation: "portrait",
-    password: null,
-    version: null,
-    enabled: false
-  },
-  {
-    id: "koyama",
-    icon: "🏔️",
-    name: "進撃の小山",
-    description: "無限に迫ってくる小山をパンチやビームを使って倒すゲームです",
-    url: "https://riverteacher.github.io/ohhhhhn/koyama/game/",
-    orientation: "landscape",
-    password: "koyama2025",
-    version: "3",
-    enabled: true
-  }
+const appsConfig=[
+{
+    id:"chat",
+    icon:"💬",
+    name:"チャット",
+    description:"現在使用不可",
+    url:"https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx",
+    password:null,
+    version:null,
+    enabled:false
+},
+{
+    id:"koyama",
+    icon:"🏔️",
+    name:"進撃の小山",
+    description:"無限に迫ってくる小山を倒すゲーム",
+    url:"https://riverteacher.github.io/ohhhhhn/koyama/game/",
+    password:"koyama2025",
+    version:"3",
+    enabled:true
+}
 ];
 
 /* ===== Cookie ===== */
-const setC = (n,v,d)=>document.cookie=`${n}=${v};expires=${new Date(Date.now()+d*864e5).toUTCString()};path=/`;
-const getC = n => (document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'))||[])[2];
-const delC = n => document.cookie=`${n}=;Max-Age=0;path=/`;
+const setC=(n,v,d)=>document.cookie=`${n}=${v};expires=${new Date(Date.now()+d*864e5).toUTCString()};path=/`;
+const getC=n=>(document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'))||[])[2];
+const delC=n=>document.cookie=`${n}=;Max-Age=0;path=/`;
+
+const list=document.getElementById("appList");
+let currentApp=null;
 
 /* ===== 描画 ===== */
-const list = document.getElementById("appList");
+function render(){
+    list.innerHTML="";
+    appsConfig.forEach(app=>{
+        const u=`unlock_${app.id}`;
+        const v=`ver_${app.id}`;
 
-function render() {
-    list.innerHTML = "";
-    appsConfig.forEach(app => {
-        const u = `unlock_${app.id}`;
-        const v = `ver_${app.id}`;
-        if (getC(u) && getC(v) !== app.version) {
+        if(getC(v)!==app.version){
             delC(u); delC(v);
         }
 
-        let status, cls;
-        if (!app.enabled) {
-            status = "アプリ使用不可"; cls = "status-disabled";
-        } else if (app.password && !getC(u)) {
-            status = "ロックされています"; cls = "status-locked";
-        } else {
-            status = "解放済"; cls = "status-unlocked";
+        const unlocked=!!getC(u);
+        let status,cls;
+
+        if(!app.enabled){
+            status="アプリ使用不可"; cls="status-disabled";
+        }else if(app.password && !unlocked){
+            status="ロックされています"; cls="status-locked";
+        }else{
+            status="解放済"; cls="status-unlocked";
         }
 
-        const li = document.createElement("li");
-        li.className = "app-card" + (app.enabled ? "" : " disabled");
-        li.innerHTML = `
+        const li=document.createElement("li");
+        li.className="app-card";
+        li.innerHTML=`
             <div class="app-icon">${app.icon}</div>
             <div>
                 <p class="app-title">${app.name}</p>
                 <p class="app-desc">${app.description}</p>
             </div>
-            <div class="app-status ${cls}">${status}</div>
+            <div class="app-right">
+                <div class="app-status ${cls}">${status}</div>
+                ${unlocked?`<button class="relock-btn">再ロック</button>`:""}
+            </div>
         `;
-        li.onclick = () => launchApp(app);
+
+        li.onclick=()=>launchApp(app);
+
+        const btn=li.querySelector(".relock-btn");
+        if(btn){
+            btn.onclick=e=>{
+                e.stopPropagation();
+                currentApp=app;
+                openRelock();
+            };
+        }
+
         list.appendChild(li);
     });
 }
 
 /* ===== 起動 ===== */
-let currentApp = null;
+function launchApp(app){
+    // enabled:false → 何もしない（アニメーションは発生）
+    if(!app.enabled) return;
 
-function launchApp(app) {
-    if (!app.enabled) return;
-
-    if (app.password && !getC(`unlock_${app.id}`)) {
-        currentApp = app;
-        openModal();
+    if(app.password && !getC(`unlock_${app.id}`)){
+        currentApp=app;
+        openPassword();
         return;
     }
-    openApp(app);
+
+    location.href=app.url;
 }
 
-function openApp(app) {
-    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    const isLandscape = innerWidth > innerHeight;
-    if (!isMobile ||
-        (app.orientation === "landscape" && isLandscape) ||
-        (app.orientation === "portrait" && !isLandscape)) {
-        location.href = app.url;
-    } else {
-        alert(app.orientation === "landscape" ? "横画面にしてください" : "縦画面にしてください");
+/* ===== パスワード ===== */
+const pwModal=document.getElementById("passwordModal");
+const pwInput=document.getElementById("pwInput");
+const pwError=document.getElementById("pwError");
+
+function openPassword(){
+    pwInput.value="";
+    pwError.style.display="none";
+    pwModal.classList.add("active");
+}
+function closePassword(){ pwModal.classList.remove("active"); }
+
+function submitPassword(){
+    if(pwInput.value===currentApp.password){
+        setC(`unlock_${currentApp.id}`,"1",7);
+        setC(`ver_${currentApp.id}`,currentApp.version,7);
+        closePassword();
+        render(); // ★ 解禁だけして遷移しない
+    }else{
+        pwError.style.display="block";
     }
 }
 
-/* ===== モーダル ===== */
-const modal = document.getElementById("passwordModal");
-const input = document.getElementById("passwordInput");
-const error = document.getElementById("passwordError");
-
-function openModal() {
-    input.value = "";
-    error.style.display = "none";
-    modal.classList.add("active");
-    input.focus();
-}
-function closeModal() {
-    modal.classList.remove("active");
-}
-function submitPassword() {
-    if (input.value === currentApp.password) {
-        setC(`unlock_${currentApp.id}`, "true", 7);
-        setC(`ver_${currentApp.id}`, currentApp.version, 7);
-        closeModal();
-        render();
-        openApp(currentApp);
-    } else {
-        error.style.display = "block";
-    }
+/* ===== 再ロック ===== */
+const rModal=document.getElementById("relockModal");
+function openRelock(){ rModal.classList.add("active"); }
+function closeRelock(){ rModal.classList.remove("active"); }
+function confirmRelock(){
+    delC(`unlock_${currentApp.id}`);
+    delC(`ver_${currentApp.id}`);
+    closeRelock();
+    render();
 }
 
 render();
 </script>
-
 </body>
 </html>
