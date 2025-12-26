@@ -1,267 +1,184 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アプリ一覧</title>
-    <style>
-        :root {
-            --bg-color: #f5f5f7;
-            --card-bg: #ffffff;
-            --primary-color: #007bff;
-            --text-main: #333333;
-            --text-sub: #666666;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アプリ一覧</title>
 
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Yu Gothic", YuGothic, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            overflow-x: hidden;
-        }
-
-        h2 {
-            text-align: center;
-            color: var(--text-main);
-            margin-bottom: 25px;
-        }
-
-        /* アプリリストのスタイル */
-        .app-list {
-            list-style: none;
-            padding: 0;
-            margin: 0 auto;
-            max-width: 600px;
-        }
-
-        .app-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .app-card:active {
-            transform: scale(0.97);
-            background-color: #f0f0f0;
-        }
-
-        .app-icon {
-            font-size: 2.5rem;
-            margin-right: 16px;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fdfdfd;
-            border-radius: 12px;
-        }
-
-        .app-details {
-            flex: 1;
-        }
-
-        .app-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin: 0 0 4px 0;
-        }
-
-        .app-desc {
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        /* カスタムモーダル（アラート）のスタイル */
-        #custom-alert {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s;
-        }
-
-        #custom-alert.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: white;
-            width: 85%;
-            max-width: 320px;
-            border-radius: 20px;
-            padding: 24px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            transform: scale(0.8);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        #custom-alert.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-icon {
-            font-size: 3rem;
-            margin-bottom: 16px;
-            display: block;
-        }
-
-        .modal-title {
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-        }
-
-        .modal-text {
-            font-size: 0.95rem;
-            color: var(--text-sub);
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        .modal-button {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 0;
-            width: 100%;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .modal-button:active {
-            background: #0056b3;
-        }
-    </style>
+<style>
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic", sans-serif;
+    background: #f5f5f7;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.app-list {
+    list-style: none;
+    padding: 0;
+    max-width: 600px;
+    margin: auto;
+}
+.app-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform .2s, opacity .2s;
+}
+.app-card:active {
+    transform: scale(.97);
+}
+.app-card.disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+.app-icon {
+    font-size: 2.5rem;
+    margin-right: 16px;
+    width: 60px;
+    text-align: center;
+}
+.app-title {
+    font-weight: bold;
+    margin: 0 0 4px;
+}
+.app-desc {
+    font-size: .85rem;
+    color: #666;
+    margin: 0;
+}
+.lock {
+    margin-left: auto;
+    font-size: 1.2rem;
+}
+</style>
 </head>
+
 <body>
 
-    <h2>アプリ一覧</h2>
+<h2>アプリ一覧</h2>
+<ul id="appList" class="app-list"></ul>
 
-    <ul class="app-list">
-        <!-- チャット：縦画面必須 -->
-        <li class="app-card" onclick="checkAndLaunch('https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx', 'portrait')">
-            <div class="app-icon">💬</div>
-            <div class="app-details">
-                <h3 class="app-title">チャット</h3>
-                <p class="app-desc">縦画面専用チャット。みんなで楽しく会話しよう！</p>
-            </div>
-        </li>
+<script>
+/* ===== アプリ定義JSON ===== */
+const appsConfig = [
+  {
+    id: "chat",
+    icon: "💬",
+    name: "チャット",
+    description: "縦画面専用チャット。みんなで会話しよう",
+    url: "https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx",
+    orientation: "portrait",
+    password: null,
+    version: null,
+    enabled: true
+  },
+  {
+    id: "koyama",
+    icon: "🏔️",
+    name: "進撃の小山",
+    description: "限定公開・横画面専用アクション",
+    url: "https://riverteacher.github.io/ohhhhhn/koyama/game/",
+    orientation: "landscape",
+    password: "koyama2025",
+    version: "3",
+    enabled: true
+  }
+];
 
-        <!-- 進撃の小山：横画面専用 -->
-        <li class="app-card" onclick="checkAndLaunch('https://riverteacher.github.io/ohhhhhn/koyama/game/', 'landscape')">
-            <div class="app-icon">🏔️</div>
-            <div class="app-details">
-                <h3 class="app-title">進撃の小山</h3>
-                <p class="app-desc">横画面専用アクション。山を越え、進み続けろ！</p>
-            </div>
-        </li>
-    </ul>
+/* ===== Cookie ===== */
+function setCookie(n, v, d) {
+    const e = new Date(Date.now() + d*86400000).toUTCString();
+    document.cookie = `${n}=${v};expires=${e};path=/`;
+}
+function getCookie(n) {
+    const m = document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'));
+    return m ? m[2] : null;
+}
+function deleteCookie(n) {
+    document.cookie = n + "=;Max-Age=0;path=/";
+}
 
-    <!-- カスタムアラート構造 -->
-    <div id="custom-alert" onclick="closeAlert()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span id="alert-icon" class="modal-icon">📱</span>
-            <div id="alert-title" class="modal-title">画面の向きを確認</div>
-            <div id="alert-text" class="modal-text">
-                このアプリは専用の向きがあります。
-            </div>
-            <button class="modal-button" onclick="closeAlert()">了解</button>
+/* ===== 描画 ===== */
+const list = document.getElementById("appList");
+
+appsConfig.forEach(app => {
+    const li = document.createElement("li");
+    li.className = "app-card" + (app.enabled ? "" : " disabled");
+    li.innerHTML = `
+        <div class="app-icon">${app.icon}</div>
+        <div>
+            <p class="app-title">${app.name}</p>
+            <p class="app-desc">${app.description}</p>
         </div>
-    </div>
+        ${app.password ? '<div class="lock">🔒</div>' : ""}
+    `;
+    li.onclick = () => launchApp(app);
+    list.appendChild(li);
+});
 
-    <script>
-        const alertEl = document.getElementById('custom-alert');
-        const alertIcon = document.getElementById('alert-icon');
-        const alertTitle = document.getElementById('alert-title');
-        const alertText = document.getElementById('alert-text');
+/* ===== 起動処理 ===== */
+function launchApp(app) {
+    if (!app.enabled) {
+        alert("このアプリは現在停止中です");
+        return;
+    }
 
-        let currentUrl = "";
-        let requiredOrientation = "";
+    if (app.password) {
+        const key = `unlock_${app.id}`;
+        const ver = `ver_${app.id}`;
 
-        function checkAndLaunch(url, orientation) {
-            currentUrl = url;
-            requiredOrientation = orientation;
+        if (getCookie(key) && getCookie(ver) !== app.version) {
+            deleteCookie(key);
+            deleteCookie(ver);
+        }
 
-            const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-            const isLandscape = window.innerWidth > window.innerHeight;
-
-            // パソコンの場合は向きを無視して即座に開く
-            if (!isMobile) {
-                window.location.href = url;
+        if (!getCookie(key)) {
+            const input = prompt("限定コンテンツです。\nパスワードを入力してください");
+            if (input !== app.password) {
+                alert("パスワードが違います");
                 return;
             }
-
-            // 向きのチェック
-            if (orientation === 'landscape') {
-                if (isLandscape) {
-                    window.location.href = url;
-                } else {
-                    showOrientationAlert('landscape');
-                }
-            } else if (orientation === 'portrait') {
-                if (!isLandscape) {
-                    window.location.href = url;
-                } else {
-                    showOrientationAlert('portrait');
-                }
-            }
+            setCookie(key, "true", 7);
+            setCookie(ver, app.version, 7);
         }
+    }
 
-        function showOrientationAlert(type) {
-            if (type === 'landscape') {
-                alertIcon.innerText = "🔄";
-                alertTitle.innerText = "横画面にしてください";
-                alertText.innerHTML = "このゲームは横画面専用です。<br>端末を横向きにしてプレイしてください。";
-            } else {
-                alertIcon.innerText = "📱";
-                alertTitle.innerText = "縦画面にしてください";
-                alertText.innerHTML = "このチャットは縦画面専用です。<br>端末を縦向きにして利用してください。";
-            }
-            alertEl.classList.add('active');
-        }
+    checkOrientationAndLaunch(app.url, app.orientation);
+}
 
-        function closeAlert() {
-            alertEl.classList.remove('active');
-        }
+/* ===== 画面向き ===== */
+function checkOrientationAndLaunch(url, orientation) {
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    const isLandscape = innerWidth > innerHeight;
 
-        // 画面が回転した時に条件を満たしていれば自動で遷移
-        window.addEventListener('resize', () => {
-            if (!alertEl.classList.contains('active')) return;
+    if (!isMobile) {
+        location.href = url;
+        return;
+    }
 
-            const isLandscape = window.innerWidth > window.innerHeight;
-            if (requiredOrientation === 'landscape' && isLandscape) {
-                window.location.href = currentUrl;
-            } else if (requiredOrientation === 'portrait' && !isLandscape) {
-                window.location.href = currentUrl;
-            }
-        });
-    </script>
+    if (
+        (orientation === "landscape" && isLandscape) ||
+        (orientation === "portrait" && !isLandscape)
+    ) {
+        location.href = url;
+    } else {
+        alert(
+            orientation === "landscape"
+            ? "横画面にしてください"
+            : "縦画面にしてください"
+        );
+    }
+}
+</script>
 
 </body>
 </html>
-
