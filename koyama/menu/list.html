@@ -25,7 +25,7 @@ h2{text-align:center;margin-bottom:24px}
     display:flex;
     gap:16px;
     cursor:pointer;
-    transition:transform .2s,opacity .2s;
+    transition:transform .2s;
 }
 .app-card:active{transform:scale(.97)}
 
@@ -60,6 +60,7 @@ h2{text-align:center;margin-bottom:24px}
     cursor:pointer;
 }
 
+/* ===== モーダル共通 ===== */
 .modal{
     position:fixed;
     inset:0;
@@ -78,17 +79,6 @@ h2{text-align:center;margin-bottom:24px}
     padding:24px;
     text-align:center;
 }
-.modal-input{
-    width:100%;
-    padding:10px;
-    border-radius:10px;
-    border:1px solid #ccc;
-}
-.modal-error{
-    color:#c62828;
-    font-size:.8rem;
-    display:none;
-}
 .modal-buttons{display:flex;gap:10px;margin-top:12px}
 .modal-btn{
     flex:1;
@@ -101,6 +91,18 @@ h2{text-align:center;margin-bottom:24px}
 .btn-ok{background:#007bff;color:#fff}
 .btn-cancel{background:#eee}
 .btn-danger{background:#c62828;color:#fff}
+
+.modal-input{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
+}
+.modal-error{
+    color:#c62828;
+    font-size:.8rem;
+    display:none;
+}
 </style>
 </head>
 
@@ -134,6 +136,15 @@ h2{text-align:center;margin-bottom:24px}
 </div>
 </div>
 
+<!-- 向き警告 -->
+<div id="orientationModal" class="modal">
+<div class="modal-box">
+    <h3 id="oriTitle"></h3>
+    <p id="oriText"></p>
+    <button class="modal-btn btn-ok" onclick="closeOrientation()">OK</button>
+</div>
+</div>
+
 <script>
 /* ===== アプリ定義 ===== */
 const appsConfig=[
@@ -143,6 +154,7 @@ const appsConfig=[
     name:"チャット",
     description:"現在使用不可",
     url:"https://www3.cbox.ws/box/?boxid=3550995&boxtag=ymqqtx",
+    orientation:"portrait",
     password:null,
     version:null,
     enabled:false
@@ -153,6 +165,7 @@ const appsConfig=[
     name:"進撃の小山",
     description:"無限に迫ってくる小山を倒すゲーム",
     url:"https://riverteacher.github.io/ohhhhhn/koyama/game/",
+    orientation:"landscape",
     password:"koyama2025",
     version:"3",
     enabled:true
@@ -166,6 +179,8 @@ const delC=n=>document.cookie=`${n}=;Max-Age=0;path=/`;
 
 const list=document.getElementById("appList");
 let currentApp=null;
+let pendingUrl=null;
+let requiredOrientation=null;
 
 /* ===== 描画 ===== */
 function render(){
@@ -173,10 +188,7 @@ function render(){
     appsConfig.forEach(app=>{
         const u=`unlock_${app.id}`;
         const v=`ver_${app.id}`;
-
-        if(getC(v)!==app.version){
-            delC(u); delC(v);
-        }
+        if(getC(v)!==app.version){ delC(u); delC(v); }
 
         const unlocked=!!getC(u);
         let status,cls;
@@ -202,7 +214,6 @@ function render(){
                 ${unlocked?`<button class="relock-btn">再ロック</button>`:""}
             </div>
         `;
-
         li.onclick=()=>launchApp(app);
 
         const btn=li.querySelector(".relock-btn");
@@ -213,14 +224,12 @@ function render(){
                 openRelock();
             };
         }
-
         list.appendChild(li);
     });
 }
 
-/* ===== 起動 ===== */
+/* ===== 起動 & 向き判定 ===== */
 function launchApp(app){
-    // enabled:false → 何もしない（アニメーションは発生）
     if(!app.enabled) return;
 
     if(app.password && !getC(`unlock_${app.id}`)){
@@ -229,8 +238,48 @@ function launchApp(app){
         return;
     }
 
-    location.href=app.url;
+    checkOrientation(app);
 }
+
+function checkOrientation(app){
+    const isMobile=/Mobi|Android|iPhone/i.test(navigator.userAgent);
+    if(!isMobile){ location.href=app.url; return; }
+
+    const isLandscape=innerWidth>innerHeight;
+    if(
+        (app.orientation==="landscape" && isLandscape) ||
+        (app.orientation==="portrait" && !isLandscape)
+    ){
+        location.href=app.url;
+    }else{
+        pendingUrl=app.url;
+        requiredOrientation=app.orientation;
+        openOrientation(app.orientation);
+    }
+}
+
+/* ===== 向きモーダル ===== */
+const oModal=document.getElementById("orientationModal");
+const oTitle=document.getElementById("oriTitle");
+const oText=document.getElementById("oriText");
+
+function openOrientation(type){
+    oTitle.textContent=type==="landscape"?"横画面にしてください":"縦画面にしてください";
+    oText.textContent="端末の向きを変更してください";
+    oModal.classList.add("active");
+}
+function closeOrientation(){ oModal.classList.remove("active"); }
+
+window.addEventListener("resize",()=>{
+    if(!pendingUrl) return;
+    const isLandscape=innerWidth>innerHeight;
+    if(
+        (requiredOrientation==="landscape" && isLandscape) ||
+        (requiredOrientation==="portrait" && !isLandscape)
+    ){
+        location.href=pendingUrl;
+    }
+});
 
 /* ===== パスワード ===== */
 const pwModal=document.getElementById("passwordModal");
@@ -238,8 +287,7 @@ const pwInput=document.getElementById("pwInput");
 const pwError=document.getElementById("pwError");
 
 function openPassword(){
-    pwInput.value="";
-    pwError.style.display="none";
+    pwInput.value=""; pwError.style.display="none";
     pwModal.classList.add("active");
 }
 function closePassword(){ pwModal.classList.remove("active"); }
@@ -249,10 +297,8 @@ function submitPassword(){
         setC(`unlock_${currentApp.id}`,"1",7);
         setC(`ver_${currentApp.id}`,currentApp.version,7);
         closePassword();
-        render(); // ★ 解禁だけして遷移しない
-    }else{
-        pwError.style.display="block";
-    }
+        render();
+    }else pwError.style.display="block";
 }
 
 /* ===== 再ロック ===== */
