@@ -115,9 +115,38 @@
             animation: flash 0.5s infinite alternate;
         }
         @keyframes flash { from { opacity: 1; } to { opacity: 0.2; } }
+        
+        /* BGMコントロール */
+        #bgmControl {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 20;
+        }
+        #bgmToggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid white;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #bgmToggle.muted {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
+
+    <!-- BGMコントロール -->
+    <div id="bgmControl">
+        <button id="bgmToggle" title="BGM ON/OFF">♪</button>
+    </div>
 
     <!-- Game Canvas -->
     <div class="w-full h-full flex flex-col items-center justify-center relative">
@@ -209,6 +238,15 @@
             GAME_OVER: 'https://riverteacher.github.io/ohhhhhn/koyama/game/dead.mp3'
         };
 
+        // BGM URLの定義を追加
+        const BGM = {
+            NORMAL: 'https://riverteacher.github.io/ohhhhhn/koyama/game/normal.mp3',
+            BOSS: [
+                'https://riverteacher.github.io/ohhhhhn/koyama/game/boss_1.mp3',
+                'https://riverteacher.github.io/ohhhhhn/koyama/game/boss_2.mp3'
+            ]
+        };
+
         const GAME_CONFIG = {
             PLAYER_SPEED: 5,
             JUMP_FORCE: 12,
@@ -268,6 +306,14 @@
         let rangeMaedaImage = new Image();
         let floorBossImage = new Image();
 
+        // BGM用のAudioオブジェクト
+        let bgmNormal = null;
+        let bgmBoss1 = null;
+        let bgmBoss2 = null;
+        let currentBGM = null;
+        let isBossBGM = false;
+        let isMuted = false;
+        
         let currentStage = 1; 
         
         // Floor Boss State
@@ -308,6 +354,85 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffers = {};
 
+        // --- BGM関連の関数 ---
+        function loadBGM(url) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.src = url;
+                
+                audio.addEventListener('canplaythrough', () => {
+                    resolve(audio);
+                }, { once: true });
+                
+                audio.addEventListener('error', (e) => {
+                    reject(new Error(`BGMの読み込みに失敗: ${url}`));
+                }, { once: true });
+                
+                // 強制的にロードを開始
+                audio.load();
+            });
+        }
+
+        function playBGM(bgmType) {
+            if (isMuted || gameState !== 'PLAYING') return;
+            
+            // 現在のBGMを停止
+            if (currentBGM) {
+                currentBGM.pause();
+                currentBGM.currentTime = 0;
+            }
+            
+            if (bgmType === 'normal' && bgmNormal) {
+                currentBGM = bgmNormal;
+                isBossBGM = false;
+            } else if (bgmType === 'boss') {
+                // ボスBGMをランダムに選択
+                const bossBGM = Math.random() < 0.5 ? bgmBoss1 : bgmBoss2;
+                currentBGM = bossBGM;
+                isBossBGM = true;
+            }
+            
+            if (currentBGM) {
+                currentBGM.loop = true;
+                currentBGM.volume = 0.5;
+                currentBGM.play().catch(e => {
+                    console.log('BGM再生エラー:', e);
+                });
+            }
+        }
+
+        function stopBGM() {
+            if (currentBGM) {
+                currentBGM.pause();
+                currentBGM.currentTime = 0;
+                currentBGM = null;
+            }
+            isBossBGM = false;
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const toggleBtn = document.getElementById('bgmToggle');
+            
+            if (isMuted) {
+                toggleBtn.classList.add('muted');
+                toggleBtn.textContent = '♪';
+                stopBGM();
+            } else {
+                toggleBtn.classList.remove('muted');
+                toggleBtn.textContent = '♪';
+                // ミュート解除時に適切なBGMを再生
+                if (gameState === 'PLAYING') {
+                    if (isFloorBossActive) {
+                        playBGM('boss');
+                    } else {
+                        playBGM('normal');
+                    }
+                }
+            }
+        }
+
         // --- Initialization ---
         window.onload = async () => {
             const loadingScreen = document.getElementById('loadingScreen');
@@ -326,12 +451,13 @@
                     throw new Error(`ゲームの実行が許可されていません。ステータス: ${statusText.trim()}`); 
                 }
 
-                // 2. Load Images
+                // 2. Load Images and BGM
                 await new Promise((resolve, reject) => {
                     let loaded = 0;
-                    const total = 3;
+                    const total = 6; // 画像3つ + BGM3つ
                     const checkLoaded = () => { loaded++; if (loaded === total) resolve(); };
 
+                    // 画像の読み込み
                     maedaImage.src = ASSETS.ENEMY_IMG;
                     maedaImage.onload = checkLoaded;
                     maedaImage.onerror = () => reject(new Error("ノーマル敵画像の読み込み失敗"));
@@ -343,6 +469,22 @@
                     floorBossImage.src = ASSETS.FLOOR_BOSS_IMG;
                     floorBossImage.onload = checkLoaded;
                     floorBossImage.onerror = () => reject(new Error("ボス画像の読み込み失敗"));
+
+                    // BGMの読み込み
+                    loadBGM(BGM.NORMAL).then(audio => {
+                        bgmNormal = audio;
+                        checkLoaded();
+                    }).catch(err => reject(err));
+
+                    loadBGM(BGM.BOSS[0]).then(audio => {
+                        bgmBoss1 = audio;
+                        checkLoaded();
+                    }).catch(err => reject(err));
+
+                    loadBGM(BGM.BOSS[1]).then(audio => {
+                        bgmBoss2 = audio;
+                        checkLoaded();
+                    }).catch(err => reject(err));
                 });
 
                 loadingScreen.classList.add('hidden');
@@ -350,7 +492,7 @@
                 initGame();
 
             } catch (err) {
-                // エラーが発生した場合（APIチェック失敗または画像ロード失敗）
+                // エラーが発生した場合（APIチェック失敗またはアセットロード失敗）
                 loadingScreen.classList.add('hidden');
                 errorScreen.classList.remove('hidden');
                 errMsg.textContent = `エラー: ${err.message}`;
@@ -371,6 +513,10 @@
             resize();
 
             setupInputs();
+            
+            // BGMトグルボタンの設定
+            document.getElementById('bgmToggle').addEventListener('click', toggleMute);
+            
             document.getElementById('startBtn').addEventListener('click', () => {
                 // ユーザーアクションをトリガーにAudioContextをResume
                 if (audioContext.state === 'suspended') {
@@ -379,6 +525,12 @@
 
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
+                
+                // 通常BGMを再生開始
+                if (!isMuted) {
+                    playBGM('normal');
+                }
+                
                 gameLoop();
             });
         }
@@ -583,6 +735,11 @@
                 } else if (enemy.type === 'floor_boss') {
                     // フロアボス撃破時
                     playSound('BOSS_KILLED'); // ボス撃破音
+                    
+                    // BGMを通常に戻す
+                    if (!isMuted) {
+                        playBGM('normal');
+                    }
 
                     score += 500 * (floorBossCount + 1);
                     isFloorBossActive = false; // ボスモード終了
@@ -717,6 +874,11 @@
             floorBossCount++;
 
             playSound('BOSS_SUMMON'); // ボス出現音
+            
+            // BGMをボス戦用に切り替え
+            if (!isMuted) {
+                playBGM('boss');
+            }
             
             // 警告表示
             const warningEl = document.getElementById('bossWarning');
@@ -929,6 +1091,7 @@
 
             if (player.hp <= 0) {
                 playSound('GAME_OVER'); // ゲームオーバー音
+                stopBGM(); // BGM停止
 
                 gameState = 'GAMEOVER';
                 document.getElementById('finalScore').textContent = score;
@@ -1373,6 +1536,9 @@
                 _saveCookie('koyamaSave', JSON.stringify(data));
                 updateSaveStateUI('SAVED');
                 
+                // BGM停止
+                stopBGM();
+                
                 // Custom alert logic (not using window.alert)
                 const tempMessage = document.createElement('div');
                 tempMessage.textContent = 'セーブ完了！タイトルに戻ります...';
@@ -1429,6 +1595,12 @@
                 loadGameData();
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
+                
+                // ゲーム開始時に通常BGMを再生
+                if (!isMuted) {
+                    playBGM('normal');
+                }
+                
                 gameLoop();
             });
             if (raw) updateSaveStateUI('SAVED'); else updateSaveStateUI('NONE');
