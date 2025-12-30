@@ -224,11 +224,17 @@
             ENEMY_SEEK_DURATION_ZAKO: 120,
             ENEMY_SEEK_DURATION_BOSS: 420,
 
-            BASE_ZAKO_HP: 1,
-            BASE_BOSS_HP: 10,
+            // 難易度調整: ワンパン対策でHP微増
+            BASE_ZAKO_HP: 1, 
+            BASE_BOSS_HP: 8,
             BASE_RANGE_HP: 9,
-            // 指数関数的HP増加設定 (1.07倍/ステージ)
+            
+            // 指数関数的HP増加設定 (基本は1.04倍)
             HP_EXPONENTIAL_BASE: 1.04,
+            // 序盤の難易度ブースト設定 (これを加算して最初は急激に上げる)
+            HP_GROWTH_INITIAL_BOOST: 0.2, // 初期の上乗せ率 (例: 1.04 + 0.25 = 1.29倍からスタート)
+            HP_GROWTH_DECAY: 0.15, // ブーストの減衰率 (高いほど早く1.04に戻る)
+
             STAGE_FRAME_DURATION: 1200, 
             IMAGE_SCALE: 1.25, 
             
@@ -616,6 +622,22 @@
 
         // --- Enemy Spawning & Logic ---
 
+        // 難易度曲線を計算する関数
+        // ステージ1では1倍、ステージ2以降は (1.04 + Boost) を累積乗算
+        function getDifficultyMultiplier(stage) {
+            let multiplier = 1;
+            // ステージ1は基準値(1.0)
+            for (let i = 1; i < stage; i++) {
+                // 基本増加率: 1.04
+                // 序盤ブースト: 減衰係数により急激に0に近づく
+                // 式: Rate = BASE + INITIAL_BOOST * exp(-DECAY * i)
+                const boost = GAME_CONFIG.HP_GROWTH_INITIAL_BOOST * Math.exp(-GAME_CONFIG.HP_GROWTH_DECAY * i);
+                const currentRate = GAME_CONFIG.HP_EXPONENTIAL_BASE + boost;
+                multiplier *= currentRate;
+            }
+            return multiplier;
+        }
+
         function spawnEnemy() {
             // フロアボス出現中は他の敵を出さない
             if (isFloorBossActive) return;
@@ -647,8 +669,8 @@
                 }
             }
 
-            // 指数関数的なHP倍率を計算 (1.07倍/ステージ)
-            const exponentialMultiplier = Math.pow(GAME_CONFIG.HP_EXPONENTIAL_BASE, currentStage - 1);
+            // 新しい難易度計算ロジック
+            const exponentialMultiplier = getDifficultyMultiplier(currentStage);
             
             let size, hp, speed, img;
 
@@ -666,6 +688,7 @@
                 speed = 0.5; img = rangeMaedaImage;
             } else { // Zako
                 size = 40;
+                // BASE_ZAKO_HPを2に上げたので、最低HPが少し上がっています
                 hp = Math.floor((Math.random() * 3 + GAME_CONFIG.BASE_ZAKO_HP) * exponentialMultiplier);
                 speed = 2; img = maedaImage;
             }
