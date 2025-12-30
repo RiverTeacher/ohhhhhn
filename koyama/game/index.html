@@ -227,7 +227,8 @@
             BASE_ZAKO_HP: 1,
             BASE_BOSS_HP: 10,
             BASE_RANGE_HP: 9,
-            HP_INCREASE_PER_STAGE: 1, 
+            // 指数関数的HP増加設定 (1.07倍/ステージ)
+            HP_EXPONENTIAL_BASE: 1.07,
             STAGE_FRAME_DURATION: 1200, 
             IMAGE_SCALE: 1.25, 
             
@@ -237,7 +238,8 @@
             // Floor Boss Config
             FLOOR_BOSS_STAGE_INTERVAL: 8, // 9ステージごとに登場 (8の倍数でボス出現)
             FLOOR_BOSS_BASE_HP: 300,
-            FLOOR_BOSS_HP_INCREASE_PERCENT: 0.5, // 50% increase per encounter
+            // ボスHP増加: 出現回数ごとに80%増加
+            FLOOR_BOSS_HP_INCREASE_PERCENT: 0.8,
             FLOOR_BOSS_FLOAT_INTERVAL: 600, // 10 seconds (60fps * 10)
             FLOOR_BOSS_FLOAT_DURATION: 120, // 2 seconds
             FLOOR_BOSS_ACTION_INTERVAL: 180, // ~3 seconds between attacks
@@ -645,25 +647,26 @@
                 }
             }
 
-            const hpIncrease = (currentStage - 1) * GAME_CONFIG.HP_INCREASE_PER_STAGE;
+            // 指数関数的なHP倍率を計算 (1.07倍/ステージ)
+            const exponentialMultiplier = Math.pow(GAME_CONFIG.HP_EXPONENTIAL_BASE, currentStage - 1);
             
             let size, hp, speed, img;
 
             if (enemyType === 'boss') {
                 size = 100;
-                hp = Math.floor(Math.random() * 31) + GAME_CONFIG.BASE_BOSS_HP + hpIncrease;
+                hp = Math.floor((Math.random() * 31 + GAME_CONFIG.BASE_BOSS_HP) * exponentialMultiplier);
                 speed = 1; img = maedaImage;
             } else if (enemyType === 'heal') {
                 size = 40;
-                hp = Math.floor(Math.random() * 2) + 1; 
+                hp = Math.floor((Math.random() * 2 + 1) * exponentialMultiplier);
                 speed = 3; img = maedaImage;
             } else if (enemyType === 'range') {
                 size = 80; 
-                hp = Math.floor(Math.random() * 4) + GAME_CONFIG.BASE_RANGE_HP + hpIncrease;
+                hp = Math.floor((Math.random() * 4 + GAME_CONFIG.BASE_RANGE_HP) * exponentialMultiplier);
                 speed = 0.5; img = rangeMaedaImage;
             } else { // Zako
                 size = 40;
-                hp = Math.floor(Math.random() * 3) + GAME_CONFIG.BASE_ZAKO_HP + hpIncrease;
+                hp = Math.floor((Math.random() * 3 + GAME_CONFIG.BASE_ZAKO_HP) * exponentialMultiplier);
                 speed = 2; img = maedaImage;
             }
 
@@ -697,8 +700,9 @@
             warningEl.style.display = 'block';
             setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
 
-            // HP計算: ベース + (50% * 回数)
-            const maxHp = Math.floor(GAME_CONFIG.FLOOR_BOSS_BASE_HP * (1 + (GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT * (floorBossCount - 1))));
+            // HP計算: 指数関数的増加（出現回数ごとに80%増加）
+            const multiplier = Math.pow(1 + GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT, floorBossCount - 1);
+            const maxHp = Math.floor(GAME_CONFIG.FLOOR_BOSS_BASE_HP * multiplier);
 
             const size = 150; // かなりでかい
             enemies.push({
@@ -1422,4 +1426,3 @@
     </script>
 </body>
 </html>
-
