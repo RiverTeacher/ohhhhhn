@@ -119,7 +119,7 @@
         /* BGMコントロール */
         #bgmControl {
             position: absolute;
-            top: 10px;
+            top: 120px;
             right: 10px;
             z-index: 20;
         }
@@ -276,7 +276,7 @@
             STAGE_FRAME_DURATION: 1200, 
             IMAGE_SCALE: 1.25, 
             
-            MAX_ENEMIES: 10,
+            MAX_ENEMIES: 6,
             HEAL_AMOUNT: 2,
 
             // Floor Boss Config
@@ -295,6 +295,8 @@
             BOSS_ATTACK_ACTIVE_FRAMES: 30, // 攻撃持続時間
             BOSS_BEAM_DAMAGE: 3, // ビーム・光線のダメージ
         };
+
+            
 
         // --- Game State ---
         let canvas, ctx;
@@ -870,20 +872,23 @@
         }
 
         function spawnFloorBoss() {
-            isFloorBossActive = true;
-            floorBossCount++;
+        isFloorBossActive = true;
+        floorBossCount++;
 
-            playSound('BOSS_SUMMON'); // ボス出現音
-            
-            // BGMをボス戦用に切り替え
-            if (!isMuted) {
-                playBGM('boss');
-            }
-            
-            // 警告表示
-            const warningEl = document.getElementById('bossWarning');
-            warningEl.style.display = 'block';
-            setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
+        // ★追加: ボス出現時に他の敵を全削除
+        enemies = enemies.filter(enemy => enemy.type === 'floor_boss');
+        
+        playSound('BOSS_SUMMON'); // ボス出現音
+        
+        // BGMをボス戦用に切り替え
+        if (!isMuted) {
+            playBGM('boss');
+        }
+        
+        // 警告表示
+        const warningEl = document.getElementById('bossWarning');
+        warningEl.style.display = 'block';
+        setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
 
             // HP計算: 指数関数的増加（出現回数ごとに80%増加）
             const multiplier = Math.pow(1 + GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT, floorBossCount - 1);
