@@ -1,30 +1,37 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="overflow-hidden h-full w-full">
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="./manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ohhhhhん Games</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('SW OK'))
-      .catch(e => console.error(e));
-  }
-</script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('SW OK'))
+                .catch(e => console.error(e));
+        }
+    </script>
 
     <style>
-        body {
+        html, body {
             margin: 0;
             padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed;
             font-family: 'Inter', sans-serif;
-            background: #f9fafb; /* white base */
+            background: #f9fafb;
+            touch-action: none;
         }
+        
         #result {
-            min-height: 100vh;
+            width: 100%;
+            height: 100%;
         }
-        /* ローディング用スピナー */
+
         .spinner {
             border: 4px solid #e5e7eb;
             border-top: 4px solid #3b82f6;
@@ -37,12 +44,77 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* 横画面を促すオーバーレイ */
+        #orientation-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 24, 39, 0.95);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* スマホかつ縦向きの場合に表示 */
+        @media screen and (max-width: 768px) and (orientation: portrait) {
+            #orientation-overlay {
+                display: flex;
+            }
+        }
+
+        .phone-icon {
+            width: 50px;
+            height: 80px;
+            border: 3px solid white;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            position: relative;
+            animation: rotate-phone 2s ease-in-out infinite;
+        }
+        .phone-icon::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        @keyframes rotate-phone {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(-90deg); }
+        }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
 
-<div id="result" class="flex items-center justify-center min-h-screen bg-gray-50">
-    <!-- 初期ロード演出 -->
+<!-- 横向き促進オーバーレイ -->
+<div id="orientation-overlay">
+    <div class="phone-icon"></div>
+    <h2 class="text-xl font-bold mb-2">画面を横にしてください</h2>
+    <p class="text-gray-300">このゲームは端末を横に持ってプレイします。</p>
+</div>
+
+<div id="result" class="flex items-center justify-center">
     <div class="text-center bg-white p-8 rounded-xl shadow-xl border">
         <div class="spinner mx-auto mb-6"></div>
         <h1 class="text-xl font-bold text-gray-800 mb-2">認証を確認中です</h1>
@@ -52,7 +124,7 @@
 
 <script>
     function checkTokenAfterDelay() {
-        const delay = Math.floor(Math.random() * 4000) + 2000; // 2〜6秒
+        const delay = Math.floor(Math.random() * 4000) + 2000;
 
         setTimeout(() => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -74,19 +146,17 @@
             }
 
             if (isAuthenticated) {
-                document.body.className = 'p-0 m-0 overflow-hidden bg-white';
-                resultDiv.className = 'w-screen h-screen';
+                document.body.style.backgroundColor = '#ffffff';
+                resultDiv.className = 'w-full h-full';
                 resultDiv.innerHTML = `
                     <iframe
                         src="https://riverteacher.github.io/ohhhhhn/koyama/game"
                         title="Koyama Game"
-                        class="w-full h-full"
-                        frameborder="0"
                         allowfullscreen>
                     </iframe>
                 `;
             } else {
-                resultDiv.className = 'flex items-center justify-center min-h-screen bg-gray-50 p-4';
+                resultDiv.className = 'flex items-center justify-center h-full w-full bg-gray-50 p-4';
                 resultDiv.innerHTML = `
                     <div class="text-center p-8 bg-white shadow-2xl rounded-xl max-w-md w-full border-t-4 border-red-500">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-600 mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -99,7 +169,6 @@
                         <div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 font-mono">
                             <p>リンクを再生成してもう一度お試しください</p>
                         </div>
-                        
                     </div>
                 `;
             }
@@ -107,7 +176,16 @@
     }
 
     window.onload = checkTokenAfterDelay;
+
+    // スクロール防止
+    document.addEventListener('touchmove', function(e) {
+        // 認証失敗時などで操作が必要な場合に備え、iframe表示中のみ強く制限
+        if(document.querySelector('iframe')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 </script>
 
 </body>
 </html>
+
