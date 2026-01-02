@@ -179,15 +179,17 @@
     </div>
   </div>
 
-  <div id="rotateOverlay" class="rotate-overlay">
-    <div class="rotate-box">
-      <h2>画面を横にしてください</h2>
-      <p>縦画面ではプレイできません。<br>端末を横向きにしてからスタートしてください。</p>
-    </div>
+  <div id="rotateOverlay" class="overlay">
+  <div class="overlay-box">
+    <p>画面を横向きにしてください</p>
+    <button id="closeOverlayBtn" class="close-btn">閉じる</button>
+  </div>
+</div>
   </div>
 
   <script>
     const startBtn = document.getElementById('startBtn');
+const closeOverlayBtn = document.getElementById('closeOverlayBtn');
     const rotateOverlay = document.getElementById('rotateOverlay');
 
     // ===== LINE / LIFF 判定（UAベース） =====
@@ -209,9 +211,21 @@
     }
 
     startBtn.addEventListener('click', () => {
-      const isPortrait = window.innerHeight > window.innerWidth;
-      if (isPortrait) {
-        rotateOverlay.classList.add('active');
+  const isPortrait = window.innerHeight > window.innerWidth;
+  if (isPortrait) {
+    rotateOverlay.classList.add('active');
+    return;
+  }
+
+  document.body.classList.add('fade-out');
+  setTimeout(() => {
+    location.href = 'https://riverteacher.github.io/ohhhhhn/koyama/game/index.html';
+  }, 800);
+});
+
+closeOverlayBtn.addEventListener('click', () => {
+  rotateOverlay.classList.remove('active');
+});
         return;
       }
 
