@@ -104,6 +104,21 @@
       box-shadow: 0 6px 12px rgba(142,197,255,0.5) inset;
     }
 
+    /* LINEボタンのスタイル */
+    .line-btn-container {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .line-btn-container img {
+      transition: opacity 0.2s ease;
+    }
+
+    .line-btn-container a:hover img {
+      opacity: 0.8;
+    }
+
     .notice {
       margin-top: 24px;
       font-size: 13px;
@@ -179,6 +194,13 @@
 
       <button id="startBtn" class="start-btn">スタート</button>
 
+      <!-- 友だち追加ボタン -->
+      <div class="line-btn-container">
+        <a href="https://lin.ee/qq3FBI2">
+          <img src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36" border="0">
+        </a>
+      </div>
+
       <div class="notice">
         <div class="notice-title">注意事項</div>
         <ul style="padding-left: 18px; margin: 6px 0 0;">
@@ -234,12 +256,10 @@
       throw new Error('Not LINE LIFF');
     }
 
-    // 画面の向きをチェックし、横画面になったらオーバーレイを隠して遷移を試みる
     function checkOrientation() {
       const isPortrait = window.innerHeight > window.innerWidth;
       if (!isPortrait && rotateOverlay.classList.contains('active')) {
         rotateOverlay.classList.remove('active');
-        // 横画面になったら自動で開始する
         startGame();
       }
     }
@@ -253,12 +273,9 @@
 
     startBtn.addEventListener('click', () => {
       const isPortrait = window.innerHeight > window.innerWidth;
-      
       if (isPortrait) {
-        // 縦画面の場合はポップアップを表示し、リダイレクトしない
         rotateOverlay.classList.add('active');
       } else {
-        // 横画面の場合はそのまま開始
         startGame();
       }
     });
