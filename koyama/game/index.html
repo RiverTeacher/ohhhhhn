@@ -116,6 +116,58 @@
         }
         @keyframes flash { from { opacity: 1; } to { opacity: 0.2; } }
         
+        /* ステージアップ通知用 */
+        #stageNotification {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #ff6600;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+        #stageNotification.show {
+            opacity: 1;
+            animation: stageUp 0.5s ease-out;
+        }
+        @keyframes stageUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        /* ステージカウントダウン表示 */
+        #stageCountdown {
+            position: absolute;
+            top: 40px;
+            left: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #87ceeb;
+            text-shadow: 1px 1px 0 #000;
+            pointer-events: none;
+            z-index: 0;
+        }
+        #stageCountdown .countdown-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        #stageCountdown .countdown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+        
         /* BGMコントロール */
         #bgmControl {
             position: absolute;
@@ -181,6 +233,13 @@
     <!-- Game Canvas -->
     <div class="w-full h-full flex flex-col items-center justify-center relative">
         <div id="scoreBoard" class="absolute top-2 left-4 text-xl font-bold text-shadow z-0 pointer-events-none">SCORE: 0</div>
+        <!-- ステージカウントダウン -->
+        <div id="stageCountdown">
+            次のステージまで: <span id="countdownTime">20</span>秒
+            <div class="countdown-bar">
+                <div class="countdown-fill" id="countdownFill" style="width: 100%"></div>
+            </div>
+        </div>
         <!-- SAVE UI -->
         <div id="saveState" class="absolute top-2 left-72 text-sm font-bold text-yellow-300">SAVE: NONE</div>
         <button id="saveBtn" class="absolute top-10 left-72 px-2 py-1 bg-green-600 text-white rounded text-sm pointer-events-auto cursor-pointer">中断する</button>
@@ -194,6 +253,9 @@
         
         <!-- ボス警告テキスト -->
         <div id="bossWarning">エリアボスが出現！<br><span style="font-size:2rem">ゴースト小山を討伐せよ！！</span></div>
+        
+        <!-- ステージアップ通知 -->
+        <div id="stageNotification">STAGE UP!</div>
 
         <canvas id="gameCanvas"></canvas>
     </div>
@@ -268,7 +330,8 @@
                 'https://riverteacher.github.io/ohhhhhn/koyama/game/killed2.mp3'
             ],
             BOSS_SUMMON: 'https://riverteacher.github.io/ohhhhhn/koyama/game/警告音2.mp3',
-            GAME_OVER: 'https://riverteacher.github.io/ohhhhhn/koyama/game/dead.mp3'
+            GAME_OVER: 'https://riverteacher.github.io/ohhhhhn/koyama/game/dead.mp3',
+            STAGE_UP: 'https://riverteacher.github.io/ohhhhhn/koyama/game/beam.wav' // ステージアップ音（ビーム音を流用）
         };
 
         // BGM URLの定義を追加
@@ -349,7 +412,8 @@
         let isBossBGM = false;
         let isMuted = false;
         
-        let currentStage = 1; 
+        let currentStage = 1;
+        let previousStage = 1; // ステージアップ検知用
         
         // Floor Boss State
         let isFloorBossActive = false; // 現在フロアボス戦中か
@@ -465,6 +529,58 @@
                         playBGM('normal');
                     }
                 }
+            }
+        }
+
+        // --- ステージアップ通知関数 ---
+        function showStageNotification(stage) {
+            const notification = document.getElementById('stageNotification');
+            notification.innerHTML = `STAGE ${stage}<br><span style="font-size:1.5rem">難易度上昇！</span>`;
+            notification.classList.add('show');
+            
+            // 効果音再生（オプション）
+            // playSound('STAGE_UP');
+            
+            // 2秒後に非表示
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // --- ステージカウントダウン更新関数 ---
+        function updateStageCountdown() {
+            const countdownEl = document.getElementById('stageCountdown');
+            if (!countdownEl) return;
+            
+            // ボス戦中はカウントダウン非表示
+            if (isFloorBossActive) {
+                countdownEl.innerHTML = '<span style="color: #ff6666;">⚔️ ボス戦中！</span>';
+                return;
+            }
+            
+            // 残りフレーム数を計算
+            const framesInCurrentStage = frameCount % GAME_CONFIG.STAGE_FRAME_DURATION;
+            const remainingFrames = GAME_CONFIG.STAGE_FRAME_DURATION - framesInCurrentStage;
+            const remainingSeconds = Math.ceil(remainingFrames / 60);
+            
+            // 進捗率を計算（0〜100%）
+            const progress = (framesInCurrentStage / GAME_CONFIG.STAGE_FRAME_DURATION) * 100;
+            
+            // 次がボスステージかどうかをチェック
+            const nextStage = currentStage + 1;
+            const isNextBoss = nextStage % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0;
+            
+            // 表示更新（常にinnerHTMLで更新して参照消失問題を回避）
+            if (isNextBoss) {
+                countdownEl.innerHTML = `<span style="color: #ff4444;">⚠️ ボスまで: ${remainingSeconds}秒</span>
+                    <div class="countdown-bar">
+                        <div class="countdown-fill" style="width: ${100 - progress}%; background: linear-gradient(90deg, #ff0000, #ff6600);"></div>
+                    </div>`;
+            } else {
+                countdownEl.innerHTML = `次のステージまで: ${remainingSeconds}秒
+                    <div class="countdown-bar">
+                        <div class="countdown-fill" style="width: ${100 - progress}%;"></div>
+                    </div>`;
             }
         }
 
@@ -779,6 +895,7 @@
                     score += 500 * (floorBossCount + 1);
                     isFloorBossActive = false; // ボスモード終了
                     currentStage++; // ステージを進める
+                    previousStage = currentStage; // ステージアップ通知をスキップ
                     
                     // ボス撃破演出
                     for(let i=0; i<30; i++) {
@@ -1226,6 +1343,15 @@
                     currentStage++;
                 }
             }
+            
+            // ステージアップ通知チェック
+            if (currentStage > previousStage) {
+                showStageNotification(currentStage);
+                previousStage = currentStage;
+            }
+            
+            // ステージカウントダウン更新
+            updateStageCountdown();
 
             // Player Physics
             if (keys.ArrowLeft || touchInput.left) {
@@ -1609,6 +1735,7 @@
                 score = Number(data.score) || 0;
                 player.hp = Number(data.playerHP) || player.hp;
                 currentStage = Number(data.stage) || 1;
+                previousStage = currentStage; // ロード時に同期
                 player.punchDamage = Number(data.punch) || 1;
                 player.beamMultiplier = Number(data.beamMulti) || 1;
                 floorBossCount = Number(data.bossCount) || 0;
