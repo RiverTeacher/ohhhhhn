@@ -249,6 +249,38 @@
             0% { opacity: 0.8; }
             100% { opacity: 0; }
         }
+        
+        /* FPS表示 */
+        #fpsCounter {
+            position: absolute;
+            bottom: 26vh;
+            left: 10px;
+            font-size: 12px;
+            color: #00ff00;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 20;
+            font-family: monospace;
+        }
+        
+        /* 低スペックモードトグル */
+        .lite-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        .lite-mode-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .lite-mode-toggle label {
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +292,9 @@
     <div id="bgmControl">
         <button id="bgmToggle" title="BGM ON/OFF">♪</button>
     </div>
+
+    <!-- FPS表示 -->
+    <div id="fpsCounter">FPS: --</div>
 
     <!-- Game Canvas -->
     <div class="w-full h-full flex flex-col items-center justify-center relative">
@@ -326,8 +361,15 @@
             <span class="text-red-400 font-bold">9ステージごとに強力なフロアボスが出現！</span><br>
             フロアボスは浮遊して攻撃を回避してくるぞ！
         </p>
+        
+        <!-- 低スペックモードトグル -->
+        <div class="lite-mode-toggle">
+            <input type="checkbox" id="liteModeCheck">
+            <label for="liteModeCheck">🔧 軽量モード（低スペックPC向け：演出を軽減）</label>
+        </div>
+        
         <!-- 横並びボタンコンテナ -->
-        <div class="start-buttons-container">
+        <div class="start-buttons-container" style="margin-top: 20px;">
             <button id="startBtn" class="px-8 py-4 bg-green-600 text-white rounded-lg text-2xl font-bold hover:bg-green-500 shadow-lg transition w-full md:w-auto">ゲーム開始</button>
             <button id="loadBtn" class="load-btn px-8 py-4 bg-blue-600 text-white rounded-lg text-2xl font-bold hover:bg-blue-500 shadow-lg transition w-full md:w-auto" disabled>セーブデータをロード</button>
         </div>
@@ -436,6 +478,14 @@
         let isBossBGM = false;
         let isMuted = false;
         
+        // 軽量モード
+        let liteMode = false;
+        
+        // FPS計測
+        let fps = 0;
+        let fpsFrameCount = 0;
+        let fpsLastTime = performance.now();
+        
         let currentStage = 1;
         let previousStage = 1;
         
@@ -480,8 +530,31 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffers = {};
 
+        // --- FPS計測関数 ---
+        function updateFPS() {
+            fpsFrameCount++;
+            const now = performance.now();
+            const elapsed = now - fpsLastTime;
+            
+            if (elapsed >= 1000) {
+                fps = Math.round((fpsFrameCount * 1000) / elapsed);
+                fpsFrameCount = 0;
+                fpsLastTime = now;
+                
+                const fpsEl = document.getElementById('fpsCounter');
+                if (fpsEl) {
+                    fpsEl.textContent = `FPS: ${fps}`;
+                    fpsEl.style.color = fps >= 50 ? '#00ff00' : (fps >= 30 ? '#ffff00' : '#ff0000');
+                }
+            }
+        }
+
         // --- Screen Shake Function ---
         function triggerScreenShake(intensity, duration) {
+            if (liteMode) {
+                intensity *= 0.5;
+                duration = Math.floor(duration * 0.5);
+            }
             screenShake.intensity = intensity;
             screenShake.duration = duration;
         }
@@ -502,7 +575,7 @@
         function triggerDamageFlash() {
             const overlay = document.getElementById('damageOverlay');
             overlay.classList.remove('active');
-            void overlay.offsetWidth; // Trigger reflow
+            void overlay.offsetWidth;
             overlay.classList.add('active');
         }
 
@@ -701,10 +774,12 @@
             
             document.getElementById('bgmToggle').addEventListener('click', toggleMute);
             
-            document.getElementById('startBtn').addEventListener('click', () => {
+            const startGame = () => {
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
+                
+                liteMode = document.getElementById('liteModeCheck').checked;
 
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
@@ -714,7 +789,9 @@
                 }
                 
                 gameLoop();
-            });
+            };
+            
+            document.getElementById('startBtn').addEventListener('click', startGame);
         }
 
         // Sound Functions
@@ -791,7 +868,9 @@
                 player.vy = -GAME_CONFIG.JUMP_FORCE * 0.8; 
                 player.jumps--;
                 
-                for(let i=0; i<3; i++) {
+                // 軽量モードでは2段ジャンプパーティクルを減らす
+                const jumpParticles = liteMode ? 1 : 3;
+                for(let i=0; i<jumpParticles; i++) {
                     particles.push({
                         type: 'pixel',
                         x: player.x + player.w/2, y: player.y + player.h,
@@ -802,91 +881,92 @@
             }
         }
 
-        // --- Enhanced Punch Effect ---
+        // --- Optimized Punch Effect ---
         function createPunchEffect(x, y, facing) {
-            // Impact burst particles
-            for(let i = 0; i < 12; i++) {
-                const angle = (Math.PI / 6) * (i - 6) + (facing === 1 ? 0 : Math.PI);
-                const speed = 4 + Math.random() * 6;
+            if (liteMode) {
+                // 軽量モード: シンプルなフラッシュのみ
                 particles.push({
-                    type: 'punchSpark',
+                    type: 'flash',
                     x: x,
                     y: y,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    life: 15 + Math.random() * 10,
-                    maxLife: 25,
-                    color: `hsl(${40 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
-                    size: 3 + Math.random() * 4
+                    radius: 20,
+                    life: 6,
+                    maxLife: 6,
+                    color: 'yellow'
+                });
+            } else {
+                // 通常モード: 軽量化されたパンチエフェクト
+                // スパーク4つのみ（元は12）
+                for(let i = 0; i < 4; i++) {
+                    const angle = (Math.PI / 3) * (i - 2) + (facing === 1 ? 0 : Math.PI);
+                    const speed = 5 + Math.random() * 3;
+                    particles.push({
+                        type: 'punchSpark',
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 10,
+                        maxLife: 10,
+                        color: '#ffcc00',
+                        size: 3
+                    });
+                }
+                
+                // フラッシュ
+                particles.push({
+                    type: 'flash',
+                    x: x,
+                    y: y,
+                    radius: 25,
+                    life: 6,
+                    maxLife: 6,
+                    color: 'white'
                 });
             }
-            
-            // Shockwave ring
-            particles.push({
-                type: 'shockwave',
-                x: x,
-                y: y,
-                radius: 5,
-                maxRadius: 50,
-                life: 15,
-                maxLife: 15,
-                color: 'rgba(255, 200, 50, 0.8)'
-            });
-            
-            // Impact flash
-            particles.push({
-                type: 'flash',
-                x: x,
-                y: y,
-                radius: 30,
-                life: 8,
-                maxLife: 8,
-                color: 'white'
-            });
         }
 
-        // --- Enhanced Beam Effect ---
+        // --- Optimized Beam Effect ---
         function createBeamEffect(startX, y, direction, width) {
-            // Main beam particles along the path
-            const particleCount = 30;
-            for(let i = 0; i < particleCount; i++) {
-                const px = direction === 1 ? startX + (width / particleCount) * i : startX - (width / particleCount) * i;
+            if (liteMode) {
+                // 軽量モード: マズルフラッシュのみ
                 particles.push({
-                    type: 'beamParticle',
-                    x: px + (Math.random() - 0.5) * 20,
-                    y: y + (Math.random() - 0.5) * 30,
-                    vx: (Math.random() - 0.5) * 3,
-                    vy: (Math.random() - 0.5) * 5 - 2,
-                    life: 20 + Math.random() * 20,
-                    maxLife: 40,
-                    color: Math.random() > 0.5 ? '#00ffff' : '#ffffff',
-                    size: 2 + Math.random() * 4
+                    type: 'muzzleFlash',
+                    x: startX,
+                    y: y,
+                    life: 8,
+                    maxLife: 8,
+                    facing: direction
+                });
+            } else {
+                // 通常モード: 軽量化されたビームエフェクト
+                // パーティクル10個（元は30）
+                const particleCount = 10;
+                for(let i = 0; i < particleCount; i++) {
+                    const px = direction === 1 ? startX + (width / particleCount) * i : startX - (width / particleCount) * i;
+                    particles.push({
+                        type: 'beamParticle',
+                        x: px,
+                        y: y + (Math.random() - 0.5) * 20,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 3,
+                        life: 15,
+                        maxLife: 15,
+                        color: Math.random() > 0.5 ? '#00ffff' : '#ffffff',
+                        size: 2 + Math.random() * 2
+                    });
+                }
+                
+                // マズルフラッシュ
+                particles.push({
+                    type: 'muzzleFlash',
+                    x: startX,
+                    y: y,
+                    life: 10,
+                    maxLife: 10,
+                    facing: direction
                 });
             }
-            
-            // Electric sparks
-            for(let i = 0; i < 15; i++) {
-                particles.push({
-                    type: 'electric',
-                    x: startX + (Math.random() * width * direction),
-                    y: y + (Math.random() - 0.5) * 40,
-                    targetX: startX + (Math.random() * width * direction),
-                    targetY: y + (Math.random() - 0.5) * 40,
-                    life: 10 + Math.random() * 10,
-                    maxLife: 20,
-                    color: '#00ffff'
-                });
-            }
-            
-            // Muzzle flash
-            particles.push({
-                type: 'muzzleFlash',
-                x: startX,
-                y: y,
-                life: 12,
-                maxLife: 12,
-                facing: direction
-            });
         }
 
         // --- Player Actions ---
@@ -920,11 +1000,10 @@
                 }
             });
             
-            // Create punch effect
             createPunchEffect(punchCenterX, player.y + 30, player.facing);
             
             if (hitAny) {
-                triggerScreenShake(4, 8);
+                triggerScreenShake(3, 5);
             }
         }
 
@@ -938,7 +1017,6 @@
             let baseDamage = GAME_CONFIG.BASE_BEAM_DMG + (player.punchDamage * 2);
             const finalBeamDamage = baseDamage * player.beamMultiplier;
 
-            let hitCount = 0;
             enemies.forEach(enemy => {
                 if (enemy.type === 'floor_boss' && enemy.isFloating) {
                     return;
@@ -950,7 +1028,6 @@
                 
                 if (hit) {
                     hitEnemy(enemy, finalBeamDamage);
-                    hitCount++;
                 }
             });
 
@@ -961,7 +1038,6 @@
             }
             player.beamMultiplier = 1;
 
-            // Enhanced beam particle
             const beamStartX = player.facing === 1 ? player.x + player.w : player.x;
             const beamWidth = player.facing === 1 ? canvas.width - player.x : player.x;
             
@@ -971,17 +1047,15 @@
                 y: player.y + player.h/2 - 15,
                 w: player.facing === 1 ? canvas.width - player.x : player.x,
                 h: 30,
-                life: 20,
-                maxLife: 20,
+                life: 15,
+                maxLife: 15,
                 color: '#00ffff',
                 facing: player.facing
             });
             
-            // Create beam effects
             createBeamEffect(beamStartX, player.y + player.h/2, player.facing, beamWidth);
             
-            // Screen shake on beam
-            triggerScreenShake(6, 10);
+            triggerScreenShake(4, 8);
         }
         
         function applyHealEffect() {
@@ -1030,51 +1104,53 @@
                     currentStage++;
                     previousStage = currentStage;
                     
-                    // Epic boss death effect
-                    triggerScreenShake(15, 30);
-                    for(let i=0; i<50; i++) {
-                        const angle = (Math.PI * 2 / 50) * i;
-                        const speed = 5 + Math.random() * 15;
+                    // ボス撃破エフェクト（軽量化）
+                    triggerScreenShake(12, 20);
+                    const deathParticles = liteMode ? 15 : 30;
+                    for(let i=0; i<deathParticles; i++) {
+                        const angle = (Math.PI * 2 / deathParticles) * i;
+                        const speed = 5 + Math.random() * 10;
                         particles.push({
                             type: 'bossDeathParticle',
                             x: enemy.x + enemy.w/2,
                             y: enemy.y + enemy.h/2,
                             vx: Math.cos(angle) * speed,
                             vy: Math.sin(angle) * speed,
-                            life: 60 + Math.random() * 30,
-                            maxLife: 90,
-                            color: `hsl(${280 + Math.random() * 60}, 100%, ${50 + Math.random() * 30}%)`,
-                            size: 5 + Math.random() * 10
+                            life: 40,
+                            maxLife: 40,
+                            color: `hsl(${280 + Math.random() * 60}, 100%, 60%)`,
+                            size: 4 + Math.random() * 6
                         });
                     }
                     
-                    // Explosion rings
-                    for(let i = 0; i < 5; i++) {
-                        setTimeout(() => {
-                            particles.push({
-                                type: 'explosionRing',
-                                x: enemy.x + enemy.w/2,
-                                y: enemy.y + enemy.h/2,
-                                radius: 10,
-                                maxRadius: 200 + i * 30,
-                                life: 30,
-                                maxLife: 30,
-                                color: i % 2 === 0 ? 'purple' : 'magenta'
-                            });
-                        }, i * 100);
+                    // 爆発リング（軽量モードでは1つ）
+                    const ringCount = liteMode ? 1 : 3;
+                    for(let i = 0; i < ringCount; i++) {
+                        particles.push({
+                            type: 'explosionRing',
+                            x: enemy.x + enemy.w/2,
+                            y: enemy.y + enemy.h/2,
+                            radius: 10,
+                            maxRadius: 150 + i * 30,
+                            life: 20,
+                            maxLife: 20,
+                            color: 'purple'
+                        });
                     }
                 } else {
                     score += enemy.isBoss ? 100 : (enemy.type === 'range' ? 30 : 10); 
                 }
                 
+                // 死亡エフェクト（軽量化）
                 const particleColor = enemy.type === 'heal' ? 'pink' : (enemy.type === 'range' ? 'blue' : 'red');
                 if (enemy.type !== 'floor_boss') {
-                    for(let i=0; i<8; i++) {
+                    const deathParticles = liteMode ? 3 : 6;
+                    for(let i=0; i<deathParticles; i++) {
                         particles.push({
                             type: 'pixel',
                             x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
-                            vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
-                            life: 25, color: particleColor
+                            vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+                            life: 20, color: particleColor
                         });
                     }
                 }
@@ -1176,28 +1252,29 @@
                 playBGM('boss');
             }
             
-            // Boss appearance effects
-            triggerScreenShake(10, 60);
+            // ボス出現エフェクト（軽量化）
+            triggerScreenShake(8, 30);
             
-            // Dark flash effect
+            // フラッシュエフェクト
             particles.push({
                 type: 'bossAppearFlash',
-                life: 30,
-                maxLife: 30
+                life: 20,
+                maxLife: 20
             });
             
-            // Warning particles
-            for(let i = 0; i < 30; i++) {
+            // 出現パーティクル（軽量化: 30→8）
+            const appearParticles = liteMode ? 4 : 8;
+            for(let i = 0; i < appearParticles; i++) {
                 particles.push({
                     type: 'bossAppearParticle',
-                    x: canvas.width - 100 + (Math.random() - 0.5) * 100,
-                    y: GAME_CONFIG.GROUND_Y - 75 + (Math.random() - 0.5) * 150,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: -Math.random() * 5,
-                    life: 60 + Math.random() * 60,
-                    maxLife: 120,
-                    color: `hsl(${Math.random() * 60}, 100%, 50%)`,
-                    size: 3 + Math.random() * 5
+                    x: canvas.width - 100 + (Math.random() - 0.5) * 80,
+                    y: GAME_CONFIG.GROUND_Y - 75 + (Math.random() - 0.5) * 100,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: -Math.random() * 4,
+                    life: 40,
+                    maxLife: 40,
+                    color: `hsl(${280 + Math.random() * 40}, 100%, 60%)`,
+                    size: 4 + Math.random() * 4
                 });
             }
             
@@ -1235,25 +1312,25 @@
 
         // --- Floor Boss Logic ---
         function updateFloorBoss(e) {
-            // Entrance animation
             e.appearanceFrame = (e.appearanceFrame || 0) + 1;
             
             const entryPositionX = canvas.width - 200;
             if (e.x > entryPositionX) {
                 e.x -= 2;
                 
-                // Entry particles
-                if (frameCount % 3 === 0) {
+                // 入場トレイル（軽量モードでは間隔を広げる）
+                const trailInterval = liteMode ? 6 : 3;
+                if (frameCount % trailInterval === 0) {
                     particles.push({
                         type: 'bossTrail',
                         x: e.x + e.w,
                         y: e.y + e.h / 2 + (Math.random() - 0.5) * e.h,
                         vx: 2,
                         vy: (Math.random() - 0.5) * 2,
-                        life: 20,
-                        maxLife: 20,
+                        life: 15,
+                        maxLife: 15,
                         color: 'purple',
-                        size: 5 + Math.random() * 5
+                        size: 4
                     });
                 }
                 return;
@@ -1269,18 +1346,19 @@
                     e.isFloating = true;
                     e.targetY = 50;
                     
-                    // Float start effect
-                    for(let i = 0; i < 10; i++) {
+                    // 浮遊開始エフェクト（軽量化）
+                    const floatParticles = liteMode ? 3 : 6;
+                    for(let i = 0; i < floatParticles; i++) {
                         particles.push({
                             type: 'floatParticle',
                             x: e.x + e.w/2 + (Math.random() - 0.5) * e.w,
                             y: e.y + e.h,
-                            vx: (Math.random() - 0.5) * 3,
-                            vy: Math.random() * 3 + 2,
-                            life: 30,
-                            maxLife: 30,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: Math.random() * 2 + 1,
+                            life: 20,
+                            maxLife: 20,
                             color: 'rgba(150, 0, 255, 0.8)',
-                            size: 4
+                            size: 3
                         });
                     }
                 }
@@ -1331,23 +1409,23 @@
                         e.targetX = player.x + player.w/2;
                     }
                     
-                    // Warning effect particles
-                    triggerScreenShake(3, 30);
+                    triggerScreenShake(2, 20);
                 }
             } else if (e.attackState === 'warning') {
-                // Charging particles
-                if (frameCount % 5 === 0) {
+                // チャージパーティクル（軽量化）
+                const chargeInterval = liteMode ? 10 : 5;
+                if (frameCount % chargeInterval === 0) {
                     const targetX = e.attackType === 'beam' ? e.x : e.targetX;
                     const targetY = e.attackType === 'ceilingBeam' ? 0 : GAME_CONFIG.GROUND_Y - 20;
                     
                     particles.push({
                         type: 'chargeParticle',
-                        x: targetX + (Math.random() - 0.5) * 100,
-                        y: targetY + (Math.random() - 0.5) * 50,
+                        x: targetX + (Math.random() - 0.5) * 80,
+                        y: targetY + (Math.random() - 0.5) * 40,
                         targetX: targetX,
                         targetY: targetY,
-                        life: 20,
-                        maxLife: 20,
+                        life: 15,
+                        maxLife: 15,
                         color: e.attackType === 'beam' ? 'purple' : (e.attackType === 'area' ? 'orange' : 'red')
                     });
                 }
@@ -1356,10 +1434,9 @@
                     e.attackState = 'active';
                     e.attackTimer = 0;
                     
-                    triggerScreenShake(8, 15);
+                    triggerScreenShake(6, 12);
                     
                     if (e.attackType === 'beam') {
-                        // Enhanced boss beam
                         projectiles.push({
                             type: 'bossBeam',
                             x: canvas.width,
@@ -1373,18 +1450,19 @@
                             spawnTime: frameCount
                         });
                         
-                        // Beam trail particles
-                        for(let i = 0; i < 20; i++) {
+                        // ビームパーティクル（軽量化）
+                        const beamParticles = liteMode ? 5 : 12;
+                        for(let i = 0; i < beamParticles; i++) {
                             particles.push({
                                 type: 'bossBeamParticle',
                                 x: canvas.width,
-                                y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2 + (Math.random() - 0.5) * 60,
-                                vx: -15 - Math.random() * 10,
-                                vy: (Math.random() - 0.5) * 5,
-                                life: 30 + Math.random() * 20,
-                                maxLife: 50,
-                                color: `hsl(${280 + Math.random() * 40}, 100%, ${50 + Math.random() * 30}%)`,
-                                size: 3 + Math.random() * 5
+                                y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2 + (Math.random() - 0.5) * 50,
+                                vx: -12 - Math.random() * 8,
+                                vy: (Math.random() - 0.5) * 4,
+                                life: 25,
+                                maxLife: 25,
+                                color: `hsl(${280 + Math.random() * 40}, 100%, 60%)`,
+                                size: 3 + Math.random() * 3
                             });
                         }
                     } else if (e.attackType === 'area') {
@@ -1398,20 +1476,21 @@
                             spawnTime: frameCount
                         });
                         
-                        // Explosion particles
-                        for(let i = 0; i < 25; i++) {
+                        // 爆発パーティクル（軽量化）
+                        const explosionParticles = liteMode ? 8 : 15;
+                        for(let i = 0; i < explosionParticles; i++) {
                             const angle = Math.random() * Math.PI;
-                            const speed = 3 + Math.random() * 8;
+                            const speed = 3 + Math.random() * 6;
                             particles.push({
                                 type: 'explosionParticle',
                                 x: e.targetX,
                                 y: GAME_CONFIG.GROUND_Y - 20,
                                 vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
                                 vy: -Math.sin(angle) * speed,
-                                life: 30 + Math.random() * 20,
-                                maxLife: 50,
-                                color: `hsl(${30 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
-                                size: 4 + Math.random() * 6
+                                life: 25,
+                                maxLife: 25,
+                                color: `hsl(${30 + Math.random() * 20}, 100%, 60%)`,
+                                size: 3 + Math.random() * 4
                             });
                         }
                     } else if (e.attackType === 'ceilingBeam') {
@@ -1428,18 +1507,19 @@
                             spawnTime: frameCount
                         });
                         
-                        // Ceiling beam particles
-                        for(let i = 0; i < 15; i++) {
+                        // 天井ビームパーティクル（軽量化）
+                        const ceilingParticles = liteMode ? 5 : 10;
+                        for(let i = 0; i < ceilingParticles; i++) {
                             particles.push({
                                 type: 'ceilingBeamParticle',
-                                x: e.targetX + (Math.random() - 0.5) * 40,
+                                x: e.targetX + (Math.random() - 0.5) * 30,
                                 y: Math.random() * GAME_CONFIG.GROUND_Y,
-                                vx: (Math.random() - 0.5) * 3,
-                                vy: 5 + Math.random() * 5,
-                                life: 20 + Math.random() * 15,
-                                maxLife: 35,
-                                color: `hsl(${Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
-                                size: 3 + Math.random() * 4
+                                vx: (Math.random() - 0.5) * 2,
+                                vy: 4 + Math.random() * 4,
+                                life: 15,
+                                maxLife: 15,
+                                color: `hsl(${Math.random() * 30}, 100%, 60%)`,
+                                size: 2 + Math.random() * 3
                             });
                         }
                     }
@@ -1470,14 +1550,15 @@
                     life: 180
                 });
                 
-                // Muzzle effect for range enemy
-                for(let i = 0; i < 5; i++) {
+                // マズルエフェクト（軽量化）
+                const muzzleParticles = liteMode ? 2 : 4;
+                for(let i = 0; i < muzzleParticles; i++) {
                     particles.push({
                         type: 'pixel',
                         x: startX, y: startY,
-                        vx: dir * (2 + Math.random() * 3),
-                        vy: (Math.random() - 0.5) * 4,
-                        life: 10,
+                        vx: dir * (2 + Math.random() * 2),
+                        vy: (Math.random() - 0.5) * 3,
+                        life: 8,
                         color: 'orange'
                     });
                 }
@@ -1504,22 +1585,22 @@
             
             playSound('DAMAGE');
             
-            // Enhanced damage effects
             triggerDamageFlash();
-            triggerScreenShake(8, 15);
+            triggerScreenShake(6, 10);
             
-            // Damage particles from player
-            for(let i = 0; i < 8; i++) {
+            // ダメージパーティクル（軽量化）
+            const damageParticles = liteMode ? 3 : 6;
+            for(let i = 0; i < damageParticles; i++) {
                 particles.push({
                     type: 'damageParticle',
                     x: player.x + player.w/2,
                     y: player.y + player.h/2,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 20,
-                    maxLife: 20,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 15,
+                    maxLife: 15,
                     color: 'red',
-                    size: 4 + Math.random() * 4
+                    size: 3 + Math.random() * 3
                 });
             }
 
@@ -1541,18 +1622,19 @@
                     p.x += p.vx;
                     p.life--;
                     
-                    // Trail particles
-                    if (frameCount % 2 === 0) {
+                    // トレイルパーティクル（軽量モードでは間隔を広げる）
+                    const trailInterval = liteMode ? 4 : 2;
+                    if (frameCount % trailInterval === 0) {
                         particles.push({
                             type: 'bossBeamTrail',
                             x: p.x,
                             y: p.y + (Math.random() - 0.5) * p.h,
                             vx: -2,
-                            vy: (Math.random() - 0.5) * 3,
-                            life: 15,
-                            maxLife: 15,
+                            vy: (Math.random() - 0.5) * 2,
+                            life: 10,
+                            maxLife: 10,
                             color: 'purple',
-                            size: 3
+                            size: 2
                         });
                     }
                     
@@ -1581,16 +1663,17 @@
                 } else if (p.type === 'ceilingBeam') {
                     p.life--;
                     
-                    // Beam particles
-                    if (frameCount % 2 === 0) {
+                    // ビームパーティクル（軽量モードでは間隔を広げる）
+                    const trailInterval = liteMode ? 4 : 2;
+                    if (frameCount % trailInterval === 0) {
                         particles.push({
                             type: 'ceilingBeamTrail',
-                            x: p.x + p.w/2 + (Math.random() - 0.5) * 20,
+                            x: p.x + p.w/2 + (Math.random() - 0.5) * 15,
                             y: Math.random() * p.h,
-                            vx: (Math.random() - 0.5) * 2,
-                            vy: 3,
-                            life: 10,
-                            maxLife: 10,
+                            vx: (Math.random() - 0.5) * 1.5,
+                            vy: 2,
+                            life: 8,
+                            maxLife: 8,
                             color: 'red',
                             size: 2
                         });
@@ -1606,14 +1689,15 @@
                     p.x += p.vx;
                     p.life--;
                     
-                    // Trail
-                    if (frameCount % 3 === 0) {
+                    // トレイル（軽量モードでは間隔を広げる）
+                    const trailInterval = liteMode ? 6 : 3;
+                    if (frameCount % trailInterval === 0) {
                         particles.push({
                             type: 'pixel',
                             x: p.x, y: p.y,
                             vx: -p.vx * 0.2,
-                            vy: (Math.random() - 0.5) * 2,
-                            life: 10,
+                            vy: (Math.random() - 0.5) * 1.5,
+                            life: 8,
                             color: 'yellow'
                         });
                     }
@@ -1634,15 +1718,16 @@
                             p.life = 30;
                             p.h = 50;
                             
-                            // Spike emerge effect
-                            for(let j = 0; j < 8; j++) {
+                            // スパイク出現エフェクト（軽量化）
+                            const spikeParticles = liteMode ? 3 : 6;
+                            for(let j = 0; j < spikeParticles; j++) {
                                 particles.push({
                                     type: 'pixel',
-                                    x: p.x + (Math.random() - 0.5) * 30,
+                                    x: p.x + (Math.random() - 0.5) * 25,
                                     y: GAME_CONFIG.GROUND_Y - 10,
-                                    vx: (Math.random() - 0.5) * 6,
-                                    vy: -Math.random() * 5 - 2,
-                                    life: 15,
+                                    vx: (Math.random() - 0.5) * 5,
+                                    vy: -Math.random() * 4 - 2,
+                                    life: 12,
                                     color: '#654321'
                                 });
                             }
@@ -1669,6 +1754,7 @@
 
             frameCount++;
             updateScreenShake();
+            updateFPS();
 
             if (!isFloorBossActive) {
                 if (frameCount % GAME_CONFIG.STAGE_FRAME_DURATION === 0) {
@@ -1780,7 +1866,7 @@
                    p.type === 'ceilingBeamParticle' || p.type === 'ceilingBeamTrail') { 
                     p.x += p.vx; 
                     p.y += p.vy;
-                    if (p.vy !== undefined && p.type !== 'floatParticle') p.vy += 0.1; // Gravity
+                    if (p.vy !== undefined && p.type !== 'floatParticle') p.vy += 0.1;
                 }
                 
                 if (p.type === 'shockwave' || p.type === 'explosionRing') {
@@ -1811,16 +1897,18 @@
             
             // Boss fight background effect
             if (isFloorBossActive) {
-                ctx.fillStyle = 'rgba(50, 0, 80, 0.4)';
+                ctx.fillStyle = 'rgba(50, 0, 80, 0.3)';
                 ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
                 
-                // Pulsing vignette
-                const pulseAlpha = 0.1 + Math.sin(frameCount * 0.05) * 0.05;
-                const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width * 0.7);
-                gradient.addColorStop(0, 'transparent');
-                gradient.addColorStop(1, `rgba(100, 0, 150, ${pulseAlpha})`);
-                ctx.fillStyle = gradient;
-                ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+                // 軽量モードではビネット効果を省略
+                if (!liteMode) {
+                    const pulseAlpha = 0.08 + Math.sin(frameCount * 0.05) * 0.04;
+                    const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width * 0.7);
+                    gradient.addColorStop(0, 'transparent');
+                    gradient.addColorStop(1, `rgba(100, 0, 150, ${pulseAlpha})`);
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+                }
             }
 
             ctx.fillStyle = '#654321';
@@ -1830,7 +1918,7 @@
             particles.forEach(p => {
                 if (p.type === 'bossAppearFlash') {
                     const alpha = p.life / p.maxLife;
-                    ctx.fillStyle = `rgba(100, 0, 150, ${alpha * 0.5})`;
+                    ctx.fillStyle = `rgba(100, 0, 150, ${alpha * 0.4})`;
                     ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
                 }
             });
@@ -1876,9 +1964,11 @@
                 } else if (e.type === 'floor_boss') {
                     ctx.filter = 'none';
                     
-                    // Boss glow effect
-                    ctx.shadowColor = 'purple';
-                    ctx.shadowBlur = 20 + Math.sin(frameCount * 0.1) * 10;
+                    // ボスグロー（軽量モードでは省略）
+                    if (!liteMode) {
+                        ctx.shadowColor = 'purple';
+                        ctx.shadowBlur = 15 + Math.sin(frameCount * 0.1) * 8;
+                    }
                     
                     if (e.isFloating) {
                         ctx.globalAlpha = 0.6 + Math.sin(frameCount * 0.15) * 0.2;
@@ -1892,25 +1982,14 @@
                     
                     // Attack warning effects
                     if (e.attackState === 'warning') {
-                        const warningProgress = e.attackTimer / GAME_CONFIG.BOSS_ATTACK_WARNING_FRAMES;
-                        
                         if (e.attackType === 'beam') {
-                            // Horizontal beam warning with pulsing
                             const beamY_center = GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2;
-                            const pulseAlpha = 0.3 + Math.sin(frameCount * 0.3) * 0.2;
+                            const pulseAlpha = 0.25 + Math.sin(frameCount * 0.3) * 0.15;
                             
-                            // Gradient warning
-                            const gradient = ctx.createLinearGradient(0, beamY_center - 30, 0, beamY_center + 30);
-                            gradient.addColorStop(0, 'transparent');
-                            gradient.addColorStop(0.3, `rgba(150, 0, 255, ${pulseAlpha})`);
-                            gradient.addColorStop(0.5, `rgba(255, 0, 255, ${pulseAlpha * 1.5})`);
-                            gradient.addColorStop(0.7, `rgba(150, 0, 255, ${pulseAlpha})`);
-                            gradient.addColorStop(1, 'transparent');
-                            ctx.fillStyle = gradient;
-                            ctx.fillRect(0, beamY_center - 40, canvas.width, 80);
+                            ctx.fillStyle = `rgba(150, 0, 255, ${pulseAlpha})`;
+                            ctx.fillRect(0, beamY_center - GAME_CONFIG.BOSS_BEAM_HEIGHT, canvas.width, GAME_CONFIG.BOSS_BEAM_HEIGHT * 2);
                             
-                            // Warning lines
-                            ctx.strokeStyle = `rgba(255, 0, 255, ${0.5 + Math.sin(frameCount * 0.5) * 0.3})`;
+                            ctx.strokeStyle = `rgba(255, 0, 255, ${0.6})`;
                             ctx.lineWidth = 2;
                             ctx.setLineDash([10, 10]);
                             ctx.beginPath();
@@ -1922,39 +2001,25 @@
                             ctx.setLineDash([]);
                             
                         } else if (e.attackType === 'area') {
-                            // Area attack warning with expanding circles
-                            const pulseSize = 30 + Math.sin(frameCount * 0.4) * 15;
+                            const pulseAlpha = 0.4 + Math.sin(frameCount * 0.4) * 0.2;
                             
-                            ctx.strokeStyle = `rgba(255, 150, 0, ${0.8})`;
-                            ctx.lineWidth = 3;
-                            ctx.beginPath();
-                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 10, 50 + pulseSize * warningProgress, 0, Math.PI, true);
-                            ctx.stroke();
-                            
-                            ctx.fillStyle = `rgba(255, 100, 0, ${0.3 + Math.sin(frameCount * 0.3) * 0.15})`;
+                            ctx.fillStyle = `rgba(255, 100, 0, ${pulseAlpha})`;
                             ctx.beginPath();
                             ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 10, 50, 0, Math.PI, true);
                             ctx.fill();
                             
-                            // Danger symbol
                             ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
                             ctx.font = 'bold 24px Arial';
                             ctx.textAlign = 'center';
                             ctx.fillText('⚠', e.targetX, GAME_CONFIG.GROUND_Y - 60);
                             
                         } else if (e.attackType === 'ceilingBeam') {
-                            // Vertical beam warning
-                            const gradient = ctx.createLinearGradient(e.targetX - 40, 0, e.targetX + 40, 0);
-                            gradient.addColorStop(0, 'transparent');
-                            gradient.addColorStop(0.3, `rgba(255, 0, 0, 0.3)`);
-                            gradient.addColorStop(0.5, `rgba(255, 100, 0, 0.5)`);
-                            gradient.addColorStop(0.7, `rgba(255, 0, 0, 0.3)`);
-                            gradient.addColorStop(1, 'transparent');
-                            ctx.fillStyle = gradient;
-                            ctx.fillRect(e.targetX - 50, 0, 100, GAME_CONFIG.GROUND_Y);
+                            const pulseAlpha = 0.3 + Math.sin(frameCount * 0.4) * 0.15;
                             
-                            // Warning dashes
-                            ctx.strokeStyle = `rgba(255, 50, 0, ${0.7 + Math.sin(frameCount * 0.4) * 0.3})`;
+                            ctx.fillStyle = `rgba(255, 50, 0, ${pulseAlpha})`;
+                            ctx.fillRect(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, 0, GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH * 2, GAME_CONFIG.GROUND_Y);
+                            
+                            ctx.strokeStyle = `rgba(255, 50, 0, 0.7)`;
                             ctx.lineWidth = 2;
                             ctx.setLineDash([15, 10]);
                             ctx.beginPath();
@@ -1987,11 +2052,7 @@
                     else if (e.type === 'range') barColor = 'blue';
                     else if (e.type === 'floor_boss') barColor = 'purple';
                     
-                    // Gradient HP bar
-                    const hpGradient = ctx.createLinearGradient(e.x, barY, e.x + e.w * (e.hp / e.maxHp), barY);
-                    hpGradient.addColorStop(0, barColor);
-                    hpGradient.addColorStop(1, e.type === 'floor_boss' ? 'magenta' : barColor);
-                    ctx.fillStyle = hpGradient;
+                    ctx.fillStyle = barColor;
                     ctx.fillRect(e.x, barY, e.w * (e.hp / e.maxHp), 5);
                 }
             });
@@ -1999,9 +2060,10 @@
             // Projectiles
             projectiles.forEach(p => {
                 if (p.type === 'shortBeam') {
-                    // Enhanced short beam with glow
-                    ctx.shadowColor = 'orange';
-                    ctx.shadowBlur = 10;
+                    if (!liteMode) {
+                        ctx.shadowColor = 'orange';
+                        ctx.shadowBlur = 8;
+                    }
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
                     ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2);
@@ -2012,120 +2074,78 @@
                         const flashAlpha = 0.5 + Math.sin(frameCount * 0.5) * 0.3;
                         ctx.fillStyle = `rgba(255, 0, 0, ${flashAlpha})`;
                         ctx.fillRect(p.x - 25, GAME_CONFIG.GROUND_Y - 8, 50, 8);
-                        
-                        // Warning cross
-                        ctx.strokeStyle = `rgba(255, 200, 0, ${flashAlpha})`;
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(p.x - 10, GAME_CONFIG.GROUND_Y - 20);
-                        ctx.lineTo(p.x + 10, GAME_CONFIG.GROUND_Y - 20);
-                        ctx.moveTo(p.x, GAME_CONFIG.GROUND_Y - 30);
-                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - 10);
-                        ctx.stroke();
                     } else if (p.state === 'active') {
-                        // Multi-spike with gradient
-                        const gradient = ctx.createLinearGradient(p.x, GAME_CONFIG.GROUND_Y, p.x, GAME_CONFIG.GROUND_Y - p.h);
-                        gradient.addColorStop(0, '#333');
-                        gradient.addColorStop(0.5, '#666');
-                        gradient.addColorStop(1, '#999');
-                        ctx.fillStyle = gradient;
-                        
-                        // Draw multiple spikes
-                        for(let s = -1; s <= 1; s++) {
-                            ctx.beginPath();
-                            ctx.moveTo(p.x - p.w/3 + s * 15, GAME_CONFIG.GROUND_Y);
-                            ctx.lineTo(p.x + p.w/3 + s * 15, GAME_CONFIG.GROUND_Y);
-                            ctx.lineTo(p.x + s * 15, GAME_CONFIG.GROUND_Y - p.h * (s === 0 ? 1 : 0.7));
-                            ctx.fill();
-                        }
+                        ctx.fillStyle = '#444';
+                        ctx.beginPath();
+                        ctx.moveTo(p.x - p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x + p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - p.h);
+                        ctx.fill();
                     }
                 } else if (p.type === 'bossBeam') {
                     if (p.life > 0) {
-                        // Multi-layered beam effect
                         const beamY = p.y;
                         
-                        // Outer glow
-                        const outerGradient = ctx.createLinearGradient(0, beamY - p.h, 0, beamY + p.h);
-                        outerGradient.addColorStop(0, 'transparent');
-                        outerGradient.addColorStop(0.3, 'rgba(150, 0, 255, 0.3)');
-                        outerGradient.addColorStop(0.5, 'rgba(200, 0, 255, 0.5)');
-                        outerGradient.addColorStop(0.7, 'rgba(150, 0, 255, 0.3)');
-                        outerGradient.addColorStop(1, 'transparent');
-                        ctx.fillStyle = outerGradient;
+                        // 外側グロー
+                        ctx.fillStyle = 'rgba(150, 0, 255, 0.3)';
                         ctx.fillRect(0, beamY - p.h, p.x, p.h * 2);
                         
-                        // Core beam
-                        ctx.shadowColor = 'magenta';
-                        ctx.shadowBlur = 20;
+                        // コアビーム
+                        if (!liteMode) {
+                            ctx.shadowColor = 'magenta';
+                            ctx.shadowBlur = 15;
+                        }
                         ctx.fillStyle = 'rgba(255, 100, 255, 0.9)';
                         ctx.fillRect(0, beamY - p.h/2, p.x, p.h);
                         
-                        // Inner bright core
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        // 内側コア
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                         ctx.fillRect(0, beamY - p.h/4, p.x, p.h/2);
                         ctx.shadowBlur = 0;
                     }
                 } else if (p.type === 'explosion') {
                     const progress = 1 - (p.life / GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES);
-                    const radius = 50 + progress * 60;
+                    const radius = 50 + progress * 50;
                     
-                    // Multi-ring explosion
-                    for(let ring = 0; ring < 3; ring++) {
-                        const ringRadius = radius - ring * 20;
-                        if (ringRadius > 0) {
-                            const alpha = (1 - progress) * (1 - ring * 0.3);
-                            const gradient = ctx.createRadialGradient(p.x, GAME_CONFIG.GROUND_Y, 0, p.x, GAME_CONFIG.GROUND_Y, ringRadius);
-                            gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
-                            gradient.addColorStop(0.5, `rgba(255, 150, 0, ${alpha * 0.8})`);
-                            gradient.addColorStop(1, `rgba(255, 50, 0, 0)`);
-                            ctx.fillStyle = gradient;
-                            ctx.beginPath();
-                            ctx.arc(p.x, GAME_CONFIG.GROUND_Y, ringRadius, Math.PI, 0, true);
-                            ctx.fill();
-                        }
-                    }
+                    const alpha = (1 - progress) * 0.8;
+                    ctx.fillStyle = `rgba(255, 150, 0, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, radius, Math.PI, 0, true);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = `rgba(255, 255, 200, ${alpha * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, radius * 0.5, Math.PI, 0, true);
+                    ctx.fill();
                 } else if (p.type === 'ceilingBeam') {
                     if (p.life > 0) {
-                        // Vertical beam with lightning effect
-                        const gradient = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
-                        gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)');
-                        gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.9)');
-                        gradient.addColorStop(1, 'rgba(255, 0, 0, 0.3)');
-                        
-                        ctx.shadowColor = 'red';
-                        ctx.shadowBlur = 30;
-                        ctx.fillStyle = gradient;
+                        if (!liteMode) {
+                            ctx.shadowColor = 'red';
+                            ctx.shadowBlur = 20;
+                        }
+                        ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
                         ctx.fillRect(p.x - 10, p.y, p.w + 20, p.h);
                         
-                        // Bright core
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                         ctx.fillRect(p.x + p.w/4, p.y, p.w/2, p.h);
                         ctx.shadowBlur = 0;
                     }
                 }
             });
 
-            // Enhanced Particles
+            // Particles
             particles.forEach(p => {
                 const alpha = p.maxLife ? p.life / p.maxLife : 1;
                 
                 if (p.type === 'beam') {
-                    // Multi-layer beam
-                    const gradient = ctx.createLinearGradient(
-                        p.facing === 1 ? p.x : p.x + p.w, p.y,
-                        p.facing === 1 ? p.x + p.w : p.x, p.y
-                    );
-                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-                    gradient.addColorStop(0.3, `rgba(0, 255, 255, ${alpha * 0.9})`);
-                    gradient.addColorStop(1, `rgba(0, 200, 255, ${alpha * 0.3})`);
-                    
-                    ctx.shadowColor = '#00ffff';
-                    ctx.shadowBlur = 30;
-                    ctx.fillStyle = gradient;
+                    if (!liteMode) {
+                        ctx.shadowColor = '#00ffff';
+                        ctx.shadowBlur = 20;
+                    }
+                    ctx.fillStyle = `rgba(0, 255, 255, ${alpha * 0.8})`;
                     ctx.fillRect(p.x, p.y, p.w, p.h);
                     
-                    // Core
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
                     ctx.fillRect(p.x, p.y + p.h/4, p.w, p.h/2);
                     ctx.shadowBlur = 0;
                     
@@ -2138,53 +2158,36 @@
                     ctx.globalAlpha = alpha;
                     ctx.fillStyle = p.color;
                     const size = p.size || 4;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, size * alpha, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.fillRect(p.x - size/2, p.y - size/2, size, size);
                     ctx.globalAlpha = 1;
                     
-                } else if (p.type === 'shockwave' || p.type === 'explosionRing') {
-                    ctx.strokeStyle = p.color.replace(')', `, ${alpha})`).replace('rgba', 'rgba').replace('rgb', 'rgba');
-                    ctx.lineWidth = 4 * alpha;
+                } else if (p.type === 'explosionRing') {
+                    ctx.strokeStyle = `rgba(150, 0, 255, ${alpha})`;
+                    ctx.lineWidth = 3 * alpha;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                     ctx.stroke();
                     
                 } else if (p.type === 'flash') {
-                    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
-                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-                    gradient.addColorStop(1, 'transparent');
-                    ctx.fillStyle = gradient;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = p.color;
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius * (2 - alpha), 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, p.radius * (1.5 - alpha * 0.5), 0, Math.PI * 2);
                     ctx.fill();
+                    ctx.globalAlpha = 1;
                     
                 } else if (p.type === 'muzzleFlash') {
-                    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x + p.facing * 40, p.y, 60);
-                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-                    gradient.addColorStop(0.3, `rgba(0, 255, 255, ${alpha * 0.8})`);
-                    gradient.addColorStop(1, 'transparent');
-                    ctx.fillStyle = gradient;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = '#00ffff';
                     ctx.beginPath();
-                    ctx.ellipse(p.x + p.facing * 20, p.y, 50 * alpha, 30 * alpha, 0, 0, Math.PI * 2);
+                    ctx.ellipse(p.x + p.facing * 15, p.y, 30 * alpha, 15 * alpha, 0, 0, Math.PI * 2);
                     ctx.fill();
-                    
-                } else if (p.type === 'electric') {
-                    ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    const midX = (p.x + p.targetX) / 2 + (Math.random() - 0.5) * 30;
-                    const midY = (p.y + p.targetY) / 2 + (Math.random() - 0.5) * 30;
-                    ctx.quadraticCurveTo(midX, midY, p.targetX, p.targetY);
-                    ctx.stroke();
+                    ctx.globalAlpha = 1;
                     
                 } else if (p.type === 'chargeParticle') {
                     ctx.globalAlpha = alpha;
                     ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
                     ctx.globalAlpha = 1;
                 }
             });
@@ -2325,6 +2328,9 @@
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
+                
+                liteMode = document.getElementById('liteModeCheck').checked;
+                
                 loadGameData();
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
