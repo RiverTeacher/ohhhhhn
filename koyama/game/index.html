@@ -108,13 +108,20 @@
             font-size: 4rem;
             color: red;
             font-weight: bold;
-            text-shadow: 4px 4px 0 #000;
+            text-shadow: 4px 4px 0 #000, 0 0 20px red, 0 0 40px red;
             pointer-events: none;
             display: none;
             z-index: 5;
-            animation: flash 0.5s infinite alternate;
+            animation: bossFlash 0.15s infinite alternate, bossScale 0.3s infinite alternate;
         }
-        @keyframes flash { from { opacity: 1; } to { opacity: 0.2; } }
+        @keyframes bossFlash { 
+            from { opacity: 1; text-shadow: 4px 4px 0 #000, 0 0 20px red, 0 0 40px red; } 
+            to { opacity: 0.7; text-shadow: 4px 4px 0 #000, 0 0 40px yellow, 0 0 80px red; } 
+        }
+        @keyframes bossScale {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(1.05); }
+        }
         
         /* ステージアップ通知用 */
         #stageNotification {
@@ -221,9 +228,33 @@
         .load-btn:disabled:hover {
             background-color: #6b7280 !important;
         }
+
+        /* ダメージオーバーレイ */
+        #damageOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(255, 0, 0, 0.6) 100%);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 4;
+            transition: opacity 0.1s;
+        }
+        #damageOverlay.active {
+            animation: damageFlash 0.3s ease-out;
+        }
+        @keyframes damageFlash {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- ダメージオーバーレイ -->
+    <div id="damageOverlay"></div>
 
     <!-- BGMコントロール -->
     <div id="bgmControl">
@@ -331,7 +362,7 @@
             ],
             BOSS_SUMMON: 'https://riverteacher.github.io/ohhhhhn/koyama/game/警告音2.mp3',
             GAME_OVER: 'https://riverteacher.github.io/ohhhhhn/koyama/game/dead.mp3',
-            STAGE_UP: 'https://riverteacher.github.io/ohhhhhn/koyama/game/beam.wav' // ステージアップ音（ビーム音を流用）
+            STAGE_UP: 'https://riverteacher.github.io/ohhhhhn/koyama/game/beam.wav'
         };
 
         // BGM URLの定義を追加
@@ -347,7 +378,7 @@
             PLAYER_SPEED: 5,
             JUMP_FORCE: 12,
             GRAVITY: 0.6,
-            GROUND_Y: 0, // Calculated dynamically
+            GROUND_Y: 0,
             BEAM_COOLDOWN: 180,
             SPAWN_RATE: 100,
             PLAYER_MAX_HP: 10,
@@ -358,16 +389,13 @@
             ENEMY_SEEK_DURATION_ZAKO: 120,
             ENEMY_SEEK_DURATION_BOSS: 420,
 
-            // 難易度調整: ワンパン対策でHP微増
             BASE_ZAKO_HP: 1, 
             BASE_BOSS_HP: 8,
             BASE_RANGE_HP: 9,
             
-            // 指数関数的HP増加設定 (基本は1.04倍)
             HP_EXPONENTIAL_BASE: 1.038,
-            // 序盤の難易度ブースト設定 (これを加算して最初は急激に上げる)
-            HP_GROWTH_INITIAL_BOOST: 0.2, // 初期の上乗せ率 (例: 1.04 + 0.25 = 1.29倍からスタート)
-            HP_GROWTH_DECAY: 0.14, // ブーストの減衰率 (高いほど早く1.038に戻る)
+            HP_GROWTH_INITIAL_BOOST: 0.2,
+            HP_GROWTH_DECAY: 0.14,
 
             STAGE_FRAME_DURATION: 1200, 
             IMAGE_SCALE: 1.25, 
@@ -375,24 +403,20 @@
             MAX_ENEMIES: 6,
             HEAL_AMOUNT: 2,
 
-            // Floor Boss Config
-            FLOOR_BOSS_STAGE_INTERVAL: 8, // 9ステージごとに登場 (8の倍数でボス出現)
+            FLOOR_BOSS_STAGE_INTERVAL: 8,
             FLOOR_BOSS_BASE_HP: 300,
-            // ボスHP増加: 出現回数ごとに40%増加
             FLOOR_BOSS_HP_INCREASE_PERCENT: 0.4,
-            FLOOR_BOSS_FLOAT_INTERVAL: 600, // 10 seconds (60fps * 10)
-            FLOOR_BOSS_FLOAT_DURATION: 120, // 2 seconds
-            FLOOR_BOSS_ACTION_INTERVAL: 180, // ~3 seconds between attacks
-            FLOOR_BOSS_MOVE_SPEED: 0.5, // ボスの移動速度
+            FLOOR_BOSS_FLOAT_INTERVAL: 600,
+            FLOOR_BOSS_FLOAT_DURATION: 120,
+            FLOOR_BOSS_ACTION_INTERVAL: 180,
+            FLOOR_BOSS_MOVE_SPEED: 0.5,
             
-            BOSS_BEAM_HEIGHT: 40, // 床ギリギリのビームの高さ
-            BOSS_CEILING_BEAM_WIDTH: 30, // 上からの光線の幅
-            BOSS_ATTACK_WARNING_FRAMES: 60, // 攻撃予兆時間
-            BOSS_ATTACK_ACTIVE_FRAMES: 30, // 攻撃持続時間
-            BOSS_BEAM_DAMAGE: 3, // ビーム・光線のダメージ
+            BOSS_BEAM_HEIGHT: 40,
+            BOSS_CEILING_BEAM_WIDTH: 30,
+            BOSS_ATTACK_WARNING_FRAMES: 60,
+            BOSS_ATTACK_ACTIVE_FRAMES: 30,
+            BOSS_BEAM_DAMAGE: 3,
         };
-
-            
 
         // --- Game State ---
         let canvas, ctx;
@@ -413,11 +437,14 @@
         let isMuted = false;
         
         let currentStage = 1;
-        let previousStage = 1; // ステージアップ検知用
+        let previousStage = 1;
         
         // Floor Boss State
-        let isFloorBossActive = false; // 現在フロアボス戦中か
-        let floorBossCount = 0; // 何回目のフロアボスか（HP計算用）
+        let isFloorBossActive = false;
+        let floorBossCount = 0;
+
+        // Screen Shake
+        let screenShake = { x: 0, y: 0, intensity: 0, duration: 0 };
 
         // Input State
         const keys = {
@@ -453,6 +480,32 @@
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffers = {};
 
+        // --- Screen Shake Function ---
+        function triggerScreenShake(intensity, duration) {
+            screenShake.intensity = intensity;
+            screenShake.duration = duration;
+        }
+
+        function updateScreenShake() {
+            if (screenShake.duration > 0) {
+                screenShake.x = (Math.random() - 0.5) * screenShake.intensity * 2;
+                screenShake.y = (Math.random() - 0.5) * screenShake.intensity * 2;
+                screenShake.duration--;
+                screenShake.intensity *= 0.95;
+            } else {
+                screenShake.x = 0;
+                screenShake.y = 0;
+            }
+        }
+
+        // --- Damage Flash Effect ---
+        function triggerDamageFlash() {
+            const overlay = document.getElementById('damageOverlay');
+            overlay.classList.remove('active');
+            void overlay.offsetWidth; // Trigger reflow
+            overlay.classList.add('active');
+        }
+
         // --- BGM関連の関数 ---
         function loadBGM(url) {
             return new Promise((resolve, reject) => {
@@ -468,7 +521,6 @@
                     reject(new Error(`BGMの読み込みに失敗: ${url}`));
                 }, { once: true });
                 
-                // 強制的にロードを開始
                 audio.load();
             });
         }
@@ -476,7 +528,6 @@
         function playBGM(bgmType) {
             if (isMuted || gameState !== 'PLAYING') return;
             
-            // 現在のBGMを停止
             if (currentBGM) {
                 currentBGM.pause();
                 currentBGM.currentTime = 0;
@@ -486,7 +537,6 @@
                 currentBGM = bgmNormal;
                 isBossBGM = false;
             } else if (bgmType === 'boss') {
-                // ボスBGMをランダムに選択
                 const bossBGM = Math.random() < 0.5 ? bgmBoss1 : bgmBoss2;
                 currentBGM = bossBGM;
                 isBossBGM = true;
@@ -521,7 +571,6 @@
             } else {
                 toggleBtn.classList.remove('muted');
                 toggleBtn.textContent = '♪';
-                // ミュート解除時に適切なBGMを再生
                 if (gameState === 'PLAYING') {
                     if (isFloorBossActive) {
                         playBGM('boss');
@@ -538,10 +587,6 @@
             notification.innerHTML = `STAGE ${stage}<br><span style="font-size:1.5rem">難易度上昇！</span>`;
             notification.classList.add('show');
             
-            // 効果音再生（オプション）
-            // playSound('STAGE_UP');
-            
-            // 2秒後に非表示
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 2000);
@@ -552,25 +597,20 @@
             const countdownEl = document.getElementById('stageCountdown');
             if (!countdownEl) return;
             
-            // ボス戦中はカウントダウン非表示
             if (isFloorBossActive) {
                 countdownEl.innerHTML = '<span style="color: #ff6666;">⚔️ ボス戦中！</span>';
                 return;
             }
             
-            // 残りフレーム数を計算
             const framesInCurrentStage = frameCount % GAME_CONFIG.STAGE_FRAME_DURATION;
             const remainingFrames = GAME_CONFIG.STAGE_FRAME_DURATION - framesInCurrentStage;
             const remainingSeconds = Math.ceil(remainingFrames / 60);
             
-            // 進捗率を計算（0〜100%）
             const progress = (framesInCurrentStage / GAME_CONFIG.STAGE_FRAME_DURATION) * 100;
             
-            // 次がボスステージかどうかをチェック
             const nextStage = currentStage + 1;
             const isNextBoss = nextStage % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0;
             
-            // 表示更新（常にinnerHTMLで更新して参照消失問題を回避）
             if (isNextBoss) {
                 countdownEl.innerHTML = `<span style="color: #ff4444;">⚠️ ボスまで: ${remainingSeconds}秒</span>
                     <div class="countdown-bar">
@@ -592,23 +632,19 @@
             const errMsg = document.getElementById('errorMessage');
 
             try {
-                // 1. Check API Status for 'allow'
                 const apiResponse = await fetch(ASSETS.API_URL);
                 if (!apiResponse.ok) throw new Error(`API Status Error: ${apiResponse.status}`);
                 const statusText = await apiResponse.text();
                 
                 if (statusText.trim().toLowerCase() !== 'allow') {
-                    // API応答が'allow'でない場合、ゲームの続行をブロック
                     throw new Error(`ゲームの実行が許可されていません。ステータス: ${statusText.trim()}`); 
                 }
 
-                // 2. Load Images and BGM
                 await new Promise((resolve, reject) => {
                     let loaded = 0;
-                    const total = 6; // 画像3つ + BGM3つ
+                    const total = 6;
                     const checkLoaded = () => { loaded++; if (loaded === total) resolve(); };
 
-                    // 画像の読み込み
                     maedaImage.src = ASSETS.ENEMY_IMG;
                     maedaImage.onload = checkLoaded;
                     maedaImage.onerror = () => reject(new Error("ノーマル敵画像の読み込み失敗"));
@@ -621,7 +657,6 @@
                     floorBossImage.onload = checkLoaded;
                     floorBossImage.onerror = () => reject(new Error("ボス画像の読み込み失敗"));
 
-                    // BGMの読み込み
                     loadBGM(BGM.NORMAL).then(audio => {
                         bgmNormal = audio;
                         checkLoaded();
@@ -643,7 +678,6 @@
                 initGame();
 
             } catch (err) {
-                // エラーが発生した場合（APIチェック失敗またはアセットロード失敗）
                 loadingScreen.classList.add('hidden');
                 errorScreen.classList.remove('hidden');
                 errMsg.textContent = `エラー: ${err.message}`;
@@ -665,11 +699,9 @@
 
             setupInputs();
             
-            // BGMトグルボタンの設定
             document.getElementById('bgmToggle').addEventListener('click', toggleMute);
             
             document.getElementById('startBtn').addEventListener('click', () => {
-                // ユーザーアクションをトリガーにAudioContextをResume
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
@@ -677,7 +709,6 @@
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
                 
-                // 通常BGMを再生開始
                 if (!isMuted) {
                     playBGM('normal');
                 }
@@ -698,9 +729,8 @@
 
             if (!src) return;
 
-            // シンプルなAudioオブジェクト再生
             const audio = new Audio(src);
-            audio.volume = 0.5; // 音量調整
+            audio.volume = 0.5;
             audio.play().catch(e => console.log('Audio play failed:', e));
         }
 
@@ -725,7 +755,6 @@
                 if(e.code === 'KeyX') keys.KeyX = false;
             });
 
-            // Touch Inputs
             const bindTouch = (id, key) => {
                 const el = document.getElementById(id);
                 el.addEventListener('touchstart', (e) => { 
@@ -755,7 +784,7 @@
         function attemptJump() {
             if (gameState !== 'PLAYING') return;
 
-            if (player.y + player.h >= GAME_CONFIG.GROUND_Y - 1) { // 許容誤差追加
+            if (player.y + player.h >= GAME_CONFIG.GROUND_Y - 1) {
                 player.vy = -GAME_CONFIG.JUMP_FORCE;
                 player.jumps = player.maxJumps - 1;
             } else if (player.jumps > 0) {
@@ -773,25 +802,112 @@
             }
         }
 
-        // --- Player Actions ---
+        // --- Enhanced Punch Effect ---
+        function createPunchEffect(x, y, facing) {
+            // Impact burst particles
+            for(let i = 0; i < 12; i++) {
+                const angle = (Math.PI / 6) * (i - 6) + (facing === 1 ? 0 : Math.PI);
+                const speed = 4 + Math.random() * 6;
+                particles.push({
+                    type: 'punchSpark',
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 15 + Math.random() * 10,
+                    maxLife: 25,
+                    color: `hsl(${40 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
+                    size: 3 + Math.random() * 4
+                });
+            }
+            
+            // Shockwave ring
+            particles.push({
+                type: 'shockwave',
+                x: x,
+                y: y,
+                radius: 5,
+                maxRadius: 50,
+                life: 15,
+                maxLife: 15,
+                color: 'rgba(255, 200, 50, 0.8)'
+            });
+            
+            // Impact flash
+            particles.push({
+                type: 'flash',
+                x: x,
+                y: y,
+                radius: 30,
+                life: 8,
+                maxLife: 8,
+                color: 'white'
+            });
+        }
 
+        // --- Enhanced Beam Effect ---
+        function createBeamEffect(startX, y, direction, width) {
+            // Main beam particles along the path
+            const particleCount = 30;
+            for(let i = 0; i < particleCount; i++) {
+                const px = direction === 1 ? startX + (width / particleCount) * i : startX - (width / particleCount) * i;
+                particles.push({
+                    type: 'beamParticle',
+                    x: px + (Math.random() - 0.5) * 20,
+                    y: y + (Math.random() - 0.5) * 30,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 5 - 2,
+                    life: 20 + Math.random() * 20,
+                    maxLife: 40,
+                    color: Math.random() > 0.5 ? '#00ffff' : '#ffffff',
+                    size: 2 + Math.random() * 4
+                });
+            }
+            
+            // Electric sparks
+            for(let i = 0; i < 15; i++) {
+                particles.push({
+                    type: 'electric',
+                    x: startX + (Math.random() * width * direction),
+                    y: y + (Math.random() - 0.5) * 40,
+                    targetX: startX + (Math.random() * width * direction),
+                    targetY: y + (Math.random() - 0.5) * 40,
+                    life: 10 + Math.random() * 10,
+                    maxLife: 20,
+                    color: '#00ffff'
+                });
+            }
+            
+            // Muzzle flash
+            particles.push({
+                type: 'muzzleFlash',
+                x: startX,
+                y: y,
+                life: 12,
+                maxLife: 12,
+                facing: direction
+            });
+        }
+
+        // --- Player Actions ---
         function attemptPunch() {
             if (gameState !== 'PLAYING') return;
             player.punching = 10; 
             
             const punchRange = 60;
             const punchX = player.facing === 1 ? player.x + player.w : player.x - punchRange;
+            const punchCenterX = player.facing === 1 ? player.x + player.w + 15 : player.x - 15;
+            
+            let hitAny = false;
             
             enemies.forEach(enemy => {
                 const hitOffsetX = enemy.isBoss ? enemy.w * 0.2 : 0; 
                 const hitOffsetY = enemy.isBoss ? enemy.h * 0.2 : 0; 
 
-                // 浮遊中のフロアボスには当たらない
                 if (enemy.type === 'floor_boss' && enemy.isFloating) {
                     return;
                 }
 
-                // 高さ判定の緩和（フロアボスが大きいので）
                 let heightTolerance = enemy.type === 'floor_boss' ? 100 : 50;
 
                 if (
@@ -800,23 +916,30 @@
                     Math.abs((enemy.y + enemy.h/2) - (player.y + player.h/2)) < (heightTolerance - hitOffsetY)
                 ) {
                     hitEnemy(enemy, player.punchDamage);
+                    hitAny = true;
                 }
             });
+            
+            // Create punch effect
+            createPunchEffect(punchCenterX, player.y + 30, player.facing);
+            
+            if (hitAny) {
+                triggerScreenShake(4, 8);
+            }
         }
 
         function attemptBeam() {
             if (gameState !== 'PLAYING') return;
             if (player.beamCooldown > 0) return;
 
-            // 効果音再生
             playSound('BEAM');
 
             player.beamCooldown = GAME_CONFIG.BEAM_COOLDOWN;
             let baseDamage = GAME_CONFIG.BASE_BEAM_DMG + (player.punchDamage * 2);
             const finalBeamDamage = baseDamage * player.beamMultiplier;
 
+            let hitCount = 0;
             enemies.forEach(enemy => {
-                // 浮遊中のフロアボスには当たらない
                 if (enemy.type === 'floor_boss' && enemy.isFloating) {
                     return;
                 }
@@ -827,6 +950,7 @@
                 
                 if (hit) {
                     hitEnemy(enemy, finalBeamDamage);
+                    hitCount++;
                 }
             });
 
@@ -837,15 +961,27 @@
             }
             player.beamMultiplier = 1;
 
+            // Enhanced beam particle
+            const beamStartX = player.facing === 1 ? player.x + player.w : player.x;
+            const beamWidth = player.facing === 1 ? canvas.width - player.x : player.x;
+            
             particles.push({
                 type: 'beam',
                 x: player.facing === 1 ? player.x + player.w : 0,
-                y: player.y + player.h/2 - 10,
+                y: player.y + player.h/2 - 15,
                 w: player.facing === 1 ? canvas.width - player.x : player.x,
-                h: 20,
-                life: 15,
-                color: '#00ffff'
+                h: 30,
+                life: 20,
+                maxLife: 20,
+                color: '#00ffff',
+                facing: player.facing
             });
+            
+            // Create beam effects
+            createBeamEffect(beamStartX, player.y + player.h/2, player.facing, beamWidth);
+            
+            // Screen shake on beam
+            triggerScreenShake(6, 10);
         }
         
         function applyHealEffect() {
@@ -878,68 +1014,81 @@
 
             if (enemy.hp <= 0) {
                 if (enemy.type === 'heal') {
-                    // Heal Logic
                     const r = Math.random();
                     if (r < 0.5) applyHealEffect();
                     else if (r < 0.75) applyPunchBuff();
                     else applyBeamBuff();
                 } else if (enemy.type === 'floor_boss') {
-                    // フロアボス撃破時
-                    playSound('BOSS_KILLED'); // ボス撃破音
+                    playSound('BOSS_KILLED');
                     
-                    // BGMを通常に戻す
                     if (!isMuted) {
                         playBGM('normal');
                     }
 
                     score += 500 * (floorBossCount + 1);
-                    isFloorBossActive = false; // ボスモード終了
-                    currentStage++; // ステージを進める
-                    previousStage = currentStage; // ステージアップ通知をスキップ
+                    isFloorBossActive = false;
+                    currentStage++;
+                    previousStage = currentStage;
                     
-                    // ボス撃破演出
-                    for(let i=0; i<30; i++) {
+                    // Epic boss death effect
+                    triggerScreenShake(15, 30);
+                    for(let i=0; i<50; i++) {
+                        const angle = (Math.PI * 2 / 50) * i;
+                        const speed = 5 + Math.random() * 15;
                         particles.push({
-                            type: 'pixel',
-                            x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
-                            vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
-                            life: 60, color: 'purple'
+                            type: 'bossDeathParticle',
+                            x: enemy.x + enemy.w/2,
+                            y: enemy.y + enemy.h/2,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            life: 60 + Math.random() * 30,
+                            maxLife: 90,
+                            color: `hsl(${280 + Math.random() * 60}, 100%, ${50 + Math.random() * 30}%)`,
+                            size: 5 + Math.random() * 10
                         });
+                    }
+                    
+                    // Explosion rings
+                    for(let i = 0; i < 5; i++) {
+                        setTimeout(() => {
+                            particles.push({
+                                type: 'explosionRing',
+                                x: enemy.x + enemy.w/2,
+                                y: enemy.y + enemy.h/2,
+                                radius: 10,
+                                maxRadius: 200 + i * 30,
+                                life: 30,
+                                maxLife: 30,
+                                color: i % 2 === 0 ? 'purple' : 'magenta'
+                            });
+                        }, i * 100);
                     }
                 } else {
                     score += enemy.isBoss ? 100 : (enemy.type === 'range' ? 30 : 10); 
                 }
                 
-                // Death effect
                 const particleColor = enemy.type === 'heal' ? 'pink' : (enemy.type === 'range' ? 'blue' : 'red');
                 if (enemy.type !== 'floor_boss') {
-                    for(let i=0; i<5; i++) {
+                    for(let i=0; i<8; i++) {
                         particles.push({
                             type: 'pixel',
                             x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2,
-                            vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
-                            life: 20, color: particleColor
+                            vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
+                            life: 25, color: particleColor
                         });
                     }
                 }
             } else {
                 if (enemy.type !== 'floor_boss') {
-                    enemy.x += (player.facing * 10); // Knockback (ボス以外)
+                    enemy.x += (player.facing * 10);
                 }
             }
         }
 
         // --- Enemy Spawning & Logic ---
-
-        // 難易度曲線を計算する関数
-        // ステージ1では1倍、ステージ2以降は (1.04 + Boost) を累積乗算
         function getDifficultyMultiplier(stage) {
             let multiplier = 1;
-            // ステージ1は基準値(1.0)
             for (let i = 1; i < stage; i++) {
-                // 基本増加率: 1.04
-                // 序盤ブースト: 減衰係数により急激に0に近づく
-                // 式: Rate = BASE + INITIAL_BOOST * exp(-DECAY * i)
                 const boost = GAME_CONFIG.HP_GROWTH_INITIAL_BOOST * Math.exp(-GAME_CONFIG.HP_GROWTH_DECAY * i);
                 const currentRate = GAME_CONFIG.HP_EXPONENTIAL_BASE + boost;
                 multiplier *= currentRate;
@@ -948,11 +1097,8 @@
         }
 
         function spawnEnemy() {
-            // フロアボス出現中は他の敵を出さない
             if (isFloorBossActive) return;
 
-            // ステージ進行チェック（9ステージごとにボス）
-            // currentStageが8の倍数、かつ まだボスが出ていない場合
             if (currentStage > 0 && currentStage % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0) {
                 spawnFloorBoss();
                 return;
@@ -960,7 +1106,6 @@
 
             if (enemies.length >= GAME_CONFIG.MAX_ENEMIES) return;
 
-            // 通常のスポーンロジック
             const r = Math.random();
             let enemyType = 'zako';
             
@@ -978,7 +1123,6 @@
                 }
             }
 
-            // 新しい難易度計算ロジック
             const exponentialMultiplier = getDifficultyMultiplier(currentStage);
             
             let size, hp, speed, img;
@@ -995,9 +1139,8 @@
                 size = 80; 
                 hp = Math.floor((Math.random() * 4 + GAME_CONFIG.BASE_RANGE_HP) * exponentialMultiplier);
                 speed = 0.5; img = rangeMaedaImage;
-            } else { // Zako
+            } else {
                 size = 40;
-                // BASE_ZAKO_HPを2に上げたので、最低HPが少し上がっています
                 hp = Math.floor((Math.random() * 3 + GAME_CONFIG.BASE_ZAKO_HP) * exponentialMultiplier);
                 speed = 2; img = maedaImage;
             }
@@ -1022,84 +1165,131 @@
         }
 
         function spawnFloorBoss() {
-        isFloorBossActive = true;
-        floorBossCount++;
+            isFloorBossActive = true;
+            floorBossCount++;
 
-        // ★追加: ボス出現時に他の敵を全削除
-        enemies = enemies.filter(enemy => enemy.type === 'floor_boss');
-        
-        playSound('BOSS_SUMMON'); // ボス出現音
-        
-        // BGMをボス戦用に切り替え
-        if (!isMuted) {
-            playBGM('boss');
-        }
-        
-        // 警告表示
-        const warningEl = document.getElementById('bossWarning');
-        warningEl.style.display = 'block';
-        setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
+            enemies = enemies.filter(enemy => enemy.type === 'floor_boss');
+            
+            playSound('BOSS_SUMMON');
+            
+            if (!isMuted) {
+                playBGM('boss');
+            }
+            
+            // Boss appearance effects
+            triggerScreenShake(10, 60);
+            
+            // Dark flash effect
+            particles.push({
+                type: 'bossAppearFlash',
+                life: 30,
+                maxLife: 30
+            });
+            
+            // Warning particles
+            for(let i = 0; i < 30; i++) {
+                particles.push({
+                    type: 'bossAppearParticle',
+                    x: canvas.width - 100 + (Math.random() - 0.5) * 100,
+                    y: GAME_CONFIG.GROUND_Y - 75 + (Math.random() - 0.5) * 150,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: -Math.random() * 5,
+                    life: 60 + Math.random() * 60,
+                    maxLife: 120,
+                    color: `hsl(${Math.random() * 60}, 100%, 50%)`,
+                    size: 3 + Math.random() * 5
+                });
+            }
+            
+            const warningEl = document.getElementById('bossWarning');
+            warningEl.style.display = 'block';
+            setTimeout(() => { warningEl.style.display = 'none'; }, 3000);
 
-            // HP計算: 指数関数的増加（出現回数ごとに80%増加）
             const multiplier = Math.pow(1 + GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT, floorBossCount - 1);
             const maxHp = Math.floor(GAME_CONFIG.FLOOR_BOSS_BASE_HP * multiplier);
 
-            const size = 150; // かなりでかい
+            const size = 150;
             enemies.push({
                 type: 'floor_boss',
-                x: canvas.width + 100, // 右から登場
+                x: canvas.width + 100,
                 y: GAME_CONFIG.GROUND_Y - size,
                 w: size, h: size,
-                vx: GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED, // 初期移動速度
+                vx: GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED,
                 hp: maxHp, maxHp: maxHp,
                 isBoss: true,
                 img: floorBossImage,
                 
-                // Floor Boss Specifics
                 floatTimer: 0,
                 isFloating: false,
                 attackTimer: 0,
-                attackState: 'idle', // idle, warning, active
-                attackType: null, // 'beam', 'area', 'ceilingBeam'
+                attackState: 'idle',
+                attackType: null,
                 
                 moveTimer: 0,
                 currentDirection: -1,
                 
-                // 攻撃時のターゲット/位置情報
-                targetX: 0 
+                targetX: 0,
+                appearanceFrame: 0
             });
         }
 
         // --- Floor Boss Logic ---
         function updateFloorBoss(e) {
-            // 1. 出現演出（画面外から定位置へ）
+            // Entrance animation
+            e.appearanceFrame = (e.appearanceFrame || 0) + 1;
+            
             const entryPositionX = canvas.width - 200;
             if (e.x > entryPositionX) {
                 e.x -= 2;
-                return; // 定位置に来るまで攻撃しない
+                
+                // Entry particles
+                if (frameCount % 3 === 0) {
+                    particles.push({
+                        type: 'bossTrail',
+                        x: e.x + e.w,
+                        y: e.y + e.h / 2 + (Math.random() - 0.5) * e.h,
+                        vx: 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        life: 20,
+                        maxLife: 20,
+                        color: 'purple',
+                        size: 5 + Math.random() * 5
+                    });
+                }
+                return;
             }
 
-            // 2. 浮遊ロジック (10秒ごとに2秒浮遊)
+            // Float logic
             e.floatTimer++;
-            const floatCycle = GAME_CONFIG.FLOOR_BOSS_FLOAT_INTERVAL; // 600
-            const floatDuration = GAME_CONFIG.FLOOR_BOSS_FLOAT_DURATION; // 120
+            const floatCycle = GAME_CONFIG.FLOOR_BOSS_FLOAT_INTERVAL;
+            const floatDuration = GAME_CONFIG.FLOOR_BOSS_FLOAT_DURATION;
 
             if (e.floatTimer % floatCycle > (floatCycle - floatDuration)) {
                 if (!e.isFloating) {
-                    // 浮遊開始
                     e.isFloating = true;
-                    // 上昇アニメーション
-                    e.targetY = 50; // 空中
+                    e.targetY = 50;
+                    
+                    // Float start effect
+                    for(let i = 0; i < 10; i++) {
+                        particles.push({
+                            type: 'floatParticle',
+                            x: e.x + e.w/2 + (Math.random() - 0.5) * e.w,
+                            y: e.y + e.h,
+                            vx: (Math.random() - 0.5) * 3,
+                            vy: Math.random() * 3 + 2,
+                            life: 30,
+                            maxLife: 30,
+                            color: 'rgba(150, 0, 255, 0.8)',
+                            size: 4
+                        });
+                    }
                 }
-                // 目標Y座標へスムース移動
                 e.y += (e.targetY - e.y) * 0.1;
             } else {
                 if (e.isFloating) {
-                    // 浮遊終了（降下）
                     e.isFloating = false;
                     e.targetY = GAME_CONFIG.GROUND_Y - e.h;
                 }
-                // 地面へ戻る
                 let groundY = GAME_CONFIG.GROUND_Y - e.h;
                 if (Math.abs(e.y - groundY) > 1) {
                     e.y += (groundY - e.y) * 0.1;
@@ -1108,77 +1298,123 @@
                 }
             }
 
-            // 3. 移動ロジック（浮遊中でない場合）
+            // Movement
             if (!e.isFloating) {
                 const centerBoss = e.x + e.w / 2;
                 const centerPlayer = player.x + player.w / 2;
                 
-                // プレイヤーにゆっくり近づく (左右50pxの許容範囲)
                 if (Math.abs(centerBoss - centerPlayer) > 50) { 
                     const moveDir = centerBoss < centerPlayer ? 1 : -1;
                     e.x += GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED * moveDir;
 
-                    // 画面端の制限
                     if (e.x < 0) e.x = 0;
                     if (e.x + e.w > canvas.width) e.x = canvas.width - e.w;
                 }
             }
 
-            // 4. 攻撃ロジック
-            if (e.isFloating) return; // 浮遊中は攻撃しない
+            // Attack logic
+            if (e.isFloating) return;
 
             e.attackTimer++;
             
-            // 攻撃サイクル管理
             if (e.attackState === 'idle') {
                 if (e.attackTimer > GAME_CONFIG.FLOOR_BOSS_ACTION_INTERVAL) {
-                    // 攻撃開始：タイプ決定
                     e.attackState = 'warning';
                     e.attackTimer = 0;
                     
-                    // 3種類の攻撃をランダムに選択
                     const r = Math.random();
-                    if (r < 0.33) e.attackType = 'beam'; // 地面すれすれ横ビーム
-                    else if (r < 0.66) e.attackType = 'area'; // 地面範囲攻撃
-                    else e.attackType = 'ceilingBeam'; // 上からの縦ビーム
+                    if (r < 0.33) e.attackType = 'beam';
+                    else if (r < 0.66) e.attackType = 'area';
+                    else e.attackType = 'ceilingBeam';
                     
                     if (e.attackType === 'area' || e.attackType === 'ceilingBeam') {
-                        // プレイヤーの現在位置をロックオン
                         e.targetX = player.x + player.w/2;
                     }
+                    
+                    // Warning effect particles
+                    triggerScreenShake(3, 30);
                 }
             } else if (e.attackState === 'warning') {
-                // 警告時間経過 (60f)
+                // Charging particles
+                if (frameCount % 5 === 0) {
+                    const targetX = e.attackType === 'beam' ? e.x : e.targetX;
+                    const targetY = e.attackType === 'ceilingBeam' ? 0 : GAME_CONFIG.GROUND_Y - 20;
+                    
+                    particles.push({
+                        type: 'chargeParticle',
+                        x: targetX + (Math.random() - 0.5) * 100,
+                        y: targetY + (Math.random() - 0.5) * 50,
+                        targetX: targetX,
+                        targetY: targetY,
+                        life: 20,
+                        maxLife: 20,
+                        color: e.attackType === 'beam' ? 'purple' : (e.attackType === 'area' ? 'orange' : 'red')
+                    });
+                }
+                
                 if (e.attackTimer > GAME_CONFIG.BOSS_ATTACK_WARNING_FRAMES) {
                     e.attackState = 'active';
                     e.attackTimer = 0;
                     
-                    // 攻撃判定発生
+                    triggerScreenShake(8, 15);
+                    
                     if (e.attackType === 'beam') {
-                        // 横ビーム発射（床ギリギリに修正）
+                        // Enhanced boss beam
                         projectiles.push({
                             type: 'bossBeam',
-                            x: canvas.width, // 右端からスタート
-                            y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2, // 地面より上にビームの中心がくるように
-                            w: canvas.width, // 初期幅（描画用）
+                            x: canvas.width,
+                            y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2,
+                            w: canvas.width,
                             h: GAME_CONFIG.BOSS_BEAM_HEIGHT,
-                            vx: -25, vy: 0, // 高速で左に移動
-                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE, // 3ダメージ
-                            life: canvas.width / 25, // 持続時間（画面を横切るのに必要な時間）
-                            color: 'purple'
+                            vx: -30, vy: 0,
+                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE,
+                            life: canvas.width / 30 + 10,
+                            color: 'purple',
+                            spawnTime: frameCount
                         });
+                        
+                        // Beam trail particles
+                        for(let i = 0; i < 20; i++) {
+                            particles.push({
+                                type: 'bossBeamParticle',
+                                x: canvas.width,
+                                y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2 + (Math.random() - 0.5) * 60,
+                                vx: -15 - Math.random() * 10,
+                                vy: (Math.random() - 0.5) * 5,
+                                life: 30 + Math.random() * 20,
+                                maxLife: 50,
+                                color: `hsl(${280 + Math.random() * 40}, 100%, ${50 + Math.random() * 30}%)`,
+                                size: 3 + Math.random() * 5
+                            });
+                        }
                     } else if (e.attackType === 'area') {
-                        // 範囲攻撃爆発
                         projectiles.push({
                             type: 'explosion',
                             x: e.targetX, y: GAME_CONFIG.GROUND_Y,
-                            w: 100, h: 150, // 縦に長い爆発
-                            damage: 4, // 接触ダメージ
+                            w: 100, h: 150,
+                            damage: 4,
                             life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES,
-                            color: 'orange'
+                            color: 'orange',
+                            spawnTime: frameCount
                         });
+                        
+                        // Explosion particles
+                        for(let i = 0; i < 25; i++) {
+                            const angle = Math.random() * Math.PI;
+                            const speed = 3 + Math.random() * 8;
+                            particles.push({
+                                type: 'explosionParticle',
+                                x: e.targetX,
+                                y: GAME_CONFIG.GROUND_Y - 20,
+                                vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
+                                vy: -Math.sin(angle) * speed,
+                                life: 30 + Math.random() * 20,
+                                maxLife: 50,
+                                color: `hsl(${30 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
+                                size: 4 + Math.random() * 6
+                            });
+                        }
                     } else if (e.attackType === 'ceilingBeam') {
-                        // 上からの縦ビーム
                         projectiles.push({
                             type: 'ceilingBeam',
                             x: e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH / 2, 
@@ -1186,14 +1422,29 @@
                             w: GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, 
                             h: GAME_CONFIG.GROUND_Y, 
                             vx: 0, vy: 0,
-                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE, // 3ダメージ (修正)
+                            damage: GAME_CONFIG.BOSS_BEAM_DAMAGE,
                             life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES, 
-                            color: 'red'
+                            color: 'red',
+                            spawnTime: frameCount
                         });
+                        
+                        // Ceiling beam particles
+                        for(let i = 0; i < 15; i++) {
+                            particles.push({
+                                type: 'ceilingBeamParticle',
+                                x: e.targetX + (Math.random() - 0.5) * 40,
+                                y: Math.random() * GAME_CONFIG.GROUND_Y,
+                                vx: (Math.random() - 0.5) * 3,
+                                vy: 5 + Math.random() * 5,
+                                life: 20 + Math.random() * 15,
+                                maxLife: 35,
+                                color: `hsl(${Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
+                                size: 3 + Math.random() * 4
+                            });
+                        }
                     }
                 }
             } else if (e.attackState === 'active') {
-                // 硬直時間経過後にidleに戻る
                 if (e.attackTimer > GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES) {
                     e.attackState = 'idle';
                     e.attackTimer = 0;
@@ -1206,7 +1457,6 @@
 
             e.rangeAttackTimer = (e.rangeAttackTimer + 1) % (60 * 60); 
 
-            // Short Beam (3s)
             if (e.rangeAttackTimer % 180 === 0) {
                 const startX = e.x + e.w / 2;
                 const startY = e.y + e.h * 0.7; 
@@ -1214,14 +1464,25 @@
                 let dir = targetX > startX ? 1 : -1;
                 projectiles.push({
                     type: 'shortBeam',
-                    x: startX, y: startY, w: 10, h: 5,
-                    vx: dir * 5, vy: 0,
-                    damage: 1, color: 'rgba(255, 165, 0, 0.8)',
-                    life: 180 // 持続時間
+                    x: startX, y: startY, w: 15, h: 8,
+                    vx: dir * 6, vy: 0,
+                    damage: 1, color: 'rgba(255, 165, 0, 0.9)',
+                    life: 180
                 });
+                
+                // Muzzle effect for range enemy
+                for(let i = 0; i < 5; i++) {
+                    particles.push({
+                        type: 'pixel',
+                        x: startX, y: startY,
+                        vx: dir * (2 + Math.random() * 3),
+                        vy: (Math.random() - 0.5) * 4,
+                        life: 10,
+                        color: 'orange'
+                    });
+                }
             }
 
-            // Spike (5s)
             if (e.rangeAttackTimer % 300 === 0) {
                 e.spikeState = 'warning';
                 e.spikeWarningPos = player.x + player.w / 2;
@@ -1241,12 +1502,30 @@
             player.hp -= damage;
             player.invincibility = GAME_CONFIG.INVINCIBILITY_FRAMES;
             
-            // ダメージ音再生
             playSound('DAMAGE');
+            
+            // Enhanced damage effects
+            triggerDamageFlash();
+            triggerScreenShake(8, 15);
+            
+            // Damage particles from player
+            for(let i = 0; i < 8; i++) {
+                particles.push({
+                    type: 'damageParticle',
+                    x: player.x + player.w/2,
+                    y: player.y + player.h/2,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 20,
+                    maxLife: 20,
+                    color: 'red',
+                    size: 4 + Math.random() * 4
+                });
+            }
 
             if (player.hp <= 0) {
-                playSound('GAME_OVER'); // ゲームオーバー音
-                stopBGM(); // BGM停止
+                playSound('GAME_OVER');
+                stopBGM();
 
                 gameState = 'GAMEOVER';
                 document.getElementById('finalScore').textContent = score;
@@ -1262,25 +1541,37 @@
                     p.x += p.vx;
                     p.life--;
                     
-                    // Hit Check (Floor Boss Beam)
+                    // Trail particles
+                    if (frameCount % 2 === 0) {
+                        particles.push({
+                            type: 'bossBeamTrail',
+                            x: p.x,
+                            y: p.y + (Math.random() - 0.5) * p.h,
+                            vx: -2,
+                            vy: (Math.random() - 0.5) * 3,
+                            life: 15,
+                            maxLife: 15,
+                            color: 'purple',
+                            size: 3
+                        });
+                    }
+                    
                     if (player.invincibility <= 0) {
-                        // ビームの座標は中心yなので、判定はy - h/2 から y + h/2
                         const beamY_top = p.y - p.h / 2;
                         const beamY_bottom = p.y + p.h / 2;
                         
                         if (
-                            player.x < p.x && player.x + player.w > (p.x + p.vx) && // X軸の範囲内
+                            player.x < p.x && player.x + player.w > (p.x + p.vx) &&
                             player.y + player.h > beamY_top && player.y < beamY_bottom
                         ) {
                             handlePlayerDamage(p.damage);
                             damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
                         }
                     }
-                    if (p.x + p.h < 0) p.life = 0; // 画面左端を過ぎたら消滅
+                    if (p.x + p.h < 0) p.life = 0;
                     
                 } else if (p.type === 'explosion') {
                     p.life--;
-                    // Hit Check (Center based)
                     if (player.invincibility <= 0 &&
                         player.x < p.x + p.w/2 && player.x + player.w > p.x - p.w/2 &&
                         player.y + player.h > GAME_CONFIG.GROUND_Y - p.h) {
@@ -1289,22 +1580,50 @@
                     }
                 } else if (p.type === 'ceilingBeam') {
                     p.life--;
-                    // Hit Check (Ceiling Beam)
+                    
+                    // Beam particles
+                    if (frameCount % 2 === 0) {
+                        particles.push({
+                            type: 'ceilingBeamTrail',
+                            x: p.x + p.w/2 + (Math.random() - 0.5) * 20,
+                            y: Math.random() * p.h,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: 3,
+                            life: 10,
+                            maxLife: 10,
+                            color: 'red',
+                            size: 2
+                        });
+                    }
+                    
                     if (player.invincibility <= 0 &&
-                        player.x < p.x + p.w && player.x + player.w > p.x && // X軸の範囲
-                        player.y < p.y + p.h && player.y + player.h > p.y) { // Y軸の範囲
+                        player.x < p.x + p.w && player.x + player.w > p.x &&
+                        player.y < p.y + p.h && player.y + player.h > p.y) {
                         handlePlayerDamage(p.damage);
                         damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
                     }
                 } else if (p.type === 'shortBeam') {
                     p.x += p.vx;
                     p.life--;
+                    
+                    // Trail
+                    if (frameCount % 3 === 0) {
+                        particles.push({
+                            type: 'pixel',
+                            x: p.x, y: p.y,
+                            vx: -p.vx * 0.2,
+                            vy: (Math.random() - 0.5) * 2,
+                            life: 10,
+                            color: 'yellow'
+                        });
+                    }
+                    
                     if (player.invincibility <= 0 &&
                         player.x < p.x + p.w && player.x + player.w > p.x &&
                         player.y < p.y + p.h && player.y + player.h > p.y) {
                         handlePlayerDamage(p.damage);
                         damageTexts.push({ x: player.x, y: player.y, text: p.damage, life: 30, vy: -2, color: 'red' });
-                        p.life = 0; // Destroy
+                        p.life = 0;
                     }
                     if (p.x < 0 || p.x > canvas.width) p.life = 0;
                 } else if (p.type === 'spike') {
@@ -1312,8 +1631,21 @@
                     if (p.state === 'warning') {
                         if (p.life <= 0) {
                             p.state = 'active';
-                            p.life = 30; // Active duration
-                            p.h = 40; 
+                            p.life = 30;
+                            p.h = 50;
+                            
+                            // Spike emerge effect
+                            for(let j = 0; j < 8; j++) {
+                                particles.push({
+                                    type: 'pixel',
+                                    x: p.x + (Math.random() - 0.5) * 30,
+                                    y: GAME_CONFIG.GROUND_Y - 10,
+                                    vx: (Math.random() - 0.5) * 6,
+                                    vy: -Math.random() * 5 - 2,
+                                    life: 15,
+                                    color: '#654321'
+                                });
+                            }
                         }
                     } else if (p.state === 'active') {
                         if (player.invincibility <= 0 &&
@@ -1336,21 +1668,19 @@
             if (gameState === 'GAMEOVER') return;
 
             frameCount++;
+            updateScreenShake();
 
-            // ステージ進行管理
             if (!isFloorBossActive) {
                 if (frameCount % GAME_CONFIG.STAGE_FRAME_DURATION === 0) {
                     currentStage++;
                 }
             }
             
-            // ステージアップ通知チェック
             if (currentStage > previousStage) {
                 showStageNotification(currentStage);
                 previousStage = currentStage;
             }
             
-            // ステージカウントダウン更新
             updateStageCountdown();
 
             // Player Physics
@@ -1382,7 +1712,6 @@
 
             // Enemies
             if (frameCount % GAME_CONFIG.SPAWN_RATE === 0) spawnEnemy();
-            // ボス戦中以外はスポーンレートを上げる
             if (!isFloorBossActive && frameCount % 600 === 0 && GAME_CONFIG.SPAWN_RATE > 30) GAME_CONFIG.SPAWN_RATE -= 1;
 
             for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1392,7 +1721,6 @@
                     updateFloorBoss(e);
                 } else {
                     handleRangedAttacks(e); 
-                    // 通常の移動AI
                     e.moveTimer++; 
                     const seekLimit = e.isBoss ? GAME_CONFIG.ENEMY_SEEK_DURATION_BOSS : GAME_CONFIG.ENEMY_SEEK_DURATION_ZAKO;
                     
@@ -1413,8 +1741,6 @@
                     }
                 }
 
-                // Melee Collision
-                // 浮遊中のボスには接触ダメージなし
                 if (e.type === 'floor_boss' && e.isFloating) {
                     // no collision
                 } else {
@@ -1427,7 +1753,6 @@
                         player.y < e.y + e.h - offsetY &&
                         player.y + player.h > e.y + offsetY
                     ) {
-                        // ボスは接触ダメージでかい
                         const dmg = e.type === 'floor_boss' ? 2 : 1;
                         
                         handlePlayerDamage(dmg);
@@ -1444,8 +1769,29 @@
 
             // Particles
             for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i]; p.life--;
-                if(p.type === 'pixel') { p.x += p.vx; p.y += p.vy; }
+                let p = particles[i]; 
+                p.life--;
+                
+                if(p.type === 'pixel' || p.type === 'punchSpark' || p.type === 'beamParticle' || 
+                   p.type === 'bossDeathParticle' || p.type === 'explosionParticle' ||
+                   p.type === 'damageParticle' || p.type === 'bossAppearParticle' ||
+                   p.type === 'floatParticle' || p.type === 'bossTrail' ||
+                   p.type === 'bossBeamParticle' || p.type === 'bossBeamTrail' ||
+                   p.type === 'ceilingBeamParticle' || p.type === 'ceilingBeamTrail') { 
+                    p.x += p.vx; 
+                    p.y += p.vy;
+                    if (p.vy !== undefined && p.type !== 'floatParticle') p.vy += 0.1; // Gravity
+                }
+                
+                if (p.type === 'shockwave' || p.type === 'explosionRing') {
+                    p.radius += (p.maxRadius - p.radius) * 0.2;
+                }
+                
+                if (p.type === 'chargeParticle') {
+                    p.x += (p.targetX - p.x) * 0.15;
+                    p.y += (p.targetY - p.y) * 0.15;
+                }
+                
                 if (p.life <= 0) particles.splice(i, 1);
             }
             
@@ -1457,17 +1803,37 @@
         }
 
         function draw() {
-            ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(screenShake.x, screenShake.y);
             
-            // ボス戦背景効果（暗くなる）
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+            
+            // Boss fight background effect
             if (isFloorBossActive) {
-                ctx.fillStyle = 'rgba(0, 0, 50, 0.3)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(50, 0, 80, 0.4)';
+                ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+                
+                // Pulsing vignette
+                const pulseAlpha = 0.1 + Math.sin(frameCount * 0.05) * 0.05;
+                const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width * 0.7);
+                gradient.addColorStop(0, 'transparent');
+                gradient.addColorStop(1, `rgba(100, 0, 150, ${pulseAlpha})`);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
             }
 
             ctx.fillStyle = '#654321';
-            ctx.fillRect(0, GAME_CONFIG.GROUND_Y, canvas.width, canvas.height - GAME_CONFIG.GROUND_Y);
+            ctx.fillRect(-10, GAME_CONFIG.GROUND_Y, canvas.width + 20, canvas.height - GAME_CONFIG.GROUND_Y + 20);
+
+            // Draw particles (background layer)
+            particles.forEach(p => {
+                if (p.type === 'bossAppearFlash') {
+                    const alpha = p.life / p.maxLife;
+                    ctx.fillStyle = `rgba(100, 0, 150, ${alpha * 0.5})`;
+                    ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+                }
+            });
 
             // Player
             if (player.invincibility % 4 < 2) { 
@@ -1488,21 +1854,11 @@
                     ctx.lineTo(player.x + (player.facing===1?25:5), player.y + 40);
                 }
                 ctx.stroke();
-                
-                if (player.punching > 0) {
-                    const effectColor = player.punchDamage > GAME_CONFIG.PUNCH_DMG ? 'rgba(255, 100, 0, 0.7)' : 'rgba(255, 255, 0, 0.5)';
-                    const effectRadius = player.punchDamage > GAME_CONFIG.PUNCH_DMG ? 20 : 15;
-                    ctx.fillStyle = effectColor;
-                    ctx.beginPath();
-                    ctx.arc(player.facing === 1 ? player.x + player.w + 15 : player.x - 15, player.y + 30, effectRadius, 0, Math.PI*2);
-                    ctx.fill();
-                }
             }
 
             // Enemies
             enemies.forEach(e => {
                 const baseScale = e.isBoss ? 2 : (e.type === 'range' ? 1.6 : 1);
-                // フロアボスはさらにでかい
                 const scale = e.type === 'floor_boss' ? 1 : baseScale * GAME_CONFIG.IMAGE_SCALE;
                 
                 const drawW = e.w * (e.type === 'floor_boss' ? 1 : GAME_CONFIG.IMAGE_SCALE);
@@ -1518,36 +1874,96 @@
                     ctx.filter = 'hue-rotate(180deg) saturate(150%) brightness(120%)';
                     ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
                 } else if (e.type === 'floor_boss') {
-                    ctx.filter = 'none'; // 画像そのまま
+                    ctx.filter = 'none';
+                    
+                    // Boss glow effect
+                    ctx.shadowColor = 'purple';
+                    ctx.shadowBlur = 20 + Math.sin(frameCount * 0.1) * 10;
+                    
                     if (e.isFloating) {
-                        // 浮遊中は半透明＆少し揺れる
-                        ctx.globalAlpha = 0.7;
+                        ctx.globalAlpha = 0.6 + Math.sin(frameCount * 0.15) * 0.2;
                         ctx.drawImage(e.img, drawX, drawY + Math.sin(frameCount * 0.1) * 10, drawW, drawH);
                         ctx.globalAlpha = 1.0;
                     } else {
                         ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
                     }
                     
-                    // ボスの攻撃予兆
+                    ctx.shadowBlur = 0;
+                    
+                    // Attack warning effects
                     if (e.attackState === 'warning') {
-                        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-                        ctx.strokeStyle = 'red';
-                        ctx.lineWidth = 2;
+                        const warningProgress = e.attackTimer / GAME_CONFIG.BOSS_ATTACK_WARNING_FRAMES;
                         
                         if (e.attackType === 'beam') {
-                            // 横ビームライン (床ギリギリに描画)
-                            // 警告はボスから左端まで
+                            // Horizontal beam warning with pulsing
                             const beamY_center = GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2;
-                            ctx.fillRect(0, beamY_center - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2, canvas.width, GAME_CONFIG.BOSS_BEAM_HEIGHT);
-                        } else if (e.attackType === 'area') {
-                            // 範囲円
+                            const pulseAlpha = 0.3 + Math.sin(frameCount * 0.3) * 0.2;
+                            
+                            // Gradient warning
+                            const gradient = ctx.createLinearGradient(0, beamY_center - 30, 0, beamY_center + 30);
+                            gradient.addColorStop(0, 'transparent');
+                            gradient.addColorStop(0.3, `rgba(150, 0, 255, ${pulseAlpha})`);
+                            gradient.addColorStop(0.5, `rgba(255, 0, 255, ${pulseAlpha * 1.5})`);
+                            gradient.addColorStop(0.7, `rgba(150, 0, 255, ${pulseAlpha})`);
+                            gradient.addColorStop(1, 'transparent');
+                            ctx.fillStyle = gradient;
+                            ctx.fillRect(0, beamY_center - 40, canvas.width, 80);
+                            
+                            // Warning lines
+                            ctx.strokeStyle = `rgba(255, 0, 255, ${0.5 + Math.sin(frameCount * 0.5) * 0.3})`;
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([10, 10]);
                             ctx.beginPath();
-                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 50, 50, 0, Math.PI, true);
-                            ctx.fill();
+                            ctx.moveTo(0, beamY_center - GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.lineTo(canvas.width, beamY_center - GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.moveTo(0, beamY_center + GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.lineTo(canvas.width, beamY_center + GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
                             ctx.stroke();
+                            ctx.setLineDash([]);
+                            
+                        } else if (e.attackType === 'area') {
+                            // Area attack warning with expanding circles
+                            const pulseSize = 30 + Math.sin(frameCount * 0.4) * 15;
+                            
+                            ctx.strokeStyle = `rgba(255, 150, 0, ${0.8})`;
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 10, 50 + pulseSize * warningProgress, 0, Math.PI, true);
+                            ctx.stroke();
+                            
+                            ctx.fillStyle = `rgba(255, 100, 0, ${0.3 + Math.sin(frameCount * 0.3) * 0.15})`;
+                            ctx.beginPath();
+                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 10, 50, 0, Math.PI, true);
+                            ctx.fill();
+                            
+                            // Danger symbol
+                            ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+                            ctx.font = 'bold 24px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('⚠', e.targetX, GAME_CONFIG.GROUND_Y - 60);
+                            
                         } else if (e.attackType === 'ceilingBeam') {
-                            // 縦ビーム警告ライン
-                            ctx.fillRect(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0, GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, GAME_CONFIG.GROUND_Y); 
+                            // Vertical beam warning
+                            const gradient = ctx.createLinearGradient(e.targetX - 40, 0, e.targetX + 40, 0);
+                            gradient.addColorStop(0, 'transparent');
+                            gradient.addColorStop(0.3, `rgba(255, 0, 0, 0.3)`);
+                            gradient.addColorStop(0.5, `rgba(255, 100, 0, 0.5)`);
+                            gradient.addColorStop(0.7, `rgba(255, 0, 0, 0.3)`);
+                            gradient.addColorStop(1, 'transparent');
+                            ctx.fillStyle = gradient;
+                            ctx.fillRect(e.targetX - 50, 0, 100, GAME_CONFIG.GROUND_Y);
+                            
+                            // Warning dashes
+                            ctx.strokeStyle = `rgba(255, 50, 0, ${0.7 + Math.sin(frameCount * 0.4) * 0.3})`;
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([15, 10]);
+                            ctx.beginPath();
+                            ctx.moveTo(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0);
+                            ctx.lineTo(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, GAME_CONFIG.GROUND_Y);
+                            ctx.moveTo(e.targetX + GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0);
+                            ctx.lineTo(e.targetX + GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, GAME_CONFIG.GROUND_Y);
+                            ctx.stroke();
+                            ctx.setLineDash([]);
                         }
                     }
 
@@ -1563,7 +1979,7 @@
                 // HP Bar
                 if (e.isBoss || e.type === 'range' || e.hp < e.maxHp) {
                     const barY = drawY - 10; 
-                    ctx.fillStyle = 'red';
+                    ctx.fillStyle = 'rgba(100, 0, 0, 0.8)';
                     ctx.fillRect(e.x, barY, e.w, 5); 
                     
                     let barColor = '#00ff00';
@@ -1571,7 +1987,11 @@
                     else if (e.type === 'range') barColor = 'blue';
                     else if (e.type === 'floor_boss') barColor = 'purple';
                     
-                    ctx.fillStyle = barColor;
+                    // Gradient HP bar
+                    const hpGradient = ctx.createLinearGradient(e.x, barY, e.x + e.w * (e.hp / e.maxHp), barY);
+                    hpGradient.addColorStop(0, barColor);
+                    hpGradient.addColorStop(1, e.type === 'floor_boss' ? 'magenta' : barColor);
+                    ctx.fillStyle = hpGradient;
                     ctx.fillRect(e.x, barY, e.w * (e.hp / e.maxHp), 5);
                 }
             });
@@ -1579,71 +1999,206 @@
             // Projectiles
             projectiles.forEach(p => {
                 if (p.type === 'shortBeam') {
+                    // Enhanced short beam with glow
+                    ctx.shadowColor = 'orange';
+                    ctx.shadowBlur = 10;
                     ctx.fillStyle = p.color;
-                    ctx.fillRect(p.x, p.y, p.w, p.h);
+                    ctx.beginPath();
+                    ctx.ellipse(p.x + p.w/2, p.y + p.h/2, p.w/2, p.h/2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
                 } else if (p.type === 'spike') {
                     if (p.state === 'warning') {
-                        if (p.life % 10 < 5) {
-                             ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-                             ctx.fillRect(p.x - 20, GAME_CONFIG.GROUND_Y - 5, 40, 5);
-                        }
-                    } else if (p.state === 'active') {
-                        ctx.fillStyle = 'black';
+                        const flashAlpha = 0.5 + Math.sin(frameCount * 0.5) * 0.3;
+                        ctx.fillStyle = `rgba(255, 0, 0, ${flashAlpha})`;
+                        ctx.fillRect(p.x - 25, GAME_CONFIG.GROUND_Y - 8, 50, 8);
+                        
+                        // Warning cross
+                        ctx.strokeStyle = `rgba(255, 200, 0, ${flashAlpha})`;
+                        ctx.lineWidth = 2;
                         ctx.beginPath();
-                        ctx.moveTo(p.x - p.w/2, GAME_CONFIG.GROUND_Y);
-                        ctx.lineTo(p.x + p.w/2, GAME_CONFIG.GROUND_Y);
-                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - p.h);
-                        ctx.fill();
+                        ctx.moveTo(p.x - 10, GAME_CONFIG.GROUND_Y - 20);
+                        ctx.lineTo(p.x + 10, GAME_CONFIG.GROUND_Y - 20);
+                        ctx.moveTo(p.x, GAME_CONFIG.GROUND_Y - 30);
+                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - 10);
+                        ctx.stroke();
+                    } else if (p.state === 'active') {
+                        // Multi-spike with gradient
+                        const gradient = ctx.createLinearGradient(p.x, GAME_CONFIG.GROUND_Y, p.x, GAME_CONFIG.GROUND_Y - p.h);
+                        gradient.addColorStop(0, '#333');
+                        gradient.addColorStop(0.5, '#666');
+                        gradient.addColorStop(1, '#999');
+                        ctx.fillStyle = gradient;
+                        
+                        // Draw multiple spikes
+                        for(let s = -1; s <= 1; s++) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x - p.w/3 + s * 15, GAME_CONFIG.GROUND_Y);
+                            ctx.lineTo(p.x + p.w/3 + s * 15, GAME_CONFIG.GROUND_Y);
+                            ctx.lineTo(p.x + s * 15, GAME_CONFIG.GROUND_Y - p.h * (s === 0 ? 1 : 0.7));
+                            ctx.fill();
+                        }
                     }
                 } else if (p.type === 'bossBeam') {
-                    // 極太ビーム (地面ギリギリ)
-                    if (p.life > 0) { // アクティブなビームのみ描画
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = 0.9;
-                        // p.yは中心の高さ
-                        // p.xは右端からの距離（ビームの右端）
-                        ctx.fillRect(0, p.y - p.h/2, p.x, p.h); 
-                        ctx.globalAlpha = 1.0;
+                    if (p.life > 0) {
+                        // Multi-layered beam effect
+                        const beamY = p.y;
+                        
+                        // Outer glow
+                        const outerGradient = ctx.createLinearGradient(0, beamY - p.h, 0, beamY + p.h);
+                        outerGradient.addColorStop(0, 'transparent');
+                        outerGradient.addColorStop(0.3, 'rgba(150, 0, 255, 0.3)');
+                        outerGradient.addColorStop(0.5, 'rgba(200, 0, 255, 0.5)');
+                        outerGradient.addColorStop(0.7, 'rgba(150, 0, 255, 0.3)');
+                        outerGradient.addColorStop(1, 'transparent');
+                        ctx.fillStyle = outerGradient;
+                        ctx.fillRect(0, beamY - p.h, p.x, p.h * 2);
+                        
+                        // Core beam
+                        ctx.shadowColor = 'magenta';
+                        ctx.shadowBlur = 20;
+                        ctx.fillStyle = 'rgba(255, 100, 255, 0.9)';
+                        ctx.fillRect(0, beamY - p.h/2, p.x, p.h);
+                        
+                        // Inner bright core
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fillRect(0, beamY - p.h/4, p.x, p.h/2);
+                        ctx.shadowBlur = 0;
                     }
                 } else if (p.type === 'explosion') {
-                    // 爆発エフェクト
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = p.life / GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES;
-                    ctx.beginPath();
-                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, p.w/2 + (GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES-p.life)*2, 0, Math.PI, true);
-                    ctx.fill();
-                    ctx.globalAlpha = 1.0;
+                    const progress = 1 - (p.life / GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES);
+                    const radius = 50 + progress * 60;
+                    
+                    // Multi-ring explosion
+                    for(let ring = 0; ring < 3; ring++) {
+                        const ringRadius = radius - ring * 20;
+                        if (ringRadius > 0) {
+                            const alpha = (1 - progress) * (1 - ring * 0.3);
+                            const gradient = ctx.createRadialGradient(p.x, GAME_CONFIG.GROUND_Y, 0, p.x, GAME_CONFIG.GROUND_Y, ringRadius);
+                            gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
+                            gradient.addColorStop(0.5, `rgba(255, 150, 0, ${alpha * 0.8})`);
+                            gradient.addColorStop(1, `rgba(255, 50, 0, 0)`);
+                            ctx.fillStyle = gradient;
+                            ctx.beginPath();
+                            ctx.arc(p.x, GAME_CONFIG.GROUND_Y, ringRadius, Math.PI, 0, true);
+                            ctx.fill();
+                        }
+                    }
                 } else if (p.type === 'ceilingBeam') {
-                    // 上からのビーム
-                    if (p.life > 0) { // アクティブなビームのみ描画
-                        ctx.fillStyle = p.color;
-                        ctx.globalAlpha = 0.9;
-                        ctx.fillRect(p.x, p.y, p.w, p.h);
-                        ctx.globalAlpha = 1.0;
+                    if (p.life > 0) {
+                        // Vertical beam with lightning effect
+                        const gradient = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
+                        gradient.addColorStop(0, 'rgba(255, 0, 0, 0.3)');
+                        gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.9)');
+                        gradient.addColorStop(1, 'rgba(255, 0, 0, 0.3)');
+                        
+                        ctx.shadowColor = 'red';
+                        ctx.shadowBlur = 30;
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(p.x - 10, p.y, p.w + 20, p.h);
+                        
+                        // Bright core
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        ctx.fillRect(p.x + p.w/4, p.y, p.w/2, p.h);
+                        ctx.shadowBlur = 0;
                     }
                 }
             });
 
-            // Particles
+            // Enhanced Particles
             particles.forEach(p => {
+                const alpha = p.maxLife ? p.life / p.maxLife : 1;
+                
                 if (p.type === 'beam') {
-                    const beamColor = player.beamMultiplier > 1 ? `rgba(255, 255, 0, ${p.life/15})` : `rgba(0, 255, 255, ${p.life/15})`;
-                    ctx.fillStyle = beamColor;
+                    // Multi-layer beam
+                    const gradient = ctx.createLinearGradient(
+                        p.facing === 1 ? p.x : p.x + p.w, p.y,
+                        p.facing === 1 ? p.x + p.w : p.x, p.y
+                    );
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+                    gradient.addColorStop(0.3, `rgba(0, 255, 255, ${alpha * 0.9})`);
+                    gradient.addColorStop(1, `rgba(0, 200, 255, ${alpha * 0.3})`);
+                    
+                    ctx.shadowColor = '#00ffff';
+                    ctx.shadowBlur = 30;
+                    ctx.fillStyle = gradient;
                     ctx.fillRect(p.x, p.y, p.w, p.h);
-                } else if (p.type === 'pixel') {
+                    
+                    // Core
+                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+                    ctx.fillRect(p.x, p.y + p.h/4, p.w, p.h/2);
+                    ctx.shadowBlur = 0;
+                    
+                } else if (p.type === 'pixel' || p.type === 'punchSpark' || p.type === 'beamParticle' ||
+                           p.type === 'bossDeathParticle' || p.type === 'explosionParticle' ||
+                           p.type === 'damageParticle' || p.type === 'bossAppearParticle' ||
+                           p.type === 'floatParticle' || p.type === 'bossTrail' ||
+                           p.type === 'bossBeamParticle' || p.type === 'bossBeamTrail' ||
+                           p.type === 'ceilingBeamParticle' || p.type === 'ceilingBeamTrail') {
+                    ctx.globalAlpha = alpha;
                     ctx.fillStyle = p.color;
-                    ctx.fillRect(p.x, p.y, 4, 4);
+                    const size = p.size || 4;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, size * alpha, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    
+                } else if (p.type === 'shockwave' || p.type === 'explosionRing') {
+                    ctx.strokeStyle = p.color.replace(')', `, ${alpha})`).replace('rgba', 'rgba').replace('rgb', 'rgba');
+                    ctx.lineWidth = 4 * alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                } else if (p.type === 'flash') {
+                    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius * (2 - alpha), 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                } else if (p.type === 'muzzleFlash') {
+                    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x + p.facing * 40, p.y, 60);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+                    gradient.addColorStop(0.3, `rgba(0, 255, 255, ${alpha * 0.8})`);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.ellipse(p.x + p.facing * 20, p.y, 50 * alpha, 30 * alpha, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                } else if (p.type === 'electric') {
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    const midX = (p.x + p.targetX) / 2 + (Math.random() - 0.5) * 30;
+                    const midY = (p.y + p.targetY) / 2 + (Math.random() - 0.5) * 30;
+                    ctx.quadraticCurveTo(midX, midY, p.targetX, p.targetY);
+                    ctx.stroke();
+                    
+                } else if (p.type === 'chargeParticle') {
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
                 }
             });
 
             ctx.font = "bold 20px Arial";
             ctx.strokeStyle = "black";
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 3;
             damageTexts.forEach(t => {
                 ctx.fillStyle = t.color || "white";
-                ctx.fillText(t.text, t.x, t.y);
                 ctx.strokeText(t.text, t.x, t.y);
+                ctx.fillText(t.text, t.x, t.y);
             });
+
+            ctx.restore();
 
             // UI
             document.getElementById('scoreBoard').innerText = `SCORE: ${score} (Stage: ${currentStage})`;
@@ -1678,7 +2233,6 @@
         }
 
         /* Save/Load Logic (Cookie) */
-        // セーブデータ名も「koyama」に変更
         function _saveCookie(name, value) { document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + (60*60*24*30) + '; path=/'; }
         function _loadCookie(name) { const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; }
         function _deleteCookie(name) { document.cookie = name + '=; max-age=0; path=/'; }
@@ -1700,19 +2254,15 @@
                 _saveCookie('koyamaSave', JSON.stringify(data));
                 updateSaveStateUI('SAVED');
                 
-                // BGM停止
                 stopBGM();
                 
-                // Custom alert logic (not using window.alert)
                 const tempMessage = document.createElement('div');
                 tempMessage.textContent = 'セーブ完了！タイトルに戻ります...';
                 tempMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #48bb78; color: white; padding: 15px 30px; border-radius: 8px; z-index: 1000; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
                 document.body.appendChild(tempMessage);
                 
-                // 1.5秒後にメッセージを消してリロード
                 setTimeout(() => {
                     document.body.removeChild(tempMessage);
-                    // ページをリロードしてタイトル画面に戻る
                     location.reload(); 
                 }, 1500);
 
@@ -1735,7 +2285,7 @@
                 score = Number(data.score) || 0;
                 player.hp = Number(data.playerHP) || player.hp;
                 currentStage = Number(data.stage) || 1;
-                previousStage = currentStage; // ロード時に同期
+                previousStage = currentStage;
                 player.punchDamage = Number(data.punch) || 1;
                 player.beamMultiplier = Number(data.beamMulti) || 1;
                 floorBossCount = Number(data.bossCount) || 0;
@@ -1750,7 +2300,6 @@
             const raw = _loadCookie('koyamaSave');
             const loadBtn = document.getElementById('loadBtn');
             if (loadBtn) {
-                // セーブデータがある場合のみ有効化
                 if (raw) {
                     loadBtn.disabled = false;
                 } else {
@@ -1760,11 +2309,9 @@
             const saveBtn = document.getElementById('saveBtn');
             if (saveBtn) saveBtn.addEventListener('click', () => saveGameManual());
             
-            // ロードボタンのクリックイベント（セーブデータがない場合の処理を追加）
             if (loadBtn) loadBtn.addEventListener('click', () => {
                 const raw = _loadCookie('koyamaSave');
                 if (!raw) {
-                    // セーブデータがない場合のメッセージ表示
                     const tempMessage = document.createElement('div');
                     tempMessage.textContent = 'セーブデータがありません';
                     tempMessage.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e53e3e; color: white; padding: 15px 30px; border-radius: 8px; z-index: 1000; font-size: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
@@ -1775,7 +2322,6 @@
                     return;
                 }
 
-                // ユーザーアクションをトリガーにAudioContextをResume
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
@@ -1783,7 +2329,6 @@
                 document.getElementById('startScreen').classList.add('hidden');
                 gameState = 'PLAYING';
                 
-                // ゲーム開始時に通常BGMを再生
                 if (!isMuted) {
                     playBGM('normal');
                 }
@@ -1797,7 +2342,6 @@
         (function(){
             let handled = false;
             setInterval(() => {
-                // ゲームオーバー時にセーブデータを削除
                 if (!handled && gameState === 'GAMEOVER') {
                     deleteSaveData();
                     handled = true;
