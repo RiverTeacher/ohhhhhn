@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ほる顎シューター</title>
+    <title>ほる顎シューター Ver:1.02</title>
     <style>
         * {
             margin: 0;
@@ -42,7 +42,7 @@
             image-rendering: pixelated;
         }
 
-        #loadingScreen, #errorScreen, #gameOverScreen {
+        #loadingScreen, #errorScreen, #gameOverScreen, #titleScreen {
             position: absolute;
             top: 0;
             left: 0;
@@ -55,6 +55,31 @@
             background: rgba(0, 0, 0, 0.95);
             color: #fff;
             z-index: 100;
+        }
+
+        #titleScreen {
+            display: none;
+            background: radial-gradient(ellipse at center, rgba(50,0,50,0.95) 0%, rgba(0,0,0,0.98) 100%);
+        }
+
+        #titleScreen h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            color: #ff6ec7;
+            text-shadow: 0 0 20px #ff6ec7, 0 0 40px #ff6ec7, 0 0 60px #ff6ec7;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        #startPrompt {
+            font-size: 24px;
+            color: #fff;
+            animation: blinkPrompt 1.5s ease-in-out infinite;
+            margin-top: 40px;
+        }
+
+        @keyframes blinkPrompt {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         #loadingScreen h1 {
@@ -207,6 +232,15 @@
             <div id="errorMessage"></div>
         </div>
 
+        <div id="titleScreen">
+            <h1>ほる顎シューター</h1>
+            <p style="font-size: 18px; color: #aaa; text-align: center; padding: 0 40px;">
+                敵を倒してスコアを稼げ！<br>
+                パワーアップアイテムを集めよう！
+            </p>
+            <p id="startPrompt">📱 画面をタップしてスタート 📱</p>
+        </div>
+
         <div id="gameOverScreen">
             <h1>GAME OVER</h1>
             <div class="score-display">スコア: <span id="finalScore">0</span></div>
@@ -230,6 +264,10 @@
         </div>
     </div>
 
+    <audio id="bgm" loop>
+        <source src="https://riverteacher.github.io/ohhhhhn/holl-ago/agosyu-ta-1.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -238,6 +276,8 @@
         const errorMessage = document.getElementById('errorMessage');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const restartBtn = document.getElementById('restartBtn');
+        const titleScreen = document.getElementById('titleScreen');
+        const bgm = document.getElementById('bgm');
 
         canvas.width = 480;
         canvas.height = 854;
@@ -332,6 +372,14 @@
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.05);
                         break;
+                    case 'shield':
+                        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.2);
+                        break;
                 }
             } catch(e) {}
         }
@@ -357,6 +405,12 @@
         let bulletTrails = [];
         let flashEffect = { active: false, color: '#fff', alpha: 0 };
         let slowMotion = { active: false, factor: 1, duration: 0 };
+
+        // 新しいパワーアップ関連変数
+        let multiShot = 1; // 同時発射弾数
+        let playerSpeedBonus = 0; // プレイヤー速度ボーナス
+        let shieldActive = false; // シールド有効状態
+        let shieldDuration = 0; // シールド残り時間
 
         // Initialize stars
         function initStars() {
@@ -435,7 +489,7 @@
         let lastShootTime = 0;
         let lastLevelUpTime = 0;
         let lastEnemySpawnTime = 0;
-        const ENEMY_SPAWN_INTERVAL = 2000;
+        const BASE_ENEMY_SPAWN_INTERVAL = 2000;
 
         const ENEMY_TYPES = {
             WEAK: { hp: 3, speed: 1, score: 10, img: 'enemy1', dropChance: 0.3 },
@@ -447,7 +501,10 @@
 
         const ITEM_TYPES = {
             HEALTH: { color: '#00ff00', effect: 'health', icon: '❤️' },
-            POWERUP: { color: '#ffaa00', effect: 'powerup', icon: '⚡' }
+            POWERUP: { color: '#ffaa00', effect: 'powerup', icon: '⚡' },
+            SPEED: { color: '#00ffff', effect: 'speed', icon: '💨' },
+            SHIELD: { color: '#4444ff', effect: 'shield', icon: '🛡️' },
+            MULTISHOT: { color: '#ff00ff', effect: 'multishot', icon: '🔱' }
         };
 
         // Explosion class for enhanced death effects
@@ -515,7 +572,8 @@
                 this.defaultY = canvas.height - 100;
                 this.width = 40;
                 this.height = 40;
-                this.speed = 5;
+                this.baseSpeed = 5;
+                this.speed = this.baseSpeed;
                 this.hp = 5;
                 this.maxHp = 5;
                 this.invincible = 0;
@@ -541,6 +599,19 @@
                 ctx.lineTo(this.x, this.y + this.height / 2 + thrusterLength);
                 ctx.closePath();
                 ctx.fill();
+
+                // Shield effect
+                if (shieldActive) {
+                    const shieldPulse = Math.sin(Date.now() / 100) * 0.3 + 0.7;
+                    ctx.strokeStyle = `rgba(100, 100, 255, ${shieldPulse})`;
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#4444ff';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width / 2 + 15, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
 
                 // Player sprite with invincibility flash
                 if (this.invincible > 0 && Math.floor(this.invincible / 4) % 2 === 0) {
@@ -583,6 +654,9 @@
             update(keys, touch) {
                 if (this.invincible > 0) this.invincible--;
 
+                // Update speed with bonus
+                this.speed = this.baseSpeed + playerSpeedBonus;
+
                 if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
                     this.x -= this.speed;
                 }
@@ -590,25 +664,19 @@
                     this.x += this.speed;
                 }
 
-                if (isBossMode) {
-                    if (keys['ArrowUp'] || keys['w'] || keys['W']) {
-                        this.y -= this.speed;
-                    }
-                    if (keys['ArrowDown'] || keys['s'] || keys['S']) {
-                        this.y += this.speed;
-                    }
-                    this.y = Math.max(200, Math.min(canvas.height - 50, this.y));
-                } else {
-                    if (this.y !== this.defaultY) {
-                        const diff = this.defaultY - this.y;
-                        this.y += Math.sign(diff) * Math.min(Math.abs(diff), 3);
-                    }
+                // 常に上下移動可能に
+                if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                    this.y -= this.speed;
                 }
+                if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                    this.y += this.speed;
+                }
+                this.y = Math.max(200, Math.min(canvas.height - 50, this.y));
 
                 if (touch && touch.x !== 0) {
                     this.x += touch.x * 0.5;
                 }
-                if (touch && touch.y !== 0 && isBossMode) {
+                if (touch && touch.y !== 0) {
                     this.y += touch.y * 0.5;
                     this.y = Math.max(200, Math.min(canvas.height - 50, this.y));
                 }
@@ -617,6 +685,13 @@
             }
 
             takeDamage(amount) {
+                // シールドがアクティブなら無効化
+                if (shieldActive) {
+                    playSound('shield');
+                    createParticles(this.x, this.y, '#4444ff', 10);
+                    return false;
+                }
+                
                 if (this.invincible > 0) return false;
                 
                 this.hp -= amount;
@@ -628,6 +703,12 @@
                 
                 // Reset combo on damage
                 combo = 0;
+                
+                // マルチショットを1段階下げる
+                if (multiShot > 1) {
+                    multiShot--;
+                    addNotification('マルチショット減少...', '#ff8888');
+                }
                 
                 if (this.hp <= 0) {
                     gameOver();
@@ -643,8 +724,8 @@
         }
 
         class Bullet {
-            constructor(x, y, isEnemy = false, targetX = null, targetY = null, speedMultiplier = 1) {
-                this.x = x;
+            constructor(x, y, isEnemy = false, targetX = null, targetY = null, speedMultiplier = 1, offsetX = 0) {
+                this.x = x + offsetX;
                 this.y = y;
                 this.width = 6;
                 this.height = 6;
@@ -732,6 +813,8 @@
                 
                 this.isBoss = this.type.isBoss;
                 this.targetY = this.type.isBoss ? 150 : null;
+                this.isAtTargetPosition = false; // ボスが定位置に到達したか
+                this.invincibleTime = this.type.isBoss ? 300 : 0; // ボス出現から5秒(300フレーム)無敵
                 
                 // ボスの動き強化：レベルに応じて横移動も速くする
                 this.horizontalSpeed = this.type.isBoss ? 2 * (1 + (level - 1) * 0.1) : 0;
@@ -749,6 +832,32 @@
                 if (this.isBoss) {
                     ctx.shadowBlur = 30;
                     ctx.shadowColor = '#ff00ff';
+                    
+                    // ボス無敵時間の表示
+                    if (this.invincibleTime > 0) {
+                        const invinciblePulse = Math.sin(Date.now() / 100) * 0.4 + 0.6;
+                        ctx.strokeStyle = `rgba(255, 255, 0, ${invinciblePulse})`;
+                        ctx.lineWidth = 5;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width / 2 + 25, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        // 無敵時間カウンター表示
+                        ctx.fillStyle = '#ffff00';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`無敵: ${Math.ceil(this.invincibleTime / 60)}s`, this.x, this.y - this.height / 2 - 25);
+                    }
+                    
+                    // ボスが止まっている時の防御エフェクト
+                    if (this.isAtTargetPosition && this.invincibleTime <= 0) {
+                        const shieldPulse = Math.sin(Date.now() / 150) * 0.3 + 0.7;
+                        ctx.strokeStyle = `rgba(255, 0, 255, ${shieldPulse * 0.6})`;
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width / 2 + 20, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
                 }
 
                 // Hit flash effect
@@ -798,11 +907,14 @@
                 this.wobble += 0.1;
                 this.moveTimer++;
                 if (this.hitFlash > 0) this.hitFlash--;
+                if (this.invincibleTime > 0) this.invincibleTime--;
 
                 if (this.isBoss && this.targetY !== null) {
                     if (this.y < this.targetY) {
                         this.y += this.speed;
+                        this.isAtTargetPosition = false;
                     } else {
+                        this.isAtTargetPosition = true;
                         // ボスの動き強化：不規則な動きを加える
                         let movement = this.horizontalSpeed * this.horizontalDirection;
                         
@@ -846,7 +958,22 @@
             }
 
             takeDamage(amount) {
-                this.hp -= amount;
+                // ボス無敵時間中はダメージ無効
+                if (this.isBoss && this.invincibleTime > 0) {
+                    createParticles(this.x, this.y, '#ffff00', 5);
+                    playSound('shield');
+                    return false;
+                }
+                
+                // ボスが定位置で止まっている時はダメージ軽減
+                let finalDamage = amount;
+                if (this.isBoss && this.isAtTargetPosition) {
+                    finalDamage = amount * 0.4; // 60%カット
+                    // ダメージ軽減のビジュアルフィードバック
+                    createParticles(this.x, this.y, '#ff00ff', 3);
+                }
+                
+                this.hp -= finalDamage;
                 this.hitFlash = 10;
                 
                 // コンボ判定: 攻撃命中時に更新
@@ -887,11 +1014,25 @@
 
             dropItem() {
                 if (!this.type.isBoss && this.type.dropChance && Math.random() < this.type.dropChance) {
-                    // 回復アイテムの排出率をステージが進むにつれて減らす
-                    // 初期50%からレベルごとに5%減少 (最低10%)
-                    let healthChance = Math.max(0.1, 0.5 - (level - 1) * 0.05);
+                    // アイテムタイプの抽選
+                    const rand = Math.random();
+                    let itemType;
                     
-                    const itemType = Math.random() < healthChance ? ITEM_TYPES.HEALTH : ITEM_TYPES.POWERUP;
+                    // 回復アイテムの排出率をステージが進むにつれて減らす
+                    let healthChance = Math.max(0.15, 0.4 - (level - 1) * 0.03);
+                    
+                    if (rand < healthChance) {
+                        itemType = ITEM_TYPES.HEALTH;
+                    } else if (rand < healthChance + 0.25) {
+                        itemType = ITEM_TYPES.POWERUP;
+                    } else if (rand < healthChance + 0.4) {
+                        itemType = ITEM_TYPES.SPEED;
+                    } else if (rand < healthChance + 0.55) {
+                        itemType = ITEM_TYPES.SHIELD;
+                    } else {
+                        itemType = ITEM_TYPES.MULTISHOT;
+                    }
+                    
                     items.push(new Item(this.x, this.y, itemType));
                 }
             }
@@ -1092,6 +1233,23 @@
             ctx.fillText(`レベル: ${level}`, 10, 60);
             ctx.fillText(`ダメージ: ${damageMultiplier.toFixed(1)}x`, 10, 90);
             ctx.fillText(`連射: ${(1000 / shootInterval).toFixed(1)}/s`, 10, 120);
+            
+            // パワーアップ表示
+            let powerupY = 150;
+            if (multiShot > 1) {
+                ctx.fillText(`🔱 x${multiShot}`, 10, powerupY);
+                powerupY += 30;
+            }
+            if (playerSpeedBonus > 0) {
+                ctx.fillText(`💨 +${playerSpeedBonus.toFixed(1)}`, 10, powerupY);
+                powerupY += 30;
+            }
+            if (shieldActive) {
+                ctx.fillStyle = '#4444ff';
+                ctx.fillText(`🛡️ ${Math.ceil(shieldDuration / 60)}s`, 10, powerupY);
+                ctx.fillStyle = '#fff';
+            }
+            
             ctx.shadowBlur = 0;
             
             // High score
@@ -1116,7 +1274,6 @@
                 ctx.fillText(`${combo} COMBO!`, 0, 0);
                 ctx.font = 'bold 14px Arial';
                 ctx.fillStyle = '#fff';
-                // コンボ倍率の表示変更
                 ctx.fillText(`x${(1 + combo * 0.01).toFixed(2)}`, 0, 20);
                 ctx.restore();
             }
@@ -1161,6 +1318,9 @@
         function gameOver() {
             gameRunning = false;
             
+            // BGM停止
+            bgm.pause();
+            
             const isNewRecord = score > highScore;
             if (isNewRecord) {
                 highScore = score;
@@ -1193,6 +1353,10 @@
             killCount = 0;
             shootInterval = BASE_SHOOT_INTERVAL;
             damageMultiplier = 1;
+            multiShot = 1;
+            playerSpeedBonus = 0;
+            shieldActive = false;
+            shieldDuration = 0;
             isBossMode = false;
             showBossWarning = false;
             lastShootTime = 0;
@@ -1208,6 +1372,12 @@
             gameOverScreen.style.display = 'none';
             gameRunning = true;
             initAudio();
+            
+            // BGM再生
+            bgm.currentTime = 0;
+            bgm.volume = 0.5;
+            bgm.play().catch(e => console.log('BGM再生失敗:', e));
+            
             gameLoop();
         }
 
@@ -1260,6 +1430,33 @@
 
         restartBtn.addEventListener('click', resetGame);
 
+        // タイトル画面のタップ/クリックでゲーム開始
+        function startGameFromTitle() {
+            titleScreen.style.display = 'none';
+            player = new Player();
+            lastLevelUpTime = Date.now();
+            initStars();
+            gameRunning = true;
+            initAudio();
+            
+            // BGM再生
+            bgm.volume = 0.5;
+            bgm.play().then(() => {
+                console.log('✓ BGM再生開始');
+            }).catch(e => {
+                console.log('BGM再生失敗:', e);
+            });
+            
+            console.log('ゲーム開始!');
+            gameLoop();
+        }
+
+        titleScreen.addEventListener('click', startGameFromTitle);
+        titleScreen.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGameFromTitle();
+        });
+
         function gameLoop() {
             if (!gameRunning) return;
 
@@ -1269,6 +1466,16 @@
                 if (slowMotion.duration <= 0) {
                     slowMotion.active = false;
                     slowMotion.factor = 1;
+                }
+            }
+
+            // シールド時間の更新
+            if (shieldActive) {
+                shieldDuration--;
+                if (shieldDuration <= 0) {
+                    shieldActive = false;
+                    shieldDuration = 0;
+                    addNotification('シールド解除', '#4444ff');
                 }
             }
 
@@ -1297,8 +1504,8 @@
 
             const now = Date.now();
 
-            // Combo timer
-            if (comboTimer > 0) {
+            // Combo timer - ボス警告中は減らさない
+            if (comboTimer > 0 && !showBossWarning) {
                 comboTimer--;
                 if (comboTimer <= 0) {
                     combo = 0;
@@ -1318,13 +1525,30 @@
             player.update(keys, touchDelta);
             player.draw();
 
+            // プレイヤーの射撃 - マルチショット対応
             if (now - lastShootTime > shootInterval) {
-                bullets.push(new Bullet(player.x, player.y - player.height / 2));
+                if (multiShot === 1) {
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2));
+                } else if (multiShot === 2) {
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, -10));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, 10));
+                } else if (multiShot === 3) {
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, -15));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, 15));
+                } else {
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, -20));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, -7));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, 7));
+                    bullets.push(new Bullet(player.x, player.y - player.height / 2, false, null, null, 1, 20));
+                }
                 playSound('shoot');
                 lastShootTime = now;
             }
 
-            if (now - lastEnemySpawnTime > ENEMY_SPAWN_INTERVAL) {
+            // 敵の出現頻度をレベルに応じて上げる
+            const currentSpawnInterval = Math.max(500, BASE_ENEMY_SPAWN_INTERVAL - (level - 1) * 100);
+            if (now - lastEnemySpawnTime > currentSpawnInterval) {
                 spawnEnemy();
                 lastEnemySpawnTime = now;
             }
@@ -1336,7 +1560,6 @@
                 let hit = false;
                 enemies = enemies.filter(enemy => {
                     if (checkCollision(bullet, enemy)) {
-                        // コンボ倍率の計算変更: 0.1 -> 0.01
                         const comboMultiplier = 1 + combo * 0.01;
                         if (enemy.takeDamage(damageMultiplier * comboMultiplier)) {
                             score += Math.floor(enemy.type.score * comboMultiplier);
@@ -1393,6 +1616,25 @@
                         addNotification('⚡ パワーアップ！', '#ffaa00');
                         playSound('powerup');
                         flashEffect = { active: true, color: '#ffaa00', alpha: 0.2 };
+                    } else if (item.type.effect === 'speed') {
+                        playerSpeedBonus = Math.min(3, playerSpeedBonus + 0.5);
+                        createParticles(player.x, player.y, '#00ffff', 20);
+                        addNotification(`💨 スピード+0.5！(現在:+${playerSpeedBonus.toFixed(1)})`, '#00ffff');
+                        playSound('powerup');
+                        flashEffect = { active: true, color: '#00ffff', alpha: 0.2 };
+                    } else if (item.type.effect === 'shield') {
+                        shieldActive = true;
+                        shieldDuration = 600; // 10秒
+                        createParticles(player.x, player.y, '#4444ff', 20);
+                        addNotification('🛡️ シールド展開！', '#4444ff');
+                        playSound('shield');
+                        flashEffect = { active: true, color: '#4444ff', alpha: 0.2 };
+                    } else if (item.type.effect === 'multishot') {
+                        multiShot = Math.min(4, multiShot + 1);
+                        createParticles(player.x, player.y, '#ff00ff', 20);
+                        addNotification(`🔱 マルチショット x${multiShot}！`, '#ff00ff');
+                        playSound('powerup');
+                        flashEffect = { active: true, color: '#ff00ff', alpha: 0.2 };
                     }
                     return false;
                 }
@@ -1465,12 +1707,10 @@
                 console.log('✓ 全画像読み込み完了');
 
                 loadingScreen.classList.add('hidden');
-                player = new Player();
-                lastLevelUpTime = Date.now();
-                initStars();
-                gameRunning = true;
-                console.log('ゲーム開始!');
-                gameLoop();
+                
+                // タイトル画面を表示
+                titleScreen.style.display = 'flex';
+                console.log('✓ タイトル画面表示');
 
             } catch (error) {
                 console.error('初期化エラー:', error);
