@@ -1,0 +1,17 @@
+<script defer src="https://www.pushcode.jp/dist/js/pushcode.js"></script>
+<script>
+window.PushCodeInit = function() {
+  try {
+    if (PushCode && PushCode.isSupport()) {
+      PushCode.init({ domainToken: '32f4043e0f19cb092b70f50acd90171af512609472078565e43d88ed1e972c9b', userid: '', serviceWorkerPath: '/ohhhhhhn/koyama-n/pushcode_sw.js', scopePath: '/ohhhhhhn/koyama-n/' });
+      PushCode.components.openSubscribeDialog();
+    }
+  }
+  catch (err) {
+    console.error(err);
+    if (PushCode) {
+      PushCode.sendError(err);
+    }
+  }
+};
+</script>
