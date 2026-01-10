@@ -187,6 +187,16 @@
         }
         #damageOverlay.active { animation: damageFlash 0.3s ease-out; }
         @keyframes damageFlash { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+        #slowOverlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 100, 255, 0.3) 0%, rgba(0, 50, 150, 0.5) 100%);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 3;
+            transition: opacity 0.3s;
+        }
+        #slowOverlay.active { opacity: 1; }
         #fpsCounter {
             position: absolute;
             bottom: 26vh;
@@ -208,12 +218,24 @@
         }
         .lite-mode-toggle input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
         .lite-mode-toggle label { cursor: pointer; font-size: 14px; }
+        #debuffIndicator {
+            position: absolute;
+            top: 80px;
+            right: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #00aaff;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 20;
+        }
     </style>
 </head>
 <body>
     <div id="damageOverlay"></div>
+    <div id="slowOverlay"></div>
     <div id="bgmControl"><button id="bgmToggle" title="BGM ON/OFF">♪</button></div>
     <div id="fpsCounter">FPS: --</div>
+    <div id="debuffIndicator"></div>
 
     <div class="w-full h-full flex flex-col items-center justify-center relative">
         <div id="scoreBoard" class="absolute top-2 left-4 text-xl font-bold text-shadow z-0 pointer-events-none">SCORE: 0</div>
@@ -257,8 +279,9 @@
             移動: 矢印 / タップ<br>
             攻撃: Z (パンチ), X (ビーム)<br>
             ジャンプ: Space (2段ジャンプ可)<br>
-            <span class="text-red-400 font-bold">9ステージごとに強力なフロアボスが出現！</span><br>
-            フロアボスは浮遊して攻撃を回避してくるぞ！
+            <span class="text-red-400 font-bold">8ステージごとに強力なフロアボスが出現！</span><br>
+            フロアボスは多彩な攻撃を仕掛けてくる！<br>
+            <span class="text-blue-400">弾幕・追尾弾・突進・速度低下魔法に注意！</span>
         </p>
         <div class="lite-mode-toggle">
             <input type="checkbox" id="liteModeCheck">
@@ -302,21 +325,85 @@
             BOSS: ['https://riverteacher.github.io/ohhhhhn/koyama/game/boss_1.mp3', 'https://riverteacher.github.io/ohhhhhn/koyama/game/boss_2.mp3']
         };
 
-        const CFG = {
-            PLAYER_SPEED: 5, JUMP_FORCE: 12, GRAVITY: 0.6, GROUND_Y: 0,
-            BEAM_COOLDOWN: 180, SPAWN_RATE: 100, PLAYER_MAX_HP: 10,
-            PUNCH_DMG: 1, BASE_BEAM_DMG: 10, INVINCIBILITY_FRAMES: 60,
-            ENEMY_SEEK_DURATION_ZAKO: 120, ENEMY_SEEK_DURATION_BOSS: 420,
-            BASE_ZAKO_HP: 1, BASE_BOSS_HP: 8, BASE_RANGE_HP: 9,
-            HP_EXPONENTIAL_BASE: 1.038, HP_GROWTH_INITIAL_BOOST: 0.2, HP_GROWTH_DECAY: 0.14,
-            STAGE_FRAME_DURATION: 1200, IMAGE_SCALE: 1.25,
-            MAX_ENEMIES: 6, HEAL_AMOUNT: 2,
-            FLOOR_BOSS_STAGE_INTERVAL: 8, FLOOR_BOSS_BASE_HP: 300,
-            FLOOR_BOSS_HP_INCREASE_PERCENT: 0.4, FLOOR_BOSS_FLOAT_INTERVAL: 600,
-            FLOOR_BOSS_FLOAT_DURATION: 120, FLOOR_BOSS_ACTION_INTERVAL: 180,
+        // Game Configuration - 1行ずつ記述
+        const GAME_CONFIG = {
+            // プレイヤー設定
+            PLAYER_SPEED: 5,
+            PLAYER_SLOW_SPEED: 2,
+            JUMP_FORCE: 12,
+            GRAVITY: 0.6,
+            GROUND_Y: 0,
+            PLAYER_MAX_HP: 10,
+            INVINCIBILITY_FRAMES: 60,
+            
+            // 攻撃設定
+            BEAM_COOLDOWN: 180,
+            PUNCH_DMG: 1,
+            BASE_BEAM_DMG: 10,
+            
+            // 敵スポーン設定
+            SPAWN_RATE: 100,
+            MAX_ENEMIES: 6,
+            
+            // 敵AI設定
+            ENEMY_SEEK_DURATION_ZAKO: 120,
+            ENEMY_SEEK_DURATION_BOSS: 420,
+            
+            // 敵HP設定
+            BASE_ZAKO_HP: 1,
+            BASE_BOSS_HP: 8,
+            BASE_RANGE_HP: 9,
+            
+            // 難易度設定
+            HP_EXPONENTIAL_BASE: 1.038,
+            HP_GROWTH_INITIAL_BOOST: 0.2,
+            HP_GROWTH_DECAY: 0.14,
+            
+            // ステージ設定
+            STAGE_FRAME_DURATION: 1200,
+            
+            // 表示設定
+            IMAGE_SCALE: 1.25,
+            
+            // 回復設定
+            HEAL_AMOUNT: 2,
+            
+            // フロアボス基本設定
+            FLOOR_BOSS_STAGE_INTERVAL: 8,
+            FLOOR_BOSS_BASE_HP: 300,
+            FLOOR_BOSS_HP_INCREASE_PERCENT: 0.4,
+            FLOOR_BOSS_FLOAT_INTERVAL: 600,
+            FLOOR_BOSS_FLOAT_DURATION: 120,
+            FLOOR_BOSS_ACTION_INTERVAL: 120,
             FLOOR_BOSS_MOVE_SPEED: 0.5,
-            BOSS_BEAM_HEIGHT: 40, BOSS_CEILING_BEAM_WIDTH: 30,
-            BOSS_ATTACK_WARNING_FRAMES: 60, BOSS_ATTACK_ACTIVE_FRAMES: 30, BOSS_BEAM_DAMAGE: 3
+            
+            // ボス攻撃設定（既存）
+            BOSS_BEAM_HEIGHT: 40,
+            BOSS_CEILING_BEAM_WIDTH: 30,
+            BOSS_ATTACK_WARNING_FRAMES: 60,
+            BOSS_ATTACK_ACTIVE_FRAMES: 30,
+            BOSS_BEAM_DAMAGE: 3,
+            
+            // ボス新攻撃設定 - 弾幕
+            BOSS_BARRAGE_BASE_COUNT: 2,
+            BOSS_BARRAGE_SPEED: 5,
+            BOSS_BARRAGE_DAMAGE: 1,
+            
+            // ボス新攻撃設定 - 追尾弾
+            BOSS_HOMING_BASE_COUNT: 2,
+            BOSS_HOMING_SPEED: 3,
+            BOSS_HOMING_TURN_RATE: 0.03,
+            BOSS_HOMING_DAMAGE: 2,
+            BOSS_HOMING_LIFE: 300,
+            
+            // ボス新攻撃設定 - 突進
+            BOSS_CHARGE_SPEED: 10,
+            BOSS_CHARGE_DAMAGE: 1,
+            BOSS_CHARGE_DISTANCE: 250,
+            
+            // ボス新攻撃設定 - 速度低下魔法
+            BOSS_SLOW_MAGIC_DURATION: 300,
+            BOSS_SLOW_MAGIC_RADIUS: 80,
         };
 
         // Cached DOM Elements
@@ -328,6 +415,9 @@
         let frameCount = 0, score = 0, currentStage = 1, previousStage = 1;
         let isFloorBossActive = false, floorBossCount = 0;
         let liteMode = false, isMuted = false;
+        
+        // Player debuff state
+        let playerSlowTimer = 0;
         
         // Images
         const maedaImage = new Image();
@@ -351,9 +441,9 @@
         // Entities
         const player = {
             x: 100, y: 0, w: 30, h: 60, vx: 0, vy: 0,
-            hp: CFG.PLAYER_MAX_HP, facing: 1, beamCooldown: 0,
+            hp: GAME_CONFIG.PLAYER_MAX_HP, facing: 1, beamCooldown: 0,
             invincibility: 0, punching: 0, jumps: 2, maxJumps: 2,
-            punchDamage: CFG.PUNCH_DMG, beamMultiplier: 1
+            punchDamage: GAME_CONFIG.PUNCH_DMG, beamMultiplier: 1
         };
         
         let enemies = [], particles = [], damageTexts = [], projectiles = [];
@@ -362,13 +452,15 @@
         const PHYSICS_PARTICLES = new Set([
             'pixel', 'punchSpark', 'beamParticle', 'bossDeathParticle', 'explosionParticle',
             'damageParticle', 'bossAppearParticle', 'floatParticle', 'bossTrail',
-            'bossBeamParticle', 'bossBeamTrail', 'ceilingBeamParticle', 'ceilingBeamTrail', 'beamSpark'
+            'bossBeamParticle', 'bossBeamTrail', 'ceilingBeamParticle', 'ceilingBeamTrail', 'beamSpark',
+            'barrageTrail', 'homingTrail', 'chargeTrail', 'slowMagicParticle'
         ]);
         
         const SIMPLE_PARTICLES = new Set([
             'pixel', 'punchSpark', 'beamParticle', 'bossDeathParticle', 'explosionParticle',
             'damageParticle', 'bossAppearParticle', 'floatParticle', 'bossTrail',
-            'bossBeamParticle', 'bossBeamTrail', 'ceilingBeamParticle', 'ceilingBeamTrail'
+            'bossBeamParticle', 'bossBeamTrail', 'ceilingBeamParticle', 'ceilingBeamTrail',
+            'barrageTrail', 'homingTrail', 'chargeTrail', 'slowMagicParticle'
         ]);
 
         // Audio Context
@@ -382,12 +474,15 @@
         const cos = Math.cos;
         const min = Math.min;
         const max = Math.max;
+        const sqrt = Math.sqrt;
+        const atan2 = Math.atan2;
         const PI = Math.PI;
         const PI2 = PI * 2;
 
         function cacheDOMElements() {
             const ids = ['scoreBoard', 'hpBoard', 'statusBoard', 'stageCountdown', 'cdText', 'btnBeam',
-                        'bossWarning', 'stageNotification', 'damageOverlay', 'fpsCounter', 'saveState',
+                        'bossWarning', 'stageNotification', 'damageOverlay', 'slowOverlay', 'fpsCounter', 
+                        'saveState', 'debuffIndicator',
                         'loadingScreen', 'errorScreen', 'startScreen', 'gameOverScreen', 'errorMessage',
                         'finalScore', 'startBtn', 'loadBtn', 'saveBtn', 'bgmToggle', 'liteModeCheck'];
             ids.forEach(id => DOM[id] = document.getElementById(id));
@@ -473,11 +568,11 @@
                 DOM.stageCountdown.innerHTML = '<span style="color: #ff6666;">⚔️ ボス戦中！</span>';
                 return;
             }
-            const framesIn = frameCount % CFG.STAGE_FRAME_DURATION;
-            const remaining = CFG.STAGE_FRAME_DURATION - framesIn;
+            const framesIn = frameCount % GAME_CONFIG.STAGE_FRAME_DURATION;
+            const remaining = GAME_CONFIG.STAGE_FRAME_DURATION - framesIn;
             const secs = Math.ceil(remaining / 60);
-            const progress = (framesIn / CFG.STAGE_FRAME_DURATION) * 100;
-            const isNextBoss = (currentStage + 1) % CFG.FLOOR_BOSS_STAGE_INTERVAL === 0;
+            const progress = (framesIn / GAME_CONFIG.STAGE_FRAME_DURATION) * 100;
+            const isNextBoss = (currentStage + 1) % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0;
             
             DOM.stageCountdown.innerHTML = isNextBoss
                 ? `<span style="color: #ff4444;">⚠️ ボスまで: ${secs}秒</span><div class="countdown-bar"><div class="countdown-fill" style="width: ${100 - progress}%; background: linear-gradient(90deg, #ff0000, #ff6600);"></div></div>`
@@ -497,6 +592,14 @@
         
         function addDamageText(x, y, text, life, vy, color) {
             damageTexts.push({ x, y, text, life, vy, color });
+        }
+
+        // ボスの弾幕数を計算（HPが30%減るごとに+1）
+        function calculateBossBarrageCount(e) {
+            const hpPercent = e.hp / e.maxHp;
+            const lostPercent = 1 - hpPercent;
+            const bonusBullets = floor(lostPercent / 0.3);
+            return GAME_CONFIG.BOSS_BARRAGE_BASE_COUNT + bonusBullets;
         }
 
         // Initialization
@@ -547,8 +650,8 @@
             const resize = () => {
                 canvas.width = min(window.innerWidth, 800);
                 canvas.height = min(window.innerHeight * 0.75, 500);
-                CFG.GROUND_Y = canvas.height - 40;
-                player.y = CFG.GROUND_Y - player.h;
+                GAME_CONFIG.GROUND_Y = canvas.height - 40;
+                player.y = GAME_CONFIG.GROUND_Y - player.h;
             };
             window.addEventListener('resize', resize);
             resize();
@@ -576,7 +679,6 @@
             });
             DOM.saveBtn.addEventListener('click', saveGameManual);
 
-            // Check for existing save
             const raw = _loadCookie('koyamaSave');
             DOM.loadBtn.disabled = !raw;
             updateSaveStateUI(raw ? 'SAVED' : 'NONE');
@@ -625,13 +727,13 @@
 
         function attemptJump() {
             if (gameState !== 'PLAYING') return;
-            const onGround = player.y + player.h >= CFG.GROUND_Y - 1;
+            const onGround = player.y + player.h >= GAME_CONFIG.GROUND_Y - 1;
             
             if (onGround) {
-                player.vy = -CFG.JUMP_FORCE;
+                player.vy = -GAME_CONFIG.JUMP_FORCE;
                 player.jumps = player.maxJumps - 1;
             } else if (player.jumps > 0) {
-                player.vy = -CFG.JUMP_FORCE * 0.8;
+                player.vy = -GAME_CONFIG.JUMP_FORCE * 0.8;
                 player.jumps--;
                 const count = liteMode ? 1 : 3;
                 for (let i = 0; i < count; i++) {
@@ -734,8 +836,8 @@
             if (gameState !== 'PLAYING' || player.beamCooldown > 0) return;
 
             playSound('BEAM');
-            player.beamCooldown = CFG.BEAM_COOLDOWN;
-            const finalDmg = (CFG.BASE_BEAM_DMG + player.punchDamage * 2) * player.beamMultiplier;
+            player.beamCooldown = GAME_CONFIG.BEAM_COOLDOWN;
+            const finalDmg = (GAME_CONFIG.BASE_BEAM_DMG + player.punchDamage * 2) * player.beamMultiplier;
 
             for (let i = 0; i < enemies.length; i++) {
                 const e = enemies[i];
@@ -763,8 +865,8 @@
         }
 
         function applyHealEffect() {
-            player.hp = min(CFG.PLAYER_MAX_HP, player.hp + CFG.HEAL_AMOUNT);
-            addDamageText(player.x, player.y - 10, `+${CFG.HEAL_AMOUNT} HP`, 40, -1, '#00ff00');
+            player.hp = min(GAME_CONFIG.PLAYER_MAX_HP, player.hp + GAME_CONFIG.HEAL_AMOUNT);
+            addDamageText(player.x, player.y - 10, `+${GAME_CONFIG.HEAL_AMOUNT} HP`, 40, -1, '#00ff00');
         }
 
         function applyPunchBuff() {
@@ -794,6 +896,10 @@
                     isFloorBossActive = false;
                     currentStage++;
                     previousStage = currentStage;
+                    
+                    // ボス撃破時に速度低下を解除
+                    playerSlowTimer = 0;
+                    DOM.slowOverlay.classList.remove('active');
 
                     triggerScreenShake(12, 20);
                     const count = liteMode ? 15 : 30;
@@ -831,16 +937,16 @@
         function getDifficultyMultiplier(stage) {
             let mult = 1;
             for (let i = 1; i < stage; i++) {
-                const boost = CFG.HP_GROWTH_INITIAL_BOOST * Math.exp(-CFG.HP_GROWTH_DECAY * i);
-                mult *= CFG.HP_EXPONENTIAL_BASE + boost;
+                const boost = GAME_CONFIG.HP_GROWTH_INITIAL_BOOST * Math.exp(-GAME_CONFIG.HP_GROWTH_DECAY * i);
+                mult *= GAME_CONFIG.HP_EXPONENTIAL_BASE + boost;
             }
             return mult;
         }
 
         function spawnEnemy() {
             if (isFloorBossActive) return;
-            if (currentStage > 0 && currentStage % CFG.FLOOR_BOSS_STAGE_INTERVAL === 0) { spawnFloorBoss(); return; }
-            if (enemies.length >= CFG.MAX_ENEMIES) return;
+            if (currentStage > 0 && currentStage % GAME_CONFIG.FLOOR_BOSS_STAGE_INTERVAL === 0) { spawnFloorBoss(); return; }
+            if (enemies.length >= GAME_CONFIG.MAX_ENEMIES) return;
 
             const r = rand();
             let type = r < 0.1 ? 'boss' : (r < 0.25 ? 'range' : (r < 0.35 ? 'heal' : 'zako'));
@@ -854,18 +960,18 @@
 
             switch (type) {
                 case 'boss':
-                    size = 100; hp = floor((rand() * 31 + CFG.BASE_BOSS_HP) * mult); speed = 1; img = maedaImage; break;
+                    size = 100; hp = floor((rand() * 31 + GAME_CONFIG.BASE_BOSS_HP) * mult); speed = 1; img = maedaImage; break;
                 case 'heal':
                     size = 40; hp = floor((rand() * 2 + 1) * mult); speed = 3; img = maedaImage; break;
                 case 'range':
-                    size = 80; hp = floor((rand() * 4 + CFG.BASE_RANGE_HP) * mult); speed = 0.5; img = rangeMaedaImage; break;
+                    size = 80; hp = floor((rand() * 4 + GAME_CONFIG.BASE_RANGE_HP) * mult); speed = 0.5; img = rangeMaedaImage; break;
                 default:
-                    size = 40; hp = floor((rand() * 3 + CFG.BASE_ZAKO_HP) * mult); speed = 2; img = maedaImage;
+                    size = 40; hp = floor((rand() * 3 + GAME_CONFIG.BASE_ZAKO_HP) * mult); speed = 2; img = maedaImage;
             }
 
             const side = rand() < 0.5 ? -1 : 1;
             enemies.push({
-                x: side === -1 ? -size : canvas.width + size, y: CFG.GROUND_Y - size,
+                x: side === -1 ? -size : canvas.width + size, y: GAME_CONFIG.GROUND_Y - size,
                 w: size, h: size, vx: speed, hp, maxHp: hp, isBoss: type === 'boss', type, img,
                 moveTimer: 0, currentDirection: side === -1 ? 1 : -1,
                 rangeAttackTimer: type === 'range' ? 0 : null,
@@ -890,7 +996,7 @@
                 addParticle({
                     type: 'bossAppearParticle',
                     x: canvas.width - 100 + (rand() - 0.5) * 80,
-                    y: CFG.GROUND_Y - 75 + (rand() - 0.5) * 100,
+                    y: GAME_CONFIG.GROUND_Y - 75 + (rand() - 0.5) * 100,
                     vx: (rand() - 0.5) * 5, vy: -rand() * 4,
                     life: 40, maxLife: 40, color: `hsl(${280 + rand() * 40}, 100%, 60%)`, size: 4 + rand() * 4
                 });
@@ -899,15 +1005,35 @@
             DOM.bossWarning.style.display = 'block';
             setTimeout(() => DOM.bossWarning.style.display = 'none', 3000);
 
-            const mult = Math.pow(1 + CFG.FLOOR_BOSS_HP_INCREASE_PERCENT, floorBossCount - 1);
-            const maxHp = floor(CFG.FLOOR_BOSS_BASE_HP * mult);
+            const mult = Math.pow(1 + GAME_CONFIG.FLOOR_BOSS_HP_INCREASE_PERCENT, floorBossCount - 1);
+            const maxHp = floor(GAME_CONFIG.FLOOR_BOSS_BASE_HP * mult);
             const size = 150;
 
             enemies.push({
-                type: 'floor_boss', x: canvas.width + 100, y: CFG.GROUND_Y - size,
-                w: size, h: size, vx: CFG.FLOOR_BOSS_MOVE_SPEED, hp: maxHp, maxHp, isBoss: true, img: floorBossImage,
-                floatTimer: 0, isFloating: false, attackTimer: 0, attackState: 'idle', attackType: null,
-                moveTimer: 0, currentDirection: -1, targetX: 0, appearanceFrame: 0
+                type: 'floor_boss', 
+                x: canvas.width + 100, 
+                y: GAME_CONFIG.GROUND_Y - size,
+                w: size, 
+                h: size, 
+                vx: GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED, 
+                hp: maxHp, 
+                maxHp, 
+                isBoss: true, 
+                img: floorBossImage,
+                floatTimer: 0, 
+                isFloating: false, 
+                attackTimer: 0, 
+                attackState: 'idle', 
+                attackType: null,
+                moveTimer: 0, 
+                currentDirection: -1, 
+                targetX: 0, 
+                appearanceFrame: 0,
+                // 新しい攻撃用のステート
+                isCharging: false,
+                chargeDistance: 0,
+                chargeDirection: 0,
+                lastHpThreshold: 1.0  // HP閾値の追跡用
             });
         }
 
@@ -915,6 +1041,7 @@
             e.appearanceFrame = (e.appearanceFrame || 0) + 1;
             const entryX = canvas.width - 200;
 
+            // 入場中
             if (e.x > entryX) {
                 e.x -= 2;
                 const interval = liteMode ? 6 : 3;
@@ -925,9 +1052,52 @@
                 return;
             }
 
+            // 突進中の処理
+            if (e.isCharging) {
+                e.chargeDistance += GAME_CONFIG.BOSS_CHARGE_SPEED;
+                e.x += e.chargeDirection * GAME_CONFIG.BOSS_CHARGE_SPEED;
+                
+                // 突進トレイル
+                if (frameCount % 2 === 0) {
+                    addParticle({ type: 'chargeTrail', x: e.x + e.w/2, y: e.y + e.h/2,
+                        vx: -e.chargeDirection * 3, vy: (rand() - 0.5) * 2, life: 15, maxLife: 15,
+                        color: '#ff6600', size: 6 + rand() * 4 });
+                }
+                
+                // プレイヤーとの衝突判定
+                if (player.invincibility <= 0 &&
+                    player.x < e.x + e.w - 20 && player.x + player.w > e.x + 20 &&
+                    player.y < e.y + e.h - 20 && player.y + player.h > e.y + 20) {
+                    handlePlayerDamage(GAME_CONFIG.BOSS_CHARGE_DAMAGE);
+                    addDamageText(player.x, player.y, GAME_CONFIG.BOSS_CHARGE_DAMAGE, 30, -2, 'orange');
+                    player.vx = e.chargeDirection * 10;
+                    player.vy = -5;
+                }
+                
+                // 一定距離進んだら or 壁に当たったら突進終了
+                const reachedDistance = e.chargeDistance >= GAME_CONFIG.BOSS_CHARGE_DISTANCE;
+                const hitWall = e.x <= 0 || e.x + e.w >= canvas.width;
+                
+                if (reachedDistance || hitWall) {
+                    e.isCharging = false;
+                    e.x = max(0, min(canvas.width - e.w, e.x));
+                    triggerScreenShake(4, 8);
+                    
+                    // 停止エフェクト
+                    const cnt = liteMode ? 3 : 6;
+                    for (let i = 0; i < cnt; i++) {
+                        addParticle({ type: 'pixel', x: e.x + e.w/2, 
+                            y: e.y + rand() * e.h, vx: -e.chargeDirection * (2 + rand() * 3),
+                            vy: (rand() - 0.5) * 4, life: 15, color: '#ff6600' });
+                    }
+                }
+                return;
+            }
+
+            // 浮遊ロジック
             e.floatTimer++;
-            const floatCycle = CFG.FLOOR_BOSS_FLOAT_INTERVAL;
-            const floatDur = CFG.FLOOR_BOSS_FLOAT_DURATION;
+            const floatCycle = GAME_CONFIG.FLOOR_BOSS_FLOAT_INTERVAL;
+            const floatDur = GAME_CONFIG.FLOOR_BOSS_FLOAT_DURATION;
 
             if (e.floatTimer % floatCycle > (floatCycle - floatDur)) {
                 if (!e.isFloating) {
@@ -941,87 +1111,248 @@
                     }
                 }
                 e.y += (e.targetY - e.y) * 0.1;
+                
+                // 飛行中に弾幕を発射
+                if (frameCount % 90 === 0) {
+                    fireBarrage(e);
+                }
             } else {
-                if (e.isFloating) { e.isFloating = false; e.targetY = CFG.GROUND_Y - e.h; }
-                const groundY = CFG.GROUND_Y - e.h;
+                if (e.isFloating) { 
+                    e.isFloating = false; 
+                    e.targetY = GAME_CONFIG.GROUND_Y - e.h; 
+                }
+                const groundY = GAME_CONFIG.GROUND_Y - e.h;
                 if (abs(e.y - groundY) > 1) e.y += (groundY - e.y) * 0.1;
                 else e.y = groundY;
             }
 
-            if (!e.isFloating) {
+            // 移動ロジック（浮遊中でなく、突進中でもない場合）
+            if (!e.isFloating && !e.isCharging) {
                 const bossCenter = e.x + e.w / 2;
                 const playerCenter = player.x + player.w / 2;
                 if (abs(bossCenter - playerCenter) > 50) {
-                    e.x += CFG.FLOOR_BOSS_MOVE_SPEED * (bossCenter < playerCenter ? 1 : -1);
+                    e.x += GAME_CONFIG.FLOOR_BOSS_MOVE_SPEED * (bossCenter < playerCenter ? 1 : -1);
                     e.x = max(0, min(canvas.width - e.w, e.x));
                 }
             }
 
+            // 浮遊中は攻撃しない（弾幕は別で処理）
             if (e.isFloating) return;
 
+            // 攻撃ロジック
             e.attackTimer++;
 
             if (e.attackState === 'idle') {
-                if (e.attackTimer > CFG.FLOOR_BOSS_ACTION_INTERVAL) {
+                if (e.attackTimer > GAME_CONFIG.FLOOR_BOSS_ACTION_INTERVAL) {
                     e.attackState = 'warning';
                     e.attackTimer = 0;
+                    
+                    // 攻撃タイプをランダムに選択（新しい攻撃を追加）
                     const r = rand();
-                    e.attackType = r < 0.33 ? 'beam' : (r < 0.66 ? 'area' : 'ceilingBeam');
-                    if (e.attackType !== 'beam') e.targetX = player.x + player.w / 2;
+                    if (r < 0.15) {
+                        e.attackType = 'beam';
+                    } else if (r < 0.30) {
+                        e.attackType = 'area';
+                    } else if (r < 0.45) {
+                        e.attackType = 'ceilingBeam';
+                    } else if (r < 0.60) {
+                        e.attackType = 'homing';
+                    } else if (r < 0.75) {
+                        e.attackType = 'charge';
+                    } else if (r < 0.90) {
+                        e.attackType = 'slowMagic';
+                    } else {
+                        e.attackType = 'barrage';
+                    }
+                    
+                    if (e.attackType === 'area' || e.attackType === 'ceilingBeam' || e.attackType === 'slowMagic') {
+                        e.targetX = player.x + player.w / 2;
+                    }
                     triggerScreenShake(2, 20);
                 }
             } else if (e.attackState === 'warning') {
                 const interval = liteMode ? 10 : 5;
                 if (frameCount % interval === 0) {
-                    const tX = e.attackType === 'beam' ? e.x : e.targetX;
-                    const tY = e.attackType === 'ceilingBeam' ? 0 : CFG.GROUND_Y - 20;
-                    const col = e.attackType === 'beam' ? 'purple' : (e.attackType === 'area' ? 'orange' : 'red');
+                    let tX, tY, col;
+                    
+                    switch (e.attackType) {
+                        case 'beam':
+                            tX = e.x; tY = GAME_CONFIG.GROUND_Y - 20; col = 'purple'; break;
+                        case 'area':
+                            tX = e.targetX; tY = GAME_CONFIG.GROUND_Y - 20; col = 'orange'; break;
+                        case 'ceilingBeam':
+                            tX = e.targetX; tY = 0; col = 'red'; break;
+                        case 'homing':
+                            tX = e.x + e.w/2; tY = e.y + e.h/2; col = '#ff00ff'; break;
+                        case 'charge':
+                            tX = e.x + e.w/2; tY = e.y + e.h/2; col = '#ff6600'; break;
+                        case 'slowMagic':
+                            tX = e.targetX; tY = GAME_CONFIG.GROUND_Y - 40; col = '#00aaff'; break;
+                        case 'barrage':
+                            tX = e.x + e.w/2; tY = e.y + e.h/2; col = '#ff0066'; break;
+                        default:
+                            tX = e.x; tY = GAME_CONFIG.GROUND_Y - 20; col = 'purple';
+                    }
+                    
                     addParticle({ type: 'chargeParticle', x: tX + (rand() - 0.5) * 80, y: tY + (rand() - 0.5) * 40,
                         targetX: tX, targetY: tY, life: 15, maxLife: 15, color: col });
                 }
 
-                if (e.attackTimer > CFG.BOSS_ATTACK_WARNING_FRAMES) {
+                if (e.attackTimer > GAME_CONFIG.BOSS_ATTACK_WARNING_FRAMES) {
                     e.attackState = 'active';
                     e.attackTimer = 0;
                     triggerScreenShake(6, 12);
 
-                    if (e.attackType === 'beam') {
-                        projectiles.push({ type: 'bossBeam', x: canvas.width, y: CFG.GROUND_Y - CFG.BOSS_BEAM_HEIGHT / 2,
-                            w: canvas.width, h: CFG.BOSS_BEAM_HEIGHT, vx: -30, vy: 0, damage: CFG.BOSS_BEAM_DAMAGE,
-                            life: canvas.width / 30 + 10, color: 'purple', spawnTime: frameCount });
-                        const cnt = liteMode ? 5 : 12;
-                        for (let i = 0; i < cnt; i++) {
-                            addParticle({ type: 'bossBeamParticle', x: canvas.width,
-                                y: CFG.GROUND_Y - CFG.BOSS_BEAM_HEIGHT / 2 + (rand() - 0.5) * 50,
-                                vx: -12 - rand() * 8, vy: (rand() - 0.5) * 4, life: 25, maxLife: 25,
-                                color: `hsl(${280 + rand() * 40}, 100%, 60%)`, size: 3 + rand() * 3 });
-                        }
-                    } else if (e.attackType === 'area') {
-                        projectiles.push({ type: 'explosion', x: e.targetX, y: CFG.GROUND_Y, w: 100, h: 150,
-                            damage: 4, life: CFG.BOSS_ATTACK_ACTIVE_FRAMES, color: 'orange', spawnTime: frameCount });
-                        const cnt = liteMode ? 8 : 15;
-                        for (let i = 0; i < cnt; i++) {
-                            const angle = rand() * PI;
-                            const speed = 3 + rand() * 6;
-                            addParticle({ type: 'explosionParticle', x: e.targetX, y: CFG.GROUND_Y - 20,
-                                vx: cos(angle) * speed * (rand() > 0.5 ? 1 : -1), vy: -sin(angle) * speed,
-                                life: 25, maxLife: 25, color: `hsl(${30 + rand() * 20}, 100%, 60%)`, size: 3 + rand() * 4 });
-                        }
-                    } else {
-                        projectiles.push({ type: 'ceilingBeam', x: e.targetX - CFG.BOSS_CEILING_BEAM_WIDTH / 2,
-                            y: 0, w: CFG.BOSS_CEILING_BEAM_WIDTH, h: CFG.GROUND_Y, vx: 0, vy: 0,
-                            damage: CFG.BOSS_BEAM_DAMAGE, life: CFG.BOSS_ATTACK_ACTIVE_FRAMES, color: 'red', spawnTime: frameCount });
-                        const cnt = liteMode ? 5 : 10;
-                        for (let i = 0; i < cnt; i++) {
-                            addParticle({ type: 'ceilingBeamParticle', x: e.targetX + (rand() - 0.5) * 30,
-                                y: rand() * CFG.GROUND_Y, vx: (rand() - 0.5) * 2, vy: 4 + rand() * 4,
-                                life: 15, maxLife: 15, color: `hsl(${rand() * 30}, 100%, 60%)`, size: 2 + rand() * 3 });
-                        }
-                    }
+                    // 攻撃実行
+                    executeFloorBossAttack(e);
                 }
-            } else if (e.attackState === 'active' && e.attackTimer > CFG.BOSS_ATTACK_ACTIVE_FRAMES) {
+            } else if (e.attackState === 'active' && e.attackTimer > GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES) {
                 e.attackState = 'idle';
                 e.attackTimer = 0;
+            }
+        }
+
+        // 弾幕発射（プレイヤーがいる方向に向かって発射）
+        function fireBarrage(e) {
+            const barrageCount = calculateBossBarrageCount(e);
+            const centerX = e.x + e.w / 2;
+            const centerY = e.y + e.h / 2;
+            const playerCenterX = player.x + player.w / 2;
+            const playerCenterY = player.y + player.h / 2;
+            
+            // プレイヤー方向への基準角度（発射時点で固定）
+            const baseAngle = atan2(playerCenterY - centerY, playerCenterX - centerX);
+            
+            // 弾の間隔（少しずらして発射）
+            const spreadAngle = PI / 8; // 22.5度の扇（狭め）
+            
+            for (let i = 0; i < barrageCount; i++) {
+                // 弾が複数の場合は少しだけ角度をずらす
+                const angleOffset = barrageCount > 1 
+                    ? (i / (barrageCount - 1) - 0.5) * spreadAngle 
+                    : 0;
+                const angle = baseAngle + angleOffset;
+                
+                // 少し遅延を付けて発射（時間差攻撃）
+                const delay = i * 5;
+                
+                setTimeout(() => {
+                    if (gameState !== 'PLAYING') return;
+                    projectiles.push({
+                        type: 'barrage',
+                        x: centerX,
+                        y: centerY,
+                        w: 12,
+                        h: 12,
+                        vx: cos(angle) * GAME_CONFIG.BOSS_BARRAGE_SPEED,
+                        vy: sin(angle) * GAME_CONFIG.BOSS_BARRAGE_SPEED,
+                        damage: GAME_CONFIG.BOSS_BARRAGE_DAMAGE,
+                        life: 180,
+                        color: '#ff0066'
+                    });
+                }, delay * 16); // 約16ms（1フレーム）ずつ遅延
+            }
+            
+            // 発射エフェクト
+            const cnt = liteMode ? 3 : 6;
+            for (let i = 0; i < cnt; i++) {
+                addParticle({ type: 'pixel', x: centerX, y: centerY,
+                    vx: (rand() - 0.5) * 6, vy: (rand() - 0.5) * 6, life: 15, color: '#ff0066' });
+            }
+        }
+
+        // ボス攻撃実行
+        function executeFloorBossAttack(e) {
+            switch (e.attackType) {
+                case 'beam':
+                    projectiles.push({ type: 'bossBeam', x: canvas.width, y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2,
+                        w: canvas.width, h: GAME_CONFIG.BOSS_BEAM_HEIGHT, vx: -30, vy: 0, damage: GAME_CONFIG.BOSS_BEAM_DAMAGE,
+                        life: canvas.width / 30 + 10, color: 'purple', spawnTime: frameCount });
+                    const beamCnt = liteMode ? 5 : 12;
+                    for (let i = 0; i < beamCnt; i++) {
+                        addParticle({ type: 'bossBeamParticle', x: canvas.width,
+                            y: GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2 + (rand() - 0.5) * 50,
+                            vx: -12 - rand() * 8, vy: (rand() - 0.5) * 4, life: 25, maxLife: 25,
+                            color: `hsl(${280 + rand() * 40}, 100%, 60%)`, size: 3 + rand() * 3 });
+                    }
+                    break;
+                    
+                case 'area':
+                    projectiles.push({ type: 'explosion', x: e.targetX, y: GAME_CONFIG.GROUND_Y, w: 100, h: 150,
+                        damage: 4, life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES, color: 'orange', spawnTime: frameCount });
+                    const areaCnt = liteMode ? 8 : 15;
+                    for (let i = 0; i < areaCnt; i++) {
+                        const angle = rand() * PI;
+                        const speed = 3 + rand() * 6;
+                        addParticle({ type: 'explosionParticle', x: e.targetX, y: GAME_CONFIG.GROUND_Y - 20,
+                            vx: cos(angle) * speed * (rand() > 0.5 ? 1 : -1), vy: -sin(angle) * speed,
+                            life: 25, maxLife: 25, color: `hsl(${30 + rand() * 20}, 100%, 60%)`, size: 3 + rand() * 4 });
+                    }
+                    break;
+                    
+                case 'ceilingBeam':
+                    projectiles.push({ type: 'ceilingBeam', x: e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH / 2,
+                        y: 0, w: GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, h: GAME_CONFIG.GROUND_Y, vx: 0, vy: 0,
+                        damage: GAME_CONFIG.BOSS_BEAM_DAMAGE, life: GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES, color: 'red', spawnTime: frameCount });
+                    const ceilCnt = liteMode ? 5 : 10;
+                    for (let i = 0; i < ceilCnt; i++) {
+                        addParticle({ type: 'ceilingBeamParticle', x: e.targetX + (rand() - 0.5) * 30,
+                            y: rand() * GAME_CONFIG.GROUND_Y, vx: (rand() - 0.5) * 2, vy: 4 + rand() * 4,
+                            life: 15, maxLife: 15, color: `hsl(${rand() * 30}, 100%, 60%)`, size: 2 + rand() * 3 });
+                    }
+                    break;
+                    
+                case 'homing':
+                    // 追尾弾を発射
+                    const homingCount = GAME_CONFIG.BOSS_HOMING_BASE_COUNT + floor((1 - e.hp / e.maxHp) / 0.3);
+                    for (let i = 0; i < homingCount; i++) {
+                        const angle = (PI2 / homingCount) * i - PI / 2;
+                        projectiles.push({
+                            type: 'homing',
+                            x: e.x + e.w / 2,
+                            y: e.y + e.h / 2,
+                            w: 15,
+                            h: 15,
+                            vx: cos(angle) * 2,
+                            vy: sin(angle) * 2,
+                            damage: GAME_CONFIG.BOSS_HOMING_DAMAGE,
+                            life: GAME_CONFIG.BOSS_HOMING_LIFE,
+                            color: '#ff00ff'
+                        });
+                    }
+                    addDamageText(e.x + e.w/2, e.y, '追尾弾！', 40, -2, '#ff00ff');
+                    break;
+                    
+                case 'charge':
+                    // 突進開始
+                    e.isCharging = true;
+                    e.chargeDistance = 0;
+                    e.chargeDirection = player.x + player.w/2 > e.x + e.w/2 ? 1 : -1;
+                    addDamageText(e.x + e.w/2, e.y, '突進！', 40, -2, '#ff6600');
+                    triggerScreenShake(3, 8);
+                    break;
+                    
+                case 'slowMagic':
+                    // 速度低下魔法
+                    projectiles.push({
+                        type: 'slowMagic',
+                        x: e.targetX,
+                        y: GAME_CONFIG.GROUND_Y - 60,
+                        w: GAME_CONFIG.BOSS_SLOW_MAGIC_RADIUS * 2,
+                        h: GAME_CONFIG.BOSS_SLOW_MAGIC_RADIUS * 2,
+                        damage: 0,
+                        life: 90,
+                        maxLife: 90,
+                        color: '#00aaff'
+                    });
+                    addDamageText(e.x + e.w/2, e.y, '速度低下魔法！', 40, -2, '#00aaff');
+                    break;
+                    
+                case 'barrage':
+                    // 地上での弾幕発射
+                    fireBarrage(e);
+                    addDamageText(e.x + e.w/2, e.y, '弾幕！', 40, -2, '#ff0066');
+                    break;
             }
         }
 
@@ -1044,7 +1375,7 @@
             if (e.rangeAttackTimer % 300 === 0) {
                 e.spikeState = 'warning';
                 e.spikeWarningPos = player.x + player.w / 2;
-                projectiles.push({ type: 'spike', x: e.spikeWarningPos, y: CFG.GROUND_Y,
+                projectiles.push({ type: 'spike', x: e.spikeWarningPos, y: GAME_CONFIG.GROUND_Y,
                     w: 40, h: 0, damage: 2, state: 'warning', life: 60, maxLife: 60, owner: e });
             }
         }
@@ -1052,7 +1383,7 @@
         function handlePlayerDamage(damage) {
             if (player.invincibility > 0) return;
             player.hp -= damage;
-            player.invincibility = CFG.INVINCIBILITY_FRAMES;
+            player.invincibility = GAME_CONFIG.INVINCIBILITY_FRAMES;
             playSound('DAMAGE');
             triggerDamageFlash();
             triggerScreenShake(6, 10);
@@ -1095,7 +1426,7 @@
                     if (p.x + p.h < 0) p.life = 0;
                 } else if (p.type === 'explosion') {
                     if (player.invincibility <= 0 && player.x < p.x + p.w/2 && player.x + player.w > p.x - p.w/2 &&
-                        player.y + player.h > CFG.GROUND_Y - p.h) {
+                        player.y + player.h > GAME_CONFIG.GROUND_Y - p.h) {
                         handlePlayerDamage(p.damage);
                         addDamageText(player.x, player.y, p.damage, 30, -2, 'red');
                     }
@@ -1131,7 +1462,7 @@
                             p.h = 50;
                             const cnt = liteMode ? 3 : 6;
                             for (let j = 0; j < cnt; j++) {
-                                addParticle({ type: 'pixel', x: p.x + (rand() - 0.5) * 25, y: CFG.GROUND_Y - 10,
+                                addParticle({ type: 'pixel', x: p.x + (rand() - 0.5) * 25, y: GAME_CONFIG.GROUND_Y - 10,
                                     vx: (rand() - 0.5) * 5, vy: -rand() * 4 - 2, life: 12, color: '#654321' });
                             }
                         }
@@ -1139,6 +1470,104 @@
                         player.x < p.x + p.w / 2 && player.x + player.w > p.x - p.w / 2 && player.y + player.h > p.y - p.h) {
                         handlePlayerDamage(p.damage);
                         addDamageText(player.x, player.y, p.damage, 30, -2, 'red');
+                    }
+                } else if (p.type === 'barrage') {
+                    // 弾幕弾の更新
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    
+                    // トレイル
+                    if (frameCount % 3 === 0) {
+                        addParticle({ type: 'barrageTrail', x: p.x, y: p.y,
+                            vx: 0, vy: 0, life: 10, maxLife: 10, color: '#ff0066', size: 4 });
+                    }
+                    
+                    // プレイヤーとの衝突判定
+                    if (player.invincibility <= 0 &&
+                        player.x < p.x + p.w/2 && player.x + player.w > p.x - p.w/2 &&
+                        player.y < p.y + p.h/2 && player.y + player.h > p.y - p.h/2) {
+                        handlePlayerDamage(p.damage);
+                        addDamageText(player.x, player.y, p.damage, 30, -2, '#ff0066');
+                        p.life = 0;
+                    }
+                    
+                    // 画面外で消滅
+                    if (p.x < -20 || p.x > canvas.width + 20 || p.y < -20 || p.y > canvas.height + 20) {
+                        p.life = 0;
+                    }
+                } else if (p.type === 'homing') {
+                    // 追尾弾の更新
+                    const playerCenterX = player.x + player.w / 2;
+                    const playerCenterY = player.y + player.h / 2;
+                    const dx = playerCenterX - p.x;
+                    const dy = playerCenterY - p.y;
+                    const targetAngle = atan2(dy, dx);
+                    const currentAngle = atan2(p.vy, p.vx);
+                    
+                    // 角度を徐々に調整
+                    let angleDiff = targetAngle - currentAngle;
+                    while (angleDiff > PI) angleDiff -= PI2;
+                    while (angleDiff < -PI) angleDiff += PI2;
+                    
+                    const newAngle = currentAngle + angleDiff * GAME_CONFIG.BOSS_HOMING_TURN_RATE;
+                    p.vx = cos(newAngle) * GAME_CONFIG.BOSS_HOMING_SPEED;
+                    p.vy = sin(newAngle) * GAME_CONFIG.BOSS_HOMING_SPEED;
+                    
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    
+                    // トレイル
+                    if (frameCount % 2 === 0) {
+                        addParticle({ type: 'homingTrail', x: p.x, y: p.y,
+                            vx: -p.vx * 0.3, vy: -p.vy * 0.3, life: 15, maxLife: 15, color: '#ff00ff', size: 5 });
+                    }
+                    
+                    // プレイヤーとの衝突判定
+                    if (player.invincibility <= 0 &&
+                        player.x < p.x + p.w/2 && player.x + player.w > p.x - p.w/2 &&
+                        player.y < p.y + p.h/2 && player.y + player.h > p.y - p.h/2) {
+                        handlePlayerDamage(p.damage);
+                        addDamageText(player.x, player.y, p.damage, 30, -2, '#ff00ff');
+                        p.life = 0;
+                        
+                        // 爆発エフェクト
+                        const cnt = liteMode ? 4 : 8;
+                        for (let j = 0; j < cnt; j++) {
+                            addParticle({ type: 'pixel', x: p.x, y: p.y,
+                                vx: (rand() - 0.5) * 8, vy: (rand() - 0.5) * 8, life: 15, color: '#ff00ff' });
+                        }
+                    }
+                    
+                    // 画面外で消滅
+                    if (p.x < -50 || p.x > canvas.width + 50 || p.y < -50 || p.y > canvas.height + 50) {
+                        p.life = 0;
+                    }
+                } else if (p.type === 'slowMagic') {
+                    // 速度低下魔法の更新
+                    const radius = GAME_CONFIG.BOSS_SLOW_MAGIC_RADIUS;
+                    const playerCenterX = player.x + player.w / 2;
+                    const playerCenterY = player.y + player.h / 2;
+                    const dx = playerCenterX - p.x;
+                    const dy = playerCenterY - (p.y + radius);
+                    const dist = sqrt(dx * dx + dy * dy);
+                    
+                    // プレイヤーが範囲内にいたら速度低下
+                    if (dist < radius) {
+                        playerSlowTimer = GAME_CONFIG.BOSS_SLOW_MAGIC_DURATION;
+                        DOM.slowOverlay.classList.add('active');
+                        addDamageText(player.x, player.y - 20, '速度低下！', 30, -1, '#00aaff');
+                        p.life = 0;  // 当たったら消える
+                    }
+                    
+                    // パーティクルエフェクト
+                    if (frameCount % 5 === 0) {
+                        const angle = rand() * PI2;
+                        const r = rand() * radius;
+                        addParticle({ type: 'slowMagicParticle', 
+                            x: p.x + cos(angle) * r, 
+                            y: p.y + radius + sin(angle) * r * 0.5,
+                            vx: (rand() - 0.5) * 1, vy: -rand() * 2 - 1, life: 20, maxLife: 20, 
+                            color: '#00aaff', size: 3 });
                     }
                 }
 
@@ -1153,7 +1582,7 @@
             updateScreenShake();
             updateFPS();
 
-            if (!isFloorBossActive && frameCount % CFG.STAGE_FRAME_DURATION === 0) currentStage++;
+            if (!isFloorBossActive && frameCount % GAME_CONFIG.STAGE_FRAME_DURATION === 0) currentStage++;
 
             if (currentStage > previousStage) {
                 showStageNotification(currentStage);
@@ -1162,18 +1591,35 @@
 
             updateStageCountdown();
 
-            // Player movement
-            if (keys.ArrowLeft || touchInput.left) { player.vx = -CFG.PLAYER_SPEED; player.facing = -1; }
-            else if (keys.ArrowRight || touchInput.right) { player.vx = CFG.PLAYER_SPEED; player.facing = 1; }
+            // 速度低下タイマーの更新
+            if (playerSlowTimer > 0) {
+                playerSlowTimer--;
+                if (playerSlowTimer <= 0) {
+                    DOM.slowOverlay.classList.remove('active');
+                }
+            }
+            
+            // デバフ表示の更新
+            if (playerSlowTimer > 0) {
+                DOM.debuffIndicator.innerHTML = `🐢 速度低下: ${Math.ceil(playerSlowTimer / 60)}秒`;
+            } else {
+                DOM.debuffIndicator.innerHTML = '';
+            }
+
+            // Player movement（速度低下考慮）
+            const currentSpeed = playerSlowTimer > 0 ? GAME_CONFIG.PLAYER_SLOW_SPEED : GAME_CONFIG.PLAYER_SPEED;
+            
+            if (keys.ArrowLeft || touchInput.left) { player.vx = -currentSpeed; player.facing = -1; }
+            else if (keys.ArrowRight || touchInput.right) { player.vx = currentSpeed; player.facing = 1; }
             else player.vx = 0;
 
-            player.vy += CFG.GRAVITY;
+            player.vy += GAME_CONFIG.GRAVITY;
             player.x += player.vx;
             player.y += player.vy;
             player.x = max(0, min(canvas.width - player.w, player.x));
 
-            if (player.y + player.h > CFG.GROUND_Y) {
-                player.y = CFG.GROUND_Y - player.h;
+            if (player.y + player.h > GAME_CONFIG.GROUND_Y) {
+                player.y = GAME_CONFIG.GROUND_Y - player.h;
                 player.vy = 0;
                 player.jumps = player.maxJumps;
             }
@@ -1183,8 +1629,8 @@
             if (player.invincibility > 0) player.invincibility--;
 
             // Spawn enemies
-            if (frameCount % CFG.SPAWN_RATE === 0) spawnEnemy();
-            if (!isFloorBossActive && frameCount % 600 === 0 && CFG.SPAWN_RATE > 30) CFG.SPAWN_RATE--;
+            if (frameCount % GAME_CONFIG.SPAWN_RATE === 0) spawnEnemy();
+            if (!isFloorBossActive && frameCount % 600 === 0 && GAME_CONFIG.SPAWN_RATE > 30) GAME_CONFIG.SPAWN_RATE--;
 
             // Update enemies
             for (let i = enemies.length - 1; i >= 0; i--) {
@@ -1195,7 +1641,7 @@
                 } else {
                     handleRangedAttacks(e);
                     e.moveTimer++;
-                    const seekLimit = e.isBoss ? CFG.ENEMY_SEEK_DURATION_BOSS : CFG.ENEMY_SEEK_DURATION_ZAKO;
+                    const seekLimit = e.isBoss ? GAME_CONFIG.ENEMY_SEEK_DURATION_BOSS : GAME_CONFIG.ENEMY_SEEK_DURATION_ZAKO;
 
                     if (e.type === 'range') {
                         if (abs(e.x - player.x) > 300) {
@@ -1213,8 +1659,8 @@
                     }
                 }
 
-                // Collision
-                if (!(e.type === 'floor_boss' && e.isFloating)) {
+                // Collision（突進中のボスは別処理）
+                if (!(e.type === 'floor_boss' && (e.isFloating || e.isCharging))) {
                     const ox = e.isBoss ? e.w * 0.2 : 10;
                     const oy = e.isBoss ? e.h * 0.2 : 0;
 
@@ -1239,7 +1685,7 @@
                 if (PHYSICS_PARTICLES.has(p.type)) {
                     p.x += p.vx;
                     p.y += p.vy;
-                    if (p.vy !== undefined && p.type !== 'floatParticle') p.vy += 0.1;
+                    if (p.vy !== undefined && p.type !== 'floatParticle' && p.type !== 'slowMagicParticle') p.vy += 0.1;
                 }
 
                 if (p.type === 'shockwave' || p.type === 'explosionRing' || p.type === 'beamShockwave') {
@@ -1288,7 +1734,7 @@
             }
 
             ctx.fillStyle = '#654321';
-            ctx.fillRect(-10, CFG.GROUND_Y, canvas.width + 20, canvas.height - CFG.GROUND_Y + 20);
+            ctx.fillRect(-10, GAME_CONFIG.GROUND_Y, canvas.width + 20, canvas.height - GAME_CONFIG.GROUND_Y + 20);
 
             // Background particles
             for (let i = 0; i < particles.length; i++) {
@@ -1299,10 +1745,10 @@
                 }
             }
 
-            // Player
+            // Player（速度低下中は青っぽく）
             if (player.invincibility % 4 < 2) {
                 const px = player.x, py = player.y, pw = player.w, ph = player.h;
-                ctx.strokeStyle = 'white';
+                ctx.strokeStyle = playerSlowTimer > 0 ? '#88aaff' : 'white';
                 ctx.lineWidth = 4;
                 ctx.beginPath();
                 ctx.arc(px + pw/2, py + 10, 10, 0, PI2);
@@ -1315,14 +1761,21 @@
                 ctx.moveTo(px + pw/2, py + 30);
                 ctx.lineTo(player.punching > 0 ? (player.facing === 1 ? px + pw + 15 : px - 15) : px + (player.facing === 1 ? 25 : 5), py + (player.punching > 0 ? 30 : 40));
                 ctx.stroke();
+                
+                // 速度低下エフェクト
+                if (playerSlowTimer > 0 && frameCount % 10 < 5) {
+                    ctx.strokeStyle = 'rgba(0, 150, 255, 0.5)';
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                }
             }
 
             // Enemies
             for (let i = 0; i < enemies.length; i++) {
                 const e = enemies[i];
-                const scale = e.type === 'floor_boss' ? 1 : (e.isBoss ? 2 : (e.type === 'range' ? 1.6 : 1)) * CFG.IMAGE_SCALE;
-                const drawW = e.w * (e.type === 'floor_boss' ? 1 : CFG.IMAGE_SCALE);
-                const drawH = e.h * (e.type === 'floor_boss' ? 1 : CFG.IMAGE_SCALE);
+                const scale = e.type === 'floor_boss' ? 1 : (e.isBoss ? 2 : (e.type === 'range' ? 1.6 : 1)) * GAME_CONFIG.IMAGE_SCALE;
+                const drawW = e.w * (e.type === 'floor_boss' ? 1 : GAME_CONFIG.IMAGE_SCALE);
+                const drawH = e.h * (e.type === 'floor_boss' ? 1 : GAME_CONFIG.IMAGE_SCALE);
                 const drawX = e.x + (e.w - drawW) / 2;
                 const drawY = e.y + e.h - drawH;
 
@@ -1334,7 +1787,16 @@
                     ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
                 } else if (e.type === 'floor_boss') {
                     ctx.filter = 'none';
-                    if (!liteMode) { ctx.shadowColor = 'purple'; ctx.shadowBlur = 15 + sin(frameCount * 0.1) * 8; }
+                    
+                    // 突進中は赤くグロー
+                    if (e.isCharging) {
+                        if (!liteMode) { ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 25 + sin(frameCount * 0.3) * 10; }
+                        ctx.filter = 'brightness(130%) saturate(150%)';
+                    } else if (!liteMode) { 
+                        ctx.shadowColor = 'purple'; 
+                        ctx.shadowBlur = 15 + sin(frameCount * 0.1) * 8; 
+                    }
+                    
                     if (e.isFloating) {
                         ctx.globalAlpha = 0.6 + sin(frameCount * 0.15) * 0.2;
                         ctx.drawImage(e.img, drawX, drawY + sin(frameCount * 0.1) * 10, drawW, drawH);
@@ -1343,48 +1805,89 @@
                         ctx.drawImage(e.img, drawX, drawY, drawW, drawH);
                     }
                     ctx.shadowBlur = 0;
+                    ctx.filter = 'none';
 
                     // Attack warnings
                     if (e.attackState === 'warning') {
                         const pulse = 0.25 + sin(frameCount * 0.3) * 0.15;
                         if (e.attackType === 'beam') {
-                            const beamY = CFG.GROUND_Y - CFG.BOSS_BEAM_HEIGHT / 2;
+                            const beamY = GAME_CONFIG.GROUND_Y - GAME_CONFIG.BOSS_BEAM_HEIGHT / 2;
                             ctx.fillStyle = `rgba(150, 0, 255, ${pulse})`;
-                            ctx.fillRect(0, beamY - CFG.BOSS_BEAM_HEIGHT, canvas.width, CFG.BOSS_BEAM_HEIGHT * 2);
+                            ctx.fillRect(0, beamY - GAME_CONFIG.BOSS_BEAM_HEIGHT, canvas.width, GAME_CONFIG.BOSS_BEAM_HEIGHT * 2);
                             ctx.strokeStyle = 'rgba(255, 0, 255, 0.6)';
                             ctx.lineWidth = 2;
                             ctx.setLineDash([10, 10]);
                             ctx.beginPath();
-                            ctx.moveTo(0, beamY - CFG.BOSS_BEAM_HEIGHT/2);
-                            ctx.lineTo(canvas.width, beamY - CFG.BOSS_BEAM_HEIGHT/2);
-                            ctx.moveTo(0, beamY + CFG.BOSS_BEAM_HEIGHT/2);
-                            ctx.lineTo(canvas.width, beamY + CFG.BOSS_BEAM_HEIGHT/2);
+                            ctx.moveTo(0, beamY - GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.lineTo(canvas.width, beamY - GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.moveTo(0, beamY + GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
+                            ctx.lineTo(canvas.width, beamY + GAME_CONFIG.BOSS_BEAM_HEIGHT/2);
                             ctx.stroke();
                             ctx.setLineDash([]);
                         } else if (e.attackType === 'area') {
                             const pulse2 = 0.4 + sin(frameCount * 0.4) * 0.2;
                             ctx.fillStyle = `rgba(255, 100, 0, ${pulse2})`;
                             ctx.beginPath();
-                            ctx.arc(e.targetX, CFG.GROUND_Y - 10, 50, PI, 0, true);
+                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 10, 50, PI, 0, true);
                             ctx.fill();
                             ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
                             ctx.font = 'bold 24px Arial';
                             ctx.textAlign = 'center';
-                            ctx.fillText('⚠', e.targetX, CFG.GROUND_Y - 60);
-                        } else {
+                            ctx.fillText('⚠', e.targetX, GAME_CONFIG.GROUND_Y - 60);
+                        } else if (e.attackType === 'ceilingBeam') {
                             const pulse2 = 0.3 + sin(frameCount * 0.4) * 0.15;
                             ctx.fillStyle = `rgba(255, 50, 0, ${pulse2})`;
-                            ctx.fillRect(e.targetX - CFG.BOSS_CEILING_BEAM_WIDTH, 0, CFG.BOSS_CEILING_BEAM_WIDTH * 2, CFG.GROUND_Y);
+                            ctx.fillRect(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH, 0, GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH * 2, GAME_CONFIG.GROUND_Y);
                             ctx.strokeStyle = 'rgba(255, 50, 0, 0.7)';
                             ctx.lineWidth = 2;
                             ctx.setLineDash([15, 10]);
                             ctx.beginPath();
-                            ctx.moveTo(e.targetX - CFG.BOSS_CEILING_BEAM_WIDTH/2, 0);
-                            ctx.lineTo(e.targetX - CFG.BOSS_CEILING_BEAM_WIDTH/2, CFG.GROUND_Y);
-                            ctx.moveTo(e.targetX + CFG.BOSS_CEILING_BEAM_WIDTH/2, 0);
-                            ctx.lineTo(e.targetX + CFG.BOSS_CEILING_BEAM_WIDTH/2, CFG.GROUND_Y);
+                            ctx.moveTo(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0);
+                            ctx.lineTo(e.targetX - GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, GAME_CONFIG.GROUND_Y);
+                            ctx.moveTo(e.targetX + GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, 0);
+                            ctx.lineTo(e.targetX + GAME_CONFIG.BOSS_CEILING_BEAM_WIDTH/2, GAME_CONFIG.GROUND_Y);
                             ctx.stroke();
                             ctx.setLineDash([]);
+                        } else if (e.attackType === 'charge') {
+                            // 突進の警告
+                            const dir = player.x + player.w/2 > e.x + e.w/2 ? 1 : -1;
+                            ctx.fillStyle = `rgba(255, 100, 0, ${pulse})`;
+                            ctx.beginPath();
+                            ctx.moveTo(e.x + e.w/2, e.y + e.h/2 - 20);
+                            ctx.lineTo(e.x + e.w/2 + dir * 100, e.y + e.h/2);
+                            ctx.lineTo(e.x + e.w/2, e.y + e.h/2 + 20);
+                            ctx.fill();
+                            ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+                            ctx.font = 'bold 20px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('突進！', e.x + e.w/2 + dir * 60, e.y + e.h/2 - 30);
+                        } else if (e.attackType === 'homing') {
+                            // 追尾弾の警告
+                            ctx.strokeStyle = `rgba(255, 0, 255, ${pulse + 0.3})`;
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            ctx.arc(e.x + e.w/2, e.y + e.h/2, 40 + sin(frameCount * 0.2) * 10, 0, PI2);
+                            ctx.stroke();
+                        } else if (e.attackType === 'slowMagic') {
+                            // 速度低下魔法の警告
+                            ctx.fillStyle = `rgba(0, 150, 255, ${pulse})`;
+                            ctx.beginPath();
+                            ctx.arc(e.targetX, GAME_CONFIG.GROUND_Y - 40, GAME_CONFIG.BOSS_SLOW_MAGIC_RADIUS, 0, PI2);
+                            ctx.fill();
+                            ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
+                            ctx.font = 'bold 18px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('🐢', e.targetX, GAME_CONFIG.GROUND_Y - 70);
+                        } else if (e.attackType === 'barrage') {
+                            // 弾幕の警告
+                            const barrageCount = calculateBossBarrageCount(e);
+                            ctx.fillStyle = `rgba(255, 0, 100, ${pulse})`;
+                            for (let j = 0; j < barrageCount; j++) {
+                                const angle = (PI / 4) * (j / (barrageCount - 1) - 0.5) - PI/2;
+                                ctx.beginPath();
+                                ctx.arc(e.x + e.w/2 + cos(angle + PI/2) * 50, e.y + e.h/2 + sin(angle + PI/2) * 50, 8, 0, PI2);
+                                ctx.fill();
+                            }
                         }
                     }
                 } else if (e.isBoss) {
@@ -1403,6 +1906,19 @@
                     ctx.fillRect(e.x, barY, e.w, 5);
                     ctx.fillStyle = e.type === 'heal' ? 'pink' : (e.type === 'range' ? 'blue' : (e.type === 'floor_boss' ? 'purple' : '#00ff00'));
                     ctx.fillRect(e.x, barY, e.w * (e.hp / e.maxHp), 5);
+                    
+                    // フロアボスのHP閾値表示（30%ごと）
+                    if (e.type === 'floor_boss') {
+                        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                        ctx.lineWidth = 1;
+                        for (let t = 0.3; t < 1; t += 0.3) {
+                            const tx = e.x + e.w * t;
+                            ctx.beginPath();
+                            ctx.moveTo(tx, barY);
+                            ctx.lineTo(tx, barY + 5);
+                            ctx.stroke();
+                        }
+                    }
                 }
             }
 
@@ -1419,13 +1935,13 @@
                 } else if (p.type === 'spike') {
                     if (p.state === 'warning') {
                         ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + sin(frameCount * 0.5) * 0.3})`;
-                        ctx.fillRect(p.x - 25, CFG.GROUND_Y - 8, 50, 8);
+                        ctx.fillRect(p.x - 25, GAME_CONFIG.GROUND_Y - 8, 50, 8);
                     } else if (p.state === 'active') {
                         ctx.fillStyle = '#444';
                         ctx.beginPath();
-                        ctx.moveTo(p.x - p.w/2, CFG.GROUND_Y);
-                        ctx.lineTo(p.x + p.w/2, CFG.GROUND_Y);
-                        ctx.lineTo(p.x, CFG.GROUND_Y - p.h);
+                        ctx.moveTo(p.x - p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x + p.w/2, GAME_CONFIG.GROUND_Y);
+                        ctx.lineTo(p.x, GAME_CONFIG.GROUND_Y - p.h);
                         ctx.fill();
                     }
                 } else if (p.type === 'bossBeam' && p.life > 0) {
@@ -1438,16 +1954,16 @@
                     ctx.fillRect(0, p.y - p.h/4, p.x, p.h/2);
                     ctx.shadowBlur = 0;
                 } else if (p.type === 'explosion') {
-                    const prog = 1 - (p.life / CFG.BOSS_ATTACK_ACTIVE_FRAMES);
+                    const prog = 1 - (p.life / GAME_CONFIG.BOSS_ATTACK_ACTIVE_FRAMES);
                     const rad = 50 + prog * 50;
                     const alpha = (1 - prog) * 0.8;
                     ctx.fillStyle = `rgba(255, 150, 0, ${alpha})`;
                     ctx.beginPath();
-                    ctx.arc(p.x, CFG.GROUND_Y, rad, PI, 0, true);
+                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, rad, PI, 0, true);
                     ctx.fill();
                     ctx.fillStyle = `rgba(255, 255, 200, ${alpha * 0.5})`;
                     ctx.beginPath();
-                    ctx.arc(p.x, CFG.GROUND_Y, rad * 0.5, PI, 0, true);
+                    ctx.arc(p.x, GAME_CONFIG.GROUND_Y, rad * 0.5, PI, 0, true);
                     ctx.fill();
                 } else if (p.type === 'ceilingBeam' && p.life > 0) {
                     if (!liteMode) { ctx.shadowColor = 'red'; ctx.shadowBlur = 20; }
@@ -1456,6 +1972,70 @@
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                     ctx.fillRect(p.x + p.w/4, p.y, p.w/2, p.h);
                     ctx.shadowBlur = 0;
+                } else if (p.type === 'barrage') {
+                    // 弾幕弾の描画
+                    if (!liteMode) { ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 10; }
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.w/2, 0, PI2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.w/4, 0, PI2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else if (p.type === 'homing') {
+                    // 追尾弾の描画
+                    if (!liteMode) { ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 12; }
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.w/2, 0, PI2);
+                    ctx.fill();
+                    // 目のような模様
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.w/4, 0, PI2);
+                    ctx.fill();
+                    ctx.fillStyle = 'black';
+                    ctx.beginPath();
+                    ctx.arc(p.x + p.vx * 0.5, p.y + p.vy * 0.5, 2, 0, PI2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else if (p.type === 'slowMagic') {
+                    // 速度低下魔法の描画
+                    const alpha = p.life / p.maxLife;
+                    const radius = GAME_CONFIG.BOSS_SLOW_MAGIC_RADIUS;
+                    
+                    // 魔法陣のようなエフェクト
+                    ctx.strokeStyle = `rgba(0, 170, 255, ${alpha * 0.8})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y + radius, radius, 0, PI2);
+                    ctx.stroke();
+                    
+                    // 内側のリング
+                    ctx.strokeStyle = `rgba(100, 200, 255, ${alpha * 0.6})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y + radius, radius * 0.6, 0, PI2);
+                    ctx.stroke();
+                    
+                    // 中心の渦
+                    ctx.fillStyle = `rgba(0, 150, 255, ${alpha * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y + radius, radius, 0, PI2);
+                    ctx.fill();
+                    
+                    // 回転する模様
+                    const rotAngle = frameCount * 0.05;
+                    ctx.strokeStyle = `rgba(200, 230, 255, ${alpha * 0.5})`;
+                    for (let j = 0; j < 4; j++) {
+                        const a = rotAngle + (PI2 / 4) * j;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x + cos(a) * radius * 0.3, p.y + radius + sin(a) * radius * 0.3);
+                        ctx.lineTo(p.x + cos(a) * radius * 0.9, p.y + radius + sin(a) * radius * 0.9);
+                        ctx.stroke();
+                    }
                 }
             }
 
@@ -1576,6 +2156,7 @@
             ctx.font = 'bold 20px Arial';
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 3;
+            ctx.textAlign = 'left';
             for (let i = 0; i < damageTexts.length; i++) {
                 const t = damageTexts[i];
                 ctx.fillStyle = t.color || 'white';
@@ -1590,7 +2171,7 @@
             DOM.hpBoard.textContent = `HP: ${player.hp}`;
             DOM.hpBoard.style.color = player.hp < 4 ? 'red' : 'lightgreen';
 
-            const beamDmg = CFG.BASE_BEAM_DMG + player.punchDamage * 2;
+            const beamDmg = GAME_CONFIG.BASE_BEAM_DMG + player.punchDamage * 2;
             DOM.statusBoard.innerHTML = `PUNCH DMG: ${player.punchDamage}<br>BEAM DMG: ${beamDmg}<br>BEAM MULTI: x${player.beamMultiplier}`;
 
             if (player.beamCooldown > 0) {
