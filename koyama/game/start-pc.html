@@ -598,7 +598,7 @@
     let canStart = false;
     let isLoading = false;
     let progress = 0;
-    let particles = [];
+    let particlesArr = []; // 元コードの particles
     let isRedirecting = false;
     let currentTaskIndex = 0;
 
@@ -611,7 +611,7 @@
         particle.style.top = `${Math.random() * 100}%`;
         particle.style.animationDelay = `${Math.random() * 2}s`;
         particlesEl.appendChild(particle);
-        particles.push(particle);
+        particlesArr.push(particle);
         
         // パーティクルアニメーション
         animateParticle(particle);
@@ -688,16 +688,26 @@
       }
     }
 
-    // サーバー存在確認（簡素化）
+    // サーバー存在確認（オフラインとステータス200以外を落とすように修正）
     async function checkServerExists() {
+      // オフラインなら即終了
+      if (!navigator.onLine) {
+        showError("オフライン状態です。インターネットを確認してください。");
+        return;
+      }
+
       try {
-        // すぐにサーバーチェック
-        const response = await fetch(gameUrl, { method: 'HEAD' });
+        // HEADリクエストでステータスチェック（キャッシュ回避のためにタイムスタンプ付与）
+        const response = await fetch(gameUrl + "?t=" + Date.now(), { 
+          method: 'HEAD',
+          cache: 'no-store'
+        });
         
-        if (response.ok) {
+        // ステータスが200（OK）以外ならエラー
+        if (response.status === 200) {
           triggerPulse('#00ff00');
           
-          // すぐにUIを表示
+          // 成功時のみガイドを表示して進行可能にする
           setTimeout(() => {
             gridEl.classList.add('active');
             dataStreamEl.classList.add('active');
@@ -706,18 +716,22 @@
             createParticles();
           }, 300);
         } else {
-          showError();
+          showError(`サーバーエラー (Status: ${response.status})`);
         }
       } catch (error) {
-        showError();
+        // フェッチに失敗（接続不可）した場合
+        showError("サーバーに接続できませんでした");
       }
     }
 
-    function showError() {
+    function showError(msg) {
+      if (msg) errorEl.textContent = msg;
       triggerPulse('#ff5555');
       errorEl.classList.add('show');
+      clickGuide.classList.remove('show');
       clickGuide.style.display = 'none';
       progressContainer.style.display = 'none';
+      canStart = false; // 進行不可
     }
 
     // リダイレクト開始
@@ -739,7 +753,7 @@
       estimatedTimeEl.textContent = '残り時間: まもなく';
       
       // すべてのパーティクルを中心に集める
-      particles.forEach(p => {
+      particlesArr.forEach(p => {
         p.style.transition = 'all 1s cubic-bezier(0.2, 0.8, 0.2, 1)';
         p.style.transform = 'translate(calc(50vw - 50%), calc(50vh - 50%)) scale(3)';
         p.style.opacity = '1';
@@ -768,12 +782,12 @@
       let currentLog = 0;
       let fakeProgress = 0;
       
-      // ログ更新（速度を1/3に）
+      // ログ更新
       const logInterval = setInterval(() => {
         if (currentLog < serverLogs.length) {
           currentLog++;
           
-          // プログレス更新（ランダムに増加）
+          // プログレス更新
           if (fakeProgress < 100) {
             fakeProgress += Math.random() * 15 + 5;
             if (fakeProgress > 100) fakeProgress = 100;
@@ -793,7 +807,7 @@
             }, 500);
           }
         }
-      }, 1800); // 600ms → 1800msに変更（3倍の速度でじっくり演出）
+      }, 1800);
     }
 
     // イベントリスナー設定
@@ -809,6 +823,13 @@
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && canStart && !isLoading) {
           startLoadSequence();
+        }
+      });
+
+      // ネットワーク状態が変化した時の監視（任意）
+      window.addEventListener('offline', () => {
+        if (!isLoading && !isRedirecting) {
+          showError("接続が切断されました");
         }
       });
     }
