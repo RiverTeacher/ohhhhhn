@@ -447,6 +447,7 @@
       background: rgba(40, 0, 0, 0.2);
       backdrop-filter: blur(5px);
       animation: errorPulse 2s infinite alternate;
+      z-index: 15;
     }
 
     .error.show {
@@ -594,11 +595,12 @@
     const redirectOverlay = document.getElementById('redirectOverlay');
     
     const gameUrl = 'https://riverteacher.github.io/ohhhhhn/koyama/game/';
+    const statusUrl = 'https://riverteacher.github.io/ohhhhhn/koyama/game/status.html';
     
     let canStart = false;
     let isLoading = false;
     let progress = 0;
-    let particlesArr = []; // 元コードの particles
+    let particlesArr = [];
     let isRedirecting = false;
     let currentTaskIndex = 0;
 
@@ -612,8 +614,6 @@
         particle.style.animationDelay = `${Math.random() * 2}s`;
         particlesEl.appendChild(particle);
         particlesArr.push(particle);
-        
-        // パーティクルアニメーション
         animateParticle(particle);
       }
     }
@@ -621,20 +621,10 @@
     function animateParticle(particle) {
       const duration = 2 + Math.random() * 3;
       const keyframes = [
-        { 
-          transform: 'translate(0, 0) scale(1)',
-          opacity: 0 
-        },
-        { 
-          transform: `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) scale(${0.5 + Math.random()})`,
-          opacity: 0.8 
-        },
-        { 
-          transform: `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(0)`,
-          opacity: 0 
-        }
+        { transform: 'translate(0, 0) scale(1)', opacity: 0 },
+        { transform: `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) scale(${0.5 + Math.random()})`, opacity: 0.8 },
+        { transform: `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(0)`, opacity: 0 }
       ];
-      
       particle.animate(keyframes, {
         duration: duration * 1000,
         iterations: Infinity,
@@ -646,80 +636,81 @@
     function triggerPulse(color = '#ff2a2a') {
       pulseEl.style.background = `radial-gradient(circle at center, ${color}, transparent 70%)`;
       pulseEl.classList.remove('active');
-      void pulseEl.offsetWidth; // トリガー再フロー
+      void pulseEl.offsetWidth;
       pulseEl.classList.add('active');
     }
 
     // プログレス更新
     function updateProgress(value, taskName = '') {
       progress = Math.min(value, 100);
-      
-      // プログレス表示更新
       progressPercentage.textContent = `${progress}%`;
       progressFill.style.width = `${progress}%`;
       
-      // プログレスに応じてエフェクト強化
-      if (progress > 0) {
-        progressSpinner.classList.add('active');
-      }
+      if (progress > 0) progressSpinner.classList.add('active');
       
-      // プログレスに応じてタスク更新
       const taskStep = Math.floor(progress / (100 / taskList.length));
       if (taskStep > currentTaskIndex && taskStep <= taskList.length) {
         currentTaskIndex = taskStep;
         currentTaskEl.textContent = taskList[currentTaskIndex] || taskList[taskList.length - 1];
-        
-        // タスク更新時にパルス
-        if (progress < 90) {
-          triggerPulse();
-        }
+        if (progress < 90) triggerPulse();
       }
       
-      // 残り時間の概算表示
       const remaining = Math.max(0, Math.round((100 - progress) / 10));
       estimatedTimeEl.textContent = `残り時間: ${remaining > 0 ? remaining : '0'}秒`;
       
-      // プログレスに応じてエフェクト強化
-      if (progress > 50) {
-        gridEl.style.opacity = 0.8;
-      }
-      if (progress > 80) {
-        triggerPulse('#7adfff');
-      }
+      if (progress > 50) gridEl.style.opacity = 0.8;
+      if (progress > 80) triggerPulse('#7adfff');
     }
 
-    // サーバー存在確認（オフラインとステータス200以外を落とすように修正）
+    // サーバー存在確認 & ステータス内容チェック
     async function checkServerExists() {
-      // オフラインなら即終了
+      // 1. オフラインチェック
       if (!navigator.onLine) {
         showError("オフライン状態です。インターネットを確認してください。");
         return;
       }
 
       try {
-        // HEADリクエストでステータスチェック（キャッシュ回避のためにタイムスタンプ付与）
-        const response = await fetch(gameUrl + "?t=" + Date.now(), { 
+        const timestamp = Date.now();
+        
+        // 2. 基本的な接続確認 (HEADリクエスト)
+        const headResponse = await fetch(gameUrl + "?t=" + timestamp, { 
           method: 'HEAD',
           cache: 'no-store'
         });
         
-        // ステータスが200（OK）以外ならエラー
-        if (response.status === 200) {
-          triggerPulse('#00ff00');
-          
-          // 成功時のみガイドを表示して進行可能にする
-          setTimeout(() => {
-            gridEl.classList.add('active');
-            dataStreamEl.classList.add('active');
-            clickGuide.classList.add('show');
-            canStart = true;
-            createParticles();
-          }, 300);
+        if (headResponse.status !== 200) {
+          showError(`サーバーエラー (Status: ${headResponse.status})`);
+          return;
+        }
+
+        // 3. status.html の内容確認
+        const statusResponse = await fetch(statusUrl + "?t=" + timestamp, {
+          method: 'GET',
+          cache: 'no-store'
+        });
+
+        if (statusResponse.ok) {
+          const text = await statusResponse.text();
+          // 余計な改行やスペースを除去して "allow" かどうか判定
+          if (text.trim() === "allow") {
+            // 通信成功：演出開始
+            triggerPulse('#00ff00');
+            setTimeout(() => {
+              gridEl.classList.add('active');
+              dataStreamEl.classList.add('active');
+              clickGuide.classList.add('show');
+              canStart = true;
+              createParticles();
+            }, 300);
+          } else {
+            // allow でない場合は通信失敗扱い
+            showError("アクセス権限がありません (Access Denied)");
+          }
         } else {
-          showError(`サーバーエラー (Status: ${response.status})`);
+          showError(`ステータス確認失敗 (Status: ${statusResponse.status})`);
         }
       } catch (error) {
-        // フェッチに失敗（接続不可）した場合
         showError("サーバーに接続できませんでした");
       }
     }
@@ -731,28 +722,19 @@
       clickGuide.classList.remove('show');
       clickGuide.style.display = 'none';
       progressContainer.style.display = 'none';
-      canStart = false; // 進行不可
+      canStart = false;
     }
 
     // リダイレクト開始
     function startRedirect() {
       if (isRedirecting) return;
       isRedirecting = true;
-      
-      // クリックガイドを非表示
       clickGuide.classList.remove('show');
-      
-      // リダイレクトオーバーレイを表示
       redirectOverlay.classList.add('active');
-      
-      // スピナーをアクティブ化
       progressSpinner.classList.add('active');
-      
-      // 最終メッセージ
       currentTaskEl.textContent = 'ゲームを起動中...';
       estimatedTimeEl.textContent = '残り時間: まもなく';
       
-      // すべてのパーティクルを中心に集める
       particlesArr.forEach(p => {
         p.style.transition = 'all 1s cubic-bezier(0.2, 0.8, 0.2, 1)';
         p.style.transform = 'translate(calc(50vw - 50%), calc(50vh - 50%)) scale(3)';
@@ -760,7 +742,6 @@
         p.style.background = '#ff2a2a';
       });
       
-      // リダイレクト前に少し待機
       setTimeout(() => {
         window.location.href = gameUrl;
       }, 1500);
@@ -774,75 +755,45 @@
       clickGuide.classList.remove('show');
       progressContainer.classList.add('show');
       progressSpinner.classList.add('active');
-      
-      // 初期設定
       updateProgress(0, taskList[0]);
-      currentTaskEl.textContent = taskList[0];
       
       let currentLog = 0;
       let fakeProgress = 0;
       
-      // ログ更新
       const logInterval = setInterval(() => {
         if (currentLog < serverLogs.length) {
           currentLog++;
-          
-          // プログレス更新
           if (fakeProgress < 100) {
             fakeProgress += Math.random() * 15 + 5;
             if (fakeProgress > 100) fakeProgress = 100;
             updateProgress(Math.floor(fakeProgress), serverLogs[currentLog - 1]);
           }
-          
-          // 特定のポイントでエフェクト発動
-          if (currentLog === 3 || currentLog === 6) {
-            triggerPulse();
-          }
-          
-          // 最後のログでリダイレクト開始
+          if (currentLog === 3 || currentLog === 6) triggerPulse();
           if (currentLog === serverLogs.length) {
             clearInterval(logInterval);
-            setTimeout(() => {
-              startRedirect();
-            }, 500);
+            setTimeout(startRedirect, 500);
           }
         }
       }, 1800);
     }
 
-    // イベントリスナー設定
     function setupEventListeners() {
-      // 画面全体クリックで開始
       document.addEventListener('click', () => {
-        if (canStart && !isLoading) {
-          startLoadSequence();
-        }
+        if (canStart && !isLoading) startLoadSequence();
       });
-
-      // エンターキーでも開始
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && canStart && !isLoading) {
-          startLoadSequence();
-        }
+        if (e.key === 'Enter' && canStart && !isLoading) startLoadSequence();
       });
-
-      // ネットワーク状態が変化した時の監視（任意）
       window.addEventListener('offline', () => {
-        if (!isLoading && !isRedirecting) {
-          showError("接続が切断されました");
-        }
+        if (!isLoading && !isRedirecting) showError("接続が切断されました");
       });
     }
 
-    // 初期化
     function init() {
       setupEventListeners();
-      setTimeout(() => {
-        checkServerExists();
-      }, 800);
+      setTimeout(checkServerExists, 800);
     }
 
-    // ページ読み込み時に初期化
     window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
