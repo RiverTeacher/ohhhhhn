@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ほるとガイジな仲間たち</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #0b0b0b 0%, #000 75%);
+      color: #fff;
+      font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* ===== 背景演出 ===== */
+    .noise {
+      position: fixed;
+      inset: 0;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4"/></filter><rect width="120" height="120" filter="url(%23n)" opacity="0.035"/></svg>');
+      pointer-events: none;
+      animation: noiseMove 0.22s infinite;
+      z-index: 4;
+    }
+
+    @keyframes noiseMove {
+      0% { transform: translate(0,0); }
+      50% { transform: translate(-0.8%,0.8%); }
+      100% { transform: translate(0.8%,-0.8%); }
+    }
+
+    .fog {
+      position: fixed;
+      inset: -25%;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.035), transparent 70%);
+      animation: fogMove 24s linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes fogMove {
+      from { transform: translateX(-12%); }
+      to   { transform: translateX(12%); }
+    }
+
+    /* 強化されたスキャンライン */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03) 0px,
+        rgba(255,255,255,0.03) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      mix-blend-mode: overlay;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* グリッド背景 */
+    .grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 40, 40, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 40, 40, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .grid.active {
+      opacity: 0.6;
+      animation: gridPulse 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes gridPulse {
+      0% { opacity: 0.3; }
+      100% { opacity: 0.7; }
+    }
+
+    /* データストリーム効果 */
+    .data-stream {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(122, 223, 255, 0.05) 10%,
+        rgba(122, 223, 255, 0.1) 20%,
+        rgba(122, 223, 255, 0.05) 30%,
+        transparent 100%
+      );
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(100%);
+    }
+
+    .data-stream.active {
+      opacity: 1;
+      animation: dataFlow 8s linear infinite;
+    }
+
+    @keyframes dataFlow {
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(-100%); }
+    }
+
+    /* パーティクルエフェクト */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(122, 223, 255, 0.8);
+      border-radius: 50%;
+      box-shadow: 0 0 10px 2px rgba(122, 223, 255, 0.6);
+      opacity: 0;
+    }
+
+    /* パルスエフェクト */
+    .pulse {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255, 40, 40, 0.2), transparent 70%);
+      z-index: 6;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pulse.active {
+      animation: pulseEffect 0.8s ease-out;
+    }
+
+    @keyframes pulseEffect {
+      0% { 
+        opacity: 0.8;
+        transform: scale(0.1);
+      }
+      100% { 
+        opacity: 0;
+        transform: scale(2);
+      }
+    }
+
+    /* ===== クリックガイド ===== */
+    .click-guide {
+      position: absolute;
+      bottom: 8%;
+      font-size: 12px;
+      letter-spacing: 0.3em;
+      opacity: 0;
+      color: rgba(232, 250, 255, 0.7);
+      text-shadow: 0 0 8px rgba(120,220,255,0.3);
+      transition: opacity 1s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .click-guide.show {
+      opacity: 0.8;
+      animation: guidePulse 2s infinite alternate;
+    }
+
+    .click-icon {
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(122, 223, 255, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .click-icon::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: rgba(122, 223, 255, 0.7);
+      border-radius: 50%;
+      animation: iconPulse 1.5s infinite;
+    }
+
+    @keyframes guidePulse {
+      0% { opacity: 0.5; }
+      100% { opacity: 0.9; }
+    }
+
+    @keyframes iconPulse {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.5; }
+    }
+
+    /* ===== コンテナ ===== */
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 10;
+    }
+
+    /* ===== タイトル ===== */
+    .title {
+      font-size: clamp(48px, 9vw, 104px);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      margin-bottom: 16px;
+      text-shadow:
+        0 0 12px rgba(255,255,255,0.18),
+        0 0 42px rgba(255,40,40,0.35);
+      animation: titleDrop 4.8s cubic-bezier(.15,.85,.2,1) forwards;
+      position: relative;
+    }
+
+    .title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ff2a2a, transparent);
+      opacity: 0;
+      animation: titleLine 3s ease forwards;
+      animation-delay: 2s;
+    }
+
+    @keyframes titleLine {
+      0% { opacity: 0; width: 0%; left: 50%; }
+      100% { opacity: 0.7; width: 100%; left: 0; }
+    }
+
+    @keyframes titleDrop {
+      0% { opacity: 0; transform: translateY(-60px) scale(1.12); }
+      65% { opacity: 1; transform: translateY(8px) scale(1); }
+      100% { transform: translateY(0); }
+    }
+
+    .slash {
+      position: absolute;
+      width: 160%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #ff2a2a, transparent);
+      top: 50%;
+      animation: slash 2.4s ease-out forwards;
+    }
+
+    @keyframes slash {
+      from { transform: translateX(-140%) rotate(-4deg); opacity: 0; }
+      to   { transform: translateX(140%) rotate(-4deg); opacity: 1; }
+    }
+
+    /* ===== サブタイトル ===== */
+    .subtitle {
+      font-size: clamp(14px, 2.5vw, 20px);
+      letter-spacing: 0.35em;
+      opacity: 0;
+      margin-bottom: 80px;
+      animation: subtitleIn 3.2s ease forwards;
+      animation-delay: 4.2s;
+      position: relative;
+    }
+
+    .subtitle::before,
+    .subtitle::after {
+      content: '◄';
+      position: absolute;
+      top: 50%;
+      color: #ff2a2a;
+      opacity: 0;
+      animation: subtitleArrows 1.5s ease forwards;
+      animation-delay: 5s;
+    }
+
+    .subtitle::before {
+      left: -30px;
+    }
+
+    .subtitle::after {
+      right: -30px;
+      transform: rotate(180deg);
+    }
+
+    @keyframes subtitleArrows {
+      0% { opacity: 0; transform: translateY(-50%) scale(0); }
+      100% { opacity: 0.7; transform: translateY(-50%) scale(1); }
+    }
+
+    @keyframes subtitleIn {
+      to { opacity: 0.65; }
+    }
+
+    /* ===== スピナー ===== */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(122, 223, 255, 0.3);
+      border-top-color: #ff2a2a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .spinner.active {
+      opacity: 1;
+    }
+
+    .spinner.large {
+      width: 24px;
+      height: 24px;
+      border-width: 3px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== プログレスバー（強化版） ===== */
+    .progress-container {
+      position: absolute;
+      bottom: 18%;
+      width: 64%;
+      max-width: 480px;
+      opacity: 0;
+      transition: opacity 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transform: translateY(20px);
+    }
+
+    .progress-container.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      letter-spacing: 0.35em;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-percentage {
+      font-size: 11px;
+      color: #7adfff;
+      font-family: 'Courier New', monospace;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 7px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 
+        inset 0 0 10px rgba(0,0,0,0.5),
+        0 0 20px rgba(255,40,40,0.1);
+    }
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, 
+        #ff2a2a, 
+        #ff6a2a,
+        #7adfff);
+      transition: width 0.5s ease-out;
+      border-radius: 6px;
+    }
+
+    .progress-bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255,255,255,0.2), 
+        transparent);
+      animation: shine 3s infinite;
+    }
+
+    .progress-details {
+      margin-top: 8px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* ===== エラーメッセージ ===== */
+    .error {
+      position: absolute;
+      bottom: 20%;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      color: #ff5555;
+      text-shadow: 
+        0 0 8px rgba(255,85,85,0.5),
+        0 0 20px rgba(255,85,85,0.3);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      padding: 12px 24px;
+      border: 1px solid rgba(255,85,85,0.3);
+      border-radius: 4px;
+      background: rgba(40, 0, 0, 0.2);
+      backdrop-filter: blur(5px);
+      animation: errorPulse 2s infinite alternate;
+      z-index: 15;
+    }
+
+    .error.show {
+      opacity: 1;
+    }
+
+    @keyframes errorPulse {
+      0% { 
+        box-shadow: 0 0 10px rgba(255,85,85,0.3);
+        border-color: rgba(255,85,85,0.3);
+      }
+      100% { 
+        box-shadow: 0 0 20px rgba(255,85,85,0.5);
+        border-color: rgba(255,85,85,0.6);
+      }
+    }
+
+    /* ===== リダイレクト表示 ===== */
+    .redirect-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .redirect-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .redirect-message {
+      font-size: 18px;
+      color: #7adfff;
+      margin-bottom: 20px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .redirect-note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      max-width: 80%;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="fog"></div>
+  <div class="grid" id="grid"></div>
+  <div class="data-stream" id="dataStream"></div>
+  <div class="scanlines"></div>
+  <div class="noise"></div>
+  <div class="particles" id="particles"></div>
+  <div class="pulse" id="pulse"></div>
+
+  <!-- リダイレクトオーバーレイ -->
+  <div class="redirect-overlay" id="redirectOverlay">
+    <div class="redirect-message">
+      <span>ゲームを起動しています...</span>
+      <div class="spinner large active"></div>
+    </div>
+    <div class="redirect-note">
+      しばらくお待ちください。数秒後に自動的にゲーム画面に移動します。
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="slash"></div>
+    <div class="title">進撃の小山</div>
+    <div class="subtitle">— 進撃の小山 Windows edition —</div>
+
+    <!-- 強化されたプログレスバー -->
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-header">
+        <div class="progress-label">
+          <span>ゲームデータをロード中</span>
+          <div class="spinner" id="progressSpinner"></div>
+        </div>
+        <div class="progress-percentage" id="progressPercentage">0%</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-details">
+        <span id="currentTask">システムチェック中...</span>
+        <span id="estimatedTime">残り時間: --秒</span>
+      </div>
+    </div>
+
+    <!-- クリックガイド -->
+    <div class="click-guide" id="clickGuide">
+      <div class="click-icon"></div>
+      <span>クリックまたはエンターキーで開始</span>
+    </div>
+
+    <div class="error" id="error">サーバーに接続できませんでした</div>
+  </div>
+
+  <script>
+    const serverLogs = [
+      'ゲームサーバーに接続中...',
+      'ハンドシェイクを確立...',
+      'ゲームデータをダウンロード中...',
+      'アセットを復号化中...',
+      'パフォーマンスを最適化中...',
+      'レンダリングエンジンを初期化中...',
+      'ゲーム環境を起動中...',
+      'ゲームにリダイレクト中...'
+    ];
+
+    const taskList = [
+      'game data initialize...',
+      'アセットをロード中...',
+      '不要なデータを削除中...',
+      '必要なデータをダウンロード中...',
+      'セーブデータ確認中...',
+      'セーブデータ適用中...',
+      '最適化中...',
+      'お待たせしました！まもなく完了します...',
+      'サーバーからデータを取得中...'
+    ];
+
+    const errorEl = document.getElementById('error');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressSpinner = document.getElementById('progressSpinner');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressFill = document.getElementById('progressFill');
+    const currentTaskEl = document.getElementById('currentTask');
+    const estimatedTimeEl = document.getElementById('estimatedTime');
+    const clickGuide = document.getElementById('clickGuide');
+    const gridEl = document.getElementById('grid');
+    const dataStreamEl = document.getElementById('dataStream');
+    const particlesEl = document.getElementById('particles');
+    const pulseEl = document.getElementById('pulse');
+    const redirectOverlay = document.getElementById('redirectOverlay');
+    
+    const gameUrl = 'https://riverteacher.github.io/ohhhhhn/koyama/game/';
+    const statusUrl = 'https://riverteacher.github.io/ohhhhhn/koyama/game/status.html';
+    
+    let canStart = false;
+    let isLoading = false;
+    let progress = 0;
+    let particlesArr = [];
+    let isRedirecting = false;
+    let currentTaskIndex = 0;
+
+    // パーティクル生成
+    function createParticles(count = 30) {
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 2}s`;
+        particlesEl.appendChild(particle);
+        particlesArr.push(particle);
+        animateParticle(particle);
+      }
+    }
+
+    function animateParticle(particle) {
+      const duration = 2 + Math.random() * 3;
+      const keyframes = [
+        { transform: 'translate(0, 0) scale(1)', opacity: 0 },
+        { transform: `translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px) scale(${0.5 + Math.random()})`, opacity: 0.8 },
+        { transform: `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(0)`, opacity: 0 }
+      ];
+      particle.animate(keyframes, {
+        duration: duration * 1000,
+        iterations: Infinity,
+        easing: 'cubic-bezier(0.2, 0, 0.8, 1)'
+      });
+    }
+
+    // パルスエフェクト
+    function triggerPulse(color = '#ff2a2a') {
+      pulseEl.style.background = `radial-gradient(circle at center, ${color}, transparent 70%)`;
+      pulseEl.classList.remove('active');
+      void pulseEl.offsetWidth;
+      pulseEl.classList.add('active');
+    }
+
+    // プログレス更新
+    function updateProgress(value, taskName = '') {
+      progress = Math.min(value, 100);
+      progressPercentage.textContent = `${progress}%`;
+      progressFill.style.width = `${progress}%`;
+      
+      if (progress > 0) progressSpinner.classList.add('active');
+      
+      const taskStep = Math.floor(progress / (100 / taskList.length));
+      if (taskStep > currentTaskIndex && taskStep <= taskList.length) {
+        currentTaskIndex = taskStep;
+        currentTaskEl.textContent = taskList[currentTaskIndex] || taskList[taskList.length - 1];
+        if (progress < 90) triggerPulse();
+      }
+      
+      const remaining = Math.max(0, Math.round((100 - progress) / 10));
+      estimatedTimeEl.textContent = `残り時間: ${remaining > 0 ? remaining : '0'}秒`;
+      
+      if (progress > 50) gridEl.style.opacity = 0.8;
+      if (progress > 80) triggerPulse('#7adfff');
+    }
+
+    // サーバー存在確認 & ステータス内容チェック
+    async function checkServerExists() {
+      // 1. オフラインチェック
+      if (!navigator.onLine) {
+        showError("オフライン状態です。インターネットを確認してください。");
+        return;
+      }
+
+      try {
+        const timestamp = Date.now();
+        
+        // 2. 基本的な接続確認 (HEADリクエスト)
+        const headResponse = await fetch(gameUrl + "?t=" + timestamp, { 
+          method: 'HEAD',
+          cache: 'no-store'
+        });
+        
+        if (headResponse.status !== 200) {
+          showError(`サーバーエラー (Status: ${headResponse.status})`);
+          return;
+        }
+
+        // 3. status.html の内容確認
+        const statusResponse = await fetch(statusUrl + "?t=" + timestamp, {
+          method: 'GET',
+          cache: 'no-store'
+        });
+
+        if (statusResponse.ok) {
+          const text = await statusResponse.text();
+          // 余計な改行やスペースを除去して "allow" かどうか判定
+          if (text.trim() === "allow") {
+            // 通信成功：演出開始
+            triggerPulse('#00ff00');
+            setTimeout(() => {
+              gridEl.classList.add('active');
+              dataStreamEl.classList.add('active');
+              clickGuide.classList.add('show');
+              canStart = true;
+              createParticles();
+            }, 300);
+          } else {
+            // allow でない場合は通信失敗扱い
+            showError("アクセス権限がありません (Access Denied)");
+          }
+        } else {
+          showError(`ステータス確認失敗 (Status: ${statusResponse.status})`);
+        }
+      } catch (error) {
+        showError("サーバーに接続できませんでした");
+      }
+    }
+
+    function showError(msg) {
+      if (msg) errorEl.textContent = msg;
+      triggerPulse('#ff5555');
+      errorEl.classList.add('show');
+      clickGuide.classList.remove('show');
+      clickGuide.style.display = 'none';
+      progressContainer.style.display = 'none';
+      canStart = false;
+    }
+
+    // リダイレクト開始
+    function startRedirect() {
+      if (isRedirecting) return;
+      isRedirecting = true;
+      clickGuide.classList.remove('show');
+      redirectOverlay.classList.add('active');
+      progressSpinner.classList.add('active');
+      currentTaskEl.textContent = 'ゲームを起動中...';
+      estimatedTimeEl.textContent = '残り時間: まもなく';
+      
+      particlesArr.forEach(p => {
+        p.style.transition = 'all 1s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        p.style.transform = 'translate(calc(50vw - 50%), calc(50vh - 50%)) scale(3)';
+        p.style.opacity = '1';
+        p.style.background = '#ff2a2a';
+      });
+      
+      setTimeout(() => {
+        window.location.href = gameUrl;
+      }, 1500);
+    }
+
+    // ロード演出開始
+    function startLoadSequence() {
+      if (!canStart || isLoading) return;
+      
+      isLoading = true;
+      clickGuide.classList.remove('show');
+      progressContainer.classList.add('show');
+      progressSpinner.classList.add('active');
+      updateProgress(0, taskList[0]);
+      
+      let currentLog = 0;
+      let fakeProgress = 0;
+      
+      const logInterval = setInterval(() => {
+        if (currentLog < serverLogs.length) {
+          currentLog++;
+          if (fakeProgress < 100) {
+            fakeProgress += Math.random() * 15 + 5;
+            if (fakeProgress > 100) fakeProgress = 100;
+            updateProgress(Math.floor(fakeProgress), serverLogs[currentLog - 1]);
+          }
+          if (currentLog === 3 || currentLog === 6) triggerPulse();
+          if (currentLog === serverLogs.length) {
+            clearInterval(logInterval);
+            setTimeout(startRedirect, 500);
+          }
+        }
+      }, 1800);
+    }
+
+    function setupEventListeners() {
+      document.addEventListener('click', () => {
+        if (canStart && !isLoading) startLoadSequence();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && canStart && !isLoading) startLoadSequence();
+      });
+      window.addEventListener('offline', () => {
+        if (!isLoading && !isRedirecting) showError("接続が切断されました");
+      });
+    }
+
+    function init() {
+      setupEventListeners();
+      setTimeout(checkServerExists, 800);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
