@@ -13,7 +13,6 @@
         body {
             margin: 0;
             padding: 0;
-            /* 100vhの代わりに動的な高さを指定 */
             height: 100vh;
             height: -webkit-fill-available;
             overflow: hidden;
@@ -31,6 +30,7 @@
             height: 100%;
             width: 100%;
             position: relative;
+            overflow: hidden; /* メニューが隠れた時のための設定 */
         }
 
         /* iframeを表示するエリア */
@@ -40,6 +40,7 @@
             background-color: #f5f5f7;
             overflow: hidden;
             width: 100%;
+            transition: margin-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         iframe {
@@ -57,17 +58,41 @@
 
         /* ナビゲーションバー：PWAのセーフエリアに対応 */
         nav {
-            flex-shrink: 0; /* 潰れないように固定 */
+            position: relative;
+            flex-shrink: 0;
             min-height: 65px;
             background-color: #ffffff;
             border-top: 1px solid #dee2e6;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            /* iPhoneの下部バーの余白を確保 */
             padding-bottom: env(safe-area-inset-bottom, 0px);
             box-sizing: content-box;
             z-index: 10;
+            /* 出し入れのアニメーション設定 */
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity 0.3s ease;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* 横向き（Landscape）時のスタイル */
+        @media (orientation: landscape) {
+            nav {
+                /* 下方向に完全に隠す（セーフエリア分も考慮） */
+                transform: translateY(100%);
+                opacity: 0;
+                /* コンテンツの邪魔にならないよう高さをゼロにする（オプション） */
+                pointer-events: none;
+                position: absolute;
+                bottom: 0;
+                width: 100%;
+            }
+
+            #content {
+                /* メニューが消えた分、コンテンツを広げる */
+                margin-bottom: 0;
+            }
         }
 
         nav button {
@@ -141,14 +166,20 @@
     <script>
         // 高さを正しく再計算する関数
         function setFullHeight() {
+            // bodyの高さに反映させる
+            document.body.style.height = window.innerHeight + 'px';
+            
+            // iPhoneなどのツールバー表示によるガタつきを防ぐ
             const vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
-            // bodyの高さに反映させる（CSS側で変数を使っても良いですが、PWAでは固定値の方が安定します）
-            document.body.style.height = window.innerHeight + 'px';
         }
 
         window.addEventListener('resize', setFullHeight);
-        window.addEventListener('orientationchange', setFullHeight);
+        window.addEventListener('orientationchange', () => {
+            // 回転直後は高さの取得が不安定な場合があるため、少し遅らせて再計算
+            setTimeout(setFullHeight, 100);
+        });
+        
         setFullHeight();
 
         function loadPage(url, btn) {
@@ -167,13 +198,11 @@
             // 3. ロード
             setTimeout(() => {
                 const timestamp = new Date().getTime();
-                // 既にパラメータがあるかチェックして付与
                 const separator = url.includes('?') ? '&' : '?';
                 frame.src = url + separator + 't=' + timestamp;
                 
                 frame.onload = () => {
                     frame.classList.remove('fade-out');
-                    // ページ読み込み完了時にも高さを再確認（念のため）
                     setFullHeight();
                 };
             }, 150);
@@ -182,8 +211,10 @@
         window.onload = function() {
             setFullHeight();
             const defaultTab = document.getElementById('default-tab');
+            // 初期ページの読み込み（実際にあるファイル名に合わせて変更してください）
             loadPage('home.html', defaultTab);
         };
     </script>
 </body>
 </html>
+
