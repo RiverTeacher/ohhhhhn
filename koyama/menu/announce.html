@@ -143,7 +143,20 @@
 <body>
     <h2>最新情報</h2>
 
- <!-- ここから書いていく -->   
+ <!-- ここから書いていく --> 
+    <div class="news-item">
+        <div class="news-header" onclick="this.parentElement.classList.toggle('open')">
+            <span class="news-category cat-不具合">不具合情報</span>
+            <span class="news-date">2026年1月13日</span>
+            <span class="news-title">アプリが表示されない不具合について</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="news-content">
+            <p>本日2時から16時の期間でアプリの表示に不具合が生じておりました。<br>
+            現在は正常にご利用いただけます。ご迷惑をおかけしました。</p>
+        </div>
+    </div>
+    
     <div class="news-item">
         <div class="news-header" onclick="this.parentElement.classList.toggle('open')">
             <span class="news-category cat-重要">重要なお知らせ</span>
@@ -213,4 +226,5 @@
 -->
 </body>
 </html>
+
 
