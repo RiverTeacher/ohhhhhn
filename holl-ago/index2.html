@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ohhhhhん Games</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
@@ -22,8 +23,8 @@
             width: 100%;
             overflow: hidden;
             position: fixed;
-            font-family: 'Inter', sans-serif;
-            background: #f9fafb;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             touch-action: none;
         }
         
@@ -33,13 +34,15 @@
         }
 
         .spinner {
-            border: 4px solid #e5e7eb;
-            border-top: 4px solid #3b82f6;
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-right: 3px solid #3b82f6;
             border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            animation: spin 1s linear infinite;
+            width: 56px;
+            height: 56px;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -50,6 +53,7 @@
             width: 100%;
             height: 100%;
             border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
         /* 横画面を促すオーバーレイ */
@@ -60,7 +64,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(17, 24, 39, 0.95);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             z-index: 9999;
             flex-direction: column;
             align-items: center;
@@ -78,47 +82,102 @@
         }
 
         .phone-icon {
-            width: 50px;
-            height: 80px;
-            border: 3px solid white;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            width: 60px;
+            height: 96px;
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            margin-bottom: 24px;
             position: relative;
-            animation: rotate-phone 2s ease-in-out infinite;
+            animation: rotate-phone 2.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
+        
         .phone-icon::after {
             content: '';
             position: absolute;
-            bottom: 5px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            width: 6px;
-            height: 6px;
-            background: white;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         @keyframes rotate-phone {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(-90deg); }
-            100% { transform: rotate(-90deg); }
+            0% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(0deg) scale(1.05); }
+            40% { transform: rotate(-90deg) scale(1.05); }
+            80% { transform: rotate(-90deg) scale(1); }
+            100% { transform: rotate(-90deg) scale(1); }
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .error-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.1),
+                0 4px 24px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gradient-to-br from-gray-50 to-blue-50">
 
 <!-- 横向き促進オーバーレイ -->
 <div id="orientation-overlay">
     <div class="phone-icon"></div>
-    <h2 class="text-xl font-bold mb-2">画面を横にしてください</h2>
-    <p class="text-gray-300">このゲームは端末を横に持ってプレイします。</p>
+    <div class="max-w-sm">
+        <h2 class="text-2xl font-bold mb-3 text-white">画面を横に回転</h2>
+        <p class="text-gray-300 mb-6">より良いゲーム体験のために、端末を横向きにしてください</p>
+        <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+            <i class="fas fa-rotate-right text-blue-300"></i>
+            <span class="text-sm font-medium">90°回転させてください</span>
+        </div>
+    </div>
 </div>
 
-<div id="result" class="flex items-center justify-center">
-    <div class="text-center bg-white p-8 rounded-xl shadow-xl border">
-        <div class="spinner mx-auto mb-6"></div>
-        <h1 class="text-xl font-bold text-gray-800 mb-2">認証を確認中です</h1>
-        <p class="text-gray-600">しばらくお待ちください…</p>
+<div id="result" class="flex items-center justify-center p-4">
+    <div class="text-center glass-effect p-10 rounded-2xl max-w-md w-full transform transition-all duration-500">
+        <div class="spinner mx-auto mb-8"></div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-3 flex items-center justify-center gap-3">
+            <i class="fas fa-lock text-blue-500"></i>
+            <span class="text-gradient">認証しています</span>
+        </h1>
+        <p class="text-gray-600 mb-6 pulse">間もなくゲームを開始します。もうしばらくお待ちください。</p>
+        <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 inline-block">
+            <div class="flex items-center gap-2 text-sm text-blue-700">
+                <i class="fas fa-shield-alt"></i>
+                <span class="text-gradient">BOTからの認証情報を確認しています</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -146,7 +205,7 @@
             }
 
             if (isAuthenticated) {
-                document.body.style.backgroundColor = '#ffffff';
+                document.body.style.background = '#ffffff';
                 resultDiv.className = 'w-full h-full';
                 resultDiv.innerHTML = `
                     <iframe
@@ -155,22 +214,59 @@
                         allowfullscreen>
                     </iframe>
                 `;
+                
+                // スムーズな遷移のためのアニメーション
+                setTimeout(() => {
+                    document.body.style.opacity = '1';
+                }, 100);
             } else {
-                resultDiv.className = 'flex items-center justify-center h-full w-full bg-gray-50 p-4';
+                document.body.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fff 100%)';
+                resultDiv.className = 'flex items-center justify-center h-full w-full p-4';
                 resultDiv.innerHTML = `
-                    <div class="text-center p-8 bg-white shadow-2xl rounded-xl max-w-md w-full border-t-4 border-red-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-red-600 mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="15" y1="9" x2="9" y2="15"></line>
-                            <line x1="9" y1="9" x2="15" y2="15"></line>
-                        </svg>
-                        <h1 class="text-2xl font-extrabold text-gray-800 mb-2">認証に失敗しました</h1>
-                        <p class="text-gray-600 mb-4">トークンが無効、または期限切れです。</p>
-                        <div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 font-mono">
-                            <p>リンクを再生成してもう一度お試しください</p>
+                    <div class="error-card p-10 rounded-2xl max-w-md w-full transform transition-all duration-500 border-l-4 border-red-500">
+                        <div class="mb-8 relative">
+                            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                            </div>
+                            <div class="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fas fa-exclamation text-red-500 text-sm"></i>
+                            </div>
+                        </div>
+                        
+                        <h1 class="text-2xl font-bold text-gray-800 mb-3">認証に失敗しました</h1>
+                        <p class="text-gray-600 mb-6">トークンが無効、または期限切れです。</p>
+                        
+                        <div class="bg-red-50 border border-red-100 rounded-xl p-5 mb-8 text-left">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-key text-red-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-red-800">トークン検証エラー</h3>
+                                    <p class="text-sm text-red-600 mt-1">リンクを再生成して再度お試しください</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!--
+                        <div class="flex items-center justify-center gap-2 text-sm text-gray-500">
+                            <i class="fas fa-clock"></i>
+                            <span>認証時刻: ${hours}:${minutes}</span>
                         </div>
                     </div>
+                -->
                 `;
+                
+                // エラー時の微細なアニメーション
+                setTimeout(() => {
+                    const errorCard = resultDiv.querySelector('.error-card');
+                    if (errorCard) {
+                        errorCard.style.transform = 'translateY(0)';
+                    }
+                }, 50);
             }
         }, delay);
     }
@@ -179,13 +275,18 @@
 
     // スクロール防止
     document.addEventListener('touchmove', function(e) {
-        // 認証失敗時などで操作が必要な場合に備え、iframe表示中のみ強く制限
         if(document.querySelector('iframe')) {
             e.preventDefault();
         }
     }, { passive: false });
+    
+    // ロード時のスムーズな表示
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.3s ease';
+        document.body.style.opacity = '1';
+    }, 100);
 </script>
 
 </body>
 </html>
-
