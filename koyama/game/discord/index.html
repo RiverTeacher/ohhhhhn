@@ -2,28 +2,43 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting...</title>
+  <title>Game Loader</title>
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    iframe {
+      width: 95vw;
+      height: 95vh;
+      border: none;
+      background: #000;
+    }
+  </style>
 
   <script>
-    (function () {
+    window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-
-      // t があればそれを使う、なければ現在時刻
       const time = params.get('t') ?? Date.now();
 
-      // ★ 絶対パス指定（ここが修正点）
-      const target = `https://riverteacher.github.io/ohhhhhn/koyama/game/holl-gai_nakamatati.html?t=${time}`;
-
-      window.location.replace(target);
-    })();
+      const iframe = document.getElementById('game');
+      iframe.src =
+        `https://riverteacher.github.io/ohhhhhn/koyama/game/holl-gai_nakamatati.html?t=${time}`;
+    });
   </script>
-
-  <noscript>
-    <meta http-equiv="refresh"
-          content="0;url=https://riverteacher.github.io/ohhhhhn/koyama/game/holl-gai_nakamatati.html">
-  </noscript>
 </head>
 <body>
-  <p>Redirecting...</p>
+  <iframe
+    id="game"
+    title="holl-gai_nakamatati"
+    allow="fullscreen"
+  ></iframe>
 </body>
 </html>
