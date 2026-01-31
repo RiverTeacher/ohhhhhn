@@ -11,15 +11,16 @@
       // t があればそれを使う、なければ現在時刻
       const time = params.get('t') ?? Date.now();
 
-      const target = `holl-gai_nakamatati.html?t=${time}`;
+      // ★ 絶対パス指定（ここが修正点）
+      const target = `https://riverteacher.github.io/ohhhhhn/koyama/game/holl-gai_nakamatati.html?t=${time}`;
 
-      // 即リダイレクト
       window.location.replace(target);
     })();
   </script>
 
   <noscript>
-    <meta http-equiv="refresh" content="0;url=holl-gai_nakamatati.html">
+    <meta http-equiv="refresh"
+          content="0;url=https://riverteacher.github.io/ohhhhhn/koyama/game/holl-gai_nakamatati.html">
   </noscript>
 </head>
 <body>
