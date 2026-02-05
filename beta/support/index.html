@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>サポート</title>
+  <style>
+    /* ページ全体の余白をゼロにし、スクロールを防止 */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f9f9f9;
+    }
+
+    /* 基本設定：PCなどは高さ100% */
+    .chat-container {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      display: block;
+    }
+
+    /* スマホ（モバイルデバイス）の場合の調整 */
+    @media (max-width: 768px) {
+      .chat-container {
+        /* 下部5%を空ける設定 */
+        height: 95vh;
+        /* セーフエリア（iPhoneのノッチ等）も考慮する場合は以下を併用 */
+        height: calc(100svh - 5%);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 
+    iframeの幅と高さをスタイルで制御。
+    svh (small viewport height) を使うことで、モバイルブラウザのツールバーの影響を最小限に抑えています。
+  -->
+  <iframe
+    src="https://go.crisp.chat/chat/embed/?website_id=57bd1827-6515-4e9a-9f21-aefbb93be62b"
+    class="chat-container"
+    frameborder="0"
+  ></iframe>
+
+</body>
+</html>
