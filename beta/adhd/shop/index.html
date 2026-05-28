@@ -11,14 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        display: ['Orbitron', 'sans-serif'],
-                        body: ['Noto Sans JP', 'sans-serif'],
-                    }
-                }
-            }
+            theme: { extend: { fontFamily: { display: ['Orbitron','sans-serif'], body: ['Noto Sans JP','sans-serif'] } } }
         }
     </script>
     <style>
@@ -36,31 +29,21 @@
             --glow-gold: rgba(245, 158, 11, 0.3);
         }
         * { box-sizing: border-box; }
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: var(--bg-deep);
-            color: var(--text-primary);
-            min-height: 100vh;
-        }
+        body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; }
         body::before {
-            content: '';
-            position: fixed; inset: 0;
+            content: ''; position: fixed; inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
             opacity: 0.03; pointer-events: none; z-index: 9999;
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
         ::-webkit-scrollbar-thumb { background: var(--accent-violet); border-radius: 3px; }
-        ::selection { background: rgba(168, 85, 247, 0.3); color: #fff; }
-        .glass-card {
-            background: rgba(19, 19, 42, 0.7);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(168, 85, 247, 0.12);
-        }
+        ::selection { background: rgba(168,85,247,0.3); color: #fff; }
+
+        .glass-card { background: rgba(19,19,42,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(168,85,247,0.12); }
         .gradient-border { position: relative; }
         .gradient-border::before {
-            content: ''; position: absolute; inset: 0;
-            border-radius: inherit; padding: 1px;
+            content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
             background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan), var(--accent-violet));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -68,116 +51,174 @@
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-violet), var(--accent-purple));
-            color: #fff; font-weight: 700; border: none;
-            position: relative; overflow: hidden; transition: all 0.3s ease;
+            color: #fff; font-weight: 700; border: none; position: relative; overflow: hidden; transition: all 0.3s ease;
         }
-        .btn-primary::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .btn-primary:hover::after { opacity: 1; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(168, 85, 247, 0.4); }
-        .btn-primary:active { transform: translateY(0) scale(0.97); }
-        .btn-secondary {
-            background: rgba(255,255,255,0.05); color: var(--text-primary);
-            border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-        .input-field {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(168, 85, 247, 0.2);
-            color: var(--text-primary); transition: all 0.3s ease;
-        }
-        .input-field::placeholder { color: var(--text-muted); }
-        .input-field:focus { outline: none; border-color: var(--accent-purple); box-shadow: 0 0 20px rgba(168, 85, 247, 0.15); background: rgba(255,255,255,0.08); }
-        .modal-enter { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .modal-leave { animation: modalOut 0.2s ease-in forwards; }
-        @keyframes modalIn { from { opacity:0; transform:scale(0.9) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
-        @keyframes modalOut { from { opacity:1; transform:scale(1) translateY(0); } to { opacity:0; transform:scale(0.9) translateY(20px); } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulse-glow { 0%,100% { box-shadow:0 0 15px rgba(168,85,247,0.3); } 50% { box-shadow:0 0 30px rgba(168,85,247,0.6); } }
-        @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
-        @keyframes shimmer { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
-        .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .btn-primary::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent); opacity:0; transition:opacity 0.3s; }
+        .btn-primary:hover::after { opacity:1; }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 30px rgba(168,85,247,0.4); }
+        .btn-primary:active { transform:translateY(0) scale(0.97); }
+        .btn-secondary { background:rgba(255,255,255,0.05); color:var(--text-primary); border:1px solid rgba(255,255,255,0.1); transition:all 0.3s ease; }
+        .btn-secondary:hover { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); }
+        .input-field { background:rgba(255,255,255,0.05); border:1px solid rgba(168,85,247,0.2); color:var(--text-primary); transition:all 0.3s ease; }
+        .input-field::placeholder { color:var(--text-muted); }
+        .input-field:focus { outline:none; border-color:var(--accent-purple); box-shadow:0 0 20px rgba(168,85,247,0.15); background:rgba(255,255,255,0.08); }
+
+        @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse-glow { 0%,100%{box-shadow:0 0 15px rgba(168,85,247,0.3)} 50%{box-shadow:0 0 30px rgba(168,85,247,0.6)} }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        .stagger-1 { animation-delay: 0.05s; opacity: 0; }
-        .stagger-2 { animation-delay: 0.1s; opacity: 0; }
-        .stagger-3 { animation-delay: 0.15s; opacity: 0; }
-        .perspective { perspective: 1000px; }
-        .preserve-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .shimmer-text {
-            background: linear-gradient(90deg, var(--accent-gold) 0%, #fde68a 50%, var(--accent-gold) 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-            animation: shimmer 3s linear infinite;
+        .stagger-1 { animation-delay:0.05s; opacity:0; }
+        .stagger-2 { animation-delay:0.1s; opacity:0; }
+        .stagger-3 { animation-delay:0.15s; opacity:0; }
+        .perspective { perspective:1000px; }
+        .preserve-3d { transform-style:preserve-3d; }
+        .backface-hidden { backface-visibility:hidden; }
+        .rotate-y-180 { transform:rotateY(180deg); }
+        .shimmer-text { background:linear-gradient(90deg,var(--accent-gold) 0%,#fde68a 50%,var(--accent-gold) 100%); background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:shimmer 3s linear infinite; }
+        .shop-card { transition:all 0.4s cubic-bezier(0.16,1,0.3,1); }
+        .shop-card:hover { transform:translateY(-8px); box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(168,85,247,0.15); border-color:rgba(168,85,247,0.3); }
+        .tab-active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent-purple),var(--accent-cyan)); border-radius:3px 3px 0 0; }
+        .points-badge { background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); }
+        .game-card { transition:all 0.5s cubic-bezier(0.16,1,0.3,1); cursor:pointer; }
+        .game-card:hover .card-back-side { box-shadow:0 0 25px rgba(168,85,247,0.5); border-color:rgba(168,85,247,0.6); }
+        .result-win { background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(168,85,247,0.15)); border-color:rgba(239,68,68,0.3); }
+        .result-lose { background:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(124,58,237,0.15)); border-color:rgba(34,211,238,0.3); }
+        .result-draw { background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(124,58,237,0.15)); border-color:rgba(168,85,247,0.3); }
+        .footer-gradient { background:linear-gradient(to top,rgba(6,6,14,1),rgba(6,6,14,0.8)); }
+        .orb { position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none; z-index:0; }
+        .login-bg { background: radial-gradient(ellipse at 30% 30%,rgba(124,58,237,0.15) 0%,transparent 50%), radial-gradient(ellipse at 70% 70%,rgba(168,85,247,0.1) 0%,transparent 50%), radial-gradient(ellipse at 50% 50%,rgba(34,211,238,0.05) 0%,transparent 60%), var(--bg-deep); }
+        .header-bg { background:linear-gradient(135deg,#0e0e1a 0%,#1a1035 50%,#0e0e1a 100%); border-bottom:1px solid rgba(168,85,247,0.15); }
+        .bet-btn { width:56px; height:56px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:1.5rem; font-weight:700; transition:all 0.2s ease; }
+        .bet-btn:active { transform:scale(0.9); }
+
+        /* 準備中 */
+        .preparing-overlay { position:absolute; inset:0; background:rgba(6,6,14,0.65); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; border-radius:inherit; }
+        .preparing-badge { background:rgba(234,88,12,0.15); border:1px solid rgba(234,88,12,0.4); color:#fb923c; padding:6px 18px; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:0.08em; display:flex; align-items:center; gap:6px; }
+        .preparing-badge::before { content:''; width:8px; height:8px; border-radius:50%; background:#fb923c; animation:preparing-pulse 1.5s ease-in-out infinite; }
+        @keyframes preparing-pulse { 0%,100%{opacity:0.4;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+        .btn-preparing { background:rgba(234,88,12,0.12); color:#fb923c; border:1px solid rgba(234,88,12,0.3); cursor:not-allowed; transition:all 0.3s ease; }
+        .btn-preparing:hover { transform:none; box-shadow:none; }
+
+        /* Toast */
+        @keyframes toast-in { from{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.95)} to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }
+        @keyframes toast-out { from{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} to{opacity:0;transform:translateX(-50%) translateY(-20px) scale(0.95)} }
+        .toast-enter { animation:toast-in 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+        .toast-leave { animation:toast-out 0.25s ease-in forwards; }
+
+        /* ============ ミニゲーム演出 ============ */
+
+        /* カードパーティクル */
+        .card-particle {
+            position:absolute; border-radius:50%; pointer-events:none; z-index:20;
+            animation: particle-fly 0.7s ease-out forwards;
         }
-        .shop-card { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        .shop-card:hover { transform: translateY(-8px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 30px rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); }
-        .tab-active::after {
-            content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
-            border-radius: 3px 3px 0 0;
+        @keyframes particle-fly {
+            0% { opacity:1; transform:translate(0,0) scale(1); }
+            100% { opacity:0; transform:translate(var(--px),var(--py)) scale(0); }
         }
-        .points-badge { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
-        .game-card { transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; }
-        .game-card:hover .card-back-side { box-shadow: 0 0 25px rgba(168, 85, 247, 0.5); border-color: rgba(168, 85, 247, 0.6); }
-        .result-win { background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(168,85,247,0.15)); border-color: rgba(239,68,68,0.3); }
-        .result-lose { background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(124,58,237,0.15)); border-color: rgba(34,211,238,0.3); }
-        .result-draw { background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.15)); border-color: rgba(168,85,247,0.3); }
-        .footer-gradient { background: linear-gradient(to top, rgba(6,6,14,1), rgba(6,6,14,0.8)); }
-        .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-        .login-bg {
-            background:
-                radial-gradient(ellipse at 30% 30%, rgba(124,58,237,0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 70%, rgba(168,85,247,0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(34,211,238,0.05) 0%, transparent 60%),
-                var(--bg-deep);
+
+        /* フロートテキスト（ダメージ・回復数値） */
+        .float-text {
+            position:absolute; font-weight:900; font-family:'Orbitron',sans-serif;
+            pointer-events:none; z-index:25; white-space:nowrap;
+            animation: float-up 1.2s ease-out forwards;
         }
-        .header-bg {
-            background: linear-gradient(135deg, #0e0e1a 0%, #1a1035 50%, #0e0e1a 100%);
-            border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+        @keyframes float-up {
+            0% { opacity:1; transform:translateY(0) scale(0.5); }
+            15% { opacity:1; transform:translateY(-8px) scale(1.2); }
+            100% { opacity:0; transform:translateY(-70px) scale(0.7); }
         }
-        .bet-btn {
-            width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; font-size: 1.5rem; font-weight: 700; transition: all 0.2s ease;
+
+        /* 画面フラッシュ */
+        .screen-flash {
+            position:fixed; inset:0; pointer-events:none; z-index:30;
+            animation: flash-out 0.5s ease-out forwards;
         }
-        .bet-btn:active { transform: scale(0.9); }
-        .preparing-overlay {
-            position: absolute; inset: 0; background: rgba(6, 6, 14, 0.65);
-            backdrop-filter: blur(4px); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 10; border-radius: inherit;
+        .flash-good { background:radial-gradient(circle at center, rgba(34,197,94,0.35), transparent 70%); }
+        .flash-bad { background:radial-gradient(circle at center, rgba(239,68,68,0.35), transparent 70%); }
+        .flash-multi { background:radial-gradient(circle at center, rgba(245,158,11,0.4), transparent 70%); }
+        .flash-end { background:radial-gradient(circle at center, rgba(100,100,120,0.5), transparent 70%); }
+        @keyframes flash-out { 0%{opacity:1} 100%{opacity:0} }
+
+        /* 画面シェイク */
+        @keyframes shake {
+            0%,100%{transform:translateX(0)} 15%{transform:translateX(-6px)} 30%{transform:translateX(6px)}
+            45%{transform:translateX(-4px)} 60%{transform:translateX(4px)} 75%{transform:translateX(-2px)}
         }
-        .preparing-badge {
-            background: rgba(234, 88, 12, 0.15); border: 1px solid rgba(234, 88, 12, 0.4);
-            color: #fb923c; padding: 6px 18px; border-radius: 999px; font-size: 0.75rem;
-            font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;
+        .screen-shake { animation:shake 0.35s ease; }
+
+        /* プライズ数字のアニメーション */
+        @keyframes prize-bump {
+            0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)}
         }
-        .preparing-badge::before {
-            content: ''; width: 8px; height: 8px; border-radius: 50%;
-            background: #fb923c; animation: preparing-pulse 1.5s ease-in-out infinite;
+        .prize-bump { animation:prize-bump 0.35s ease; }
+
+        /* カード前面スタイル */
+        .card-front-multi { background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(234,88,12,0.1)); border-color:rgba(239,68,68,0.4) !important; }
+        .card-front-plus { background:linear-gradient(135deg, rgba(34,197,94,0.25), rgba(16,185,129,0.1)); border-color:rgba(34,197,94,0.4) !important; }
+        .card-front-div { background:linear-gradient(135deg, rgba(59,130,246,0.25), rgba(99,102,241,0.1)); border-color:rgba(59,130,246,0.4) !important; }
+        .card-front-minus { background:linear-gradient(135deg, rgba(34,211,238,0.2), rgba(6,182,212,0.08)); border-color:rgba(34,211,238,0.35) !important; }
+        .card-front-end { background:linear-gradient(135deg, rgba(55,55,70,0.4), rgba(20,20,30,0.5)); border-color:rgba(100,100,120,0.4) !important; }
+
+        /* カードグロー */
+        .glow-red { box-shadow:0 0 25px rgba(239,68,68,0.5), 0 0 50px rgba(239,68,68,0.2) !important; }
+        .glow-green { box-shadow:0 0 25px rgba(34,197,94,0.5), 0 0 50px rgba(34,197,94,0.2) !important; }
+        .glow-gold { box-shadow:0 0 25px rgba(245,158,11,0.5), 0 0 50px rgba(245,158,11,0.2) !important; }
+        .glow-blue { box-shadow:0 0 20px rgba(59,130,246,0.4), 0 0 40px rgba(59,130,246,0.15) !important; }
+        .glow-cyan { box-shadow:0 0 20px rgba(34,211,238,0.4), 0 0 40px rgba(34,211,238,0.15) !important; }
+        .glow-dark { box-shadow:0 0 20px rgba(80,80,100,0.4) !important; }
+
+        /* 残りカード数バッジ */
+        .remaining-badge {
+            background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.25);
+            border-radius:999px; padding:4px 14px; font-size:0.7rem; font-weight:700;
+            color:rgba(168,85,247,0.7); letter-spacing:0.05em;
         }
-        @keyframes preparing-pulse { 0%,100% { opacity:0.4; transform:scale(0.8); } 50% { opacity:1; transform:scale(1.2); } }
-        .btn-preparing {
-            background: rgba(234, 88, 12, 0.12); color: #fb923c;
-            border: 1px solid rgba(234, 88, 12, 0.3); cursor: not-allowed;
-            transition: all 0.3s ease;
+        .remaining-badge.danger {
+            background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.35); color:rgba(239,68,68,0.8);
+            animation:preparing-pulse 1s ease-in-out infinite;
         }
-        .btn-preparing:hover { transform: none; box-shadow: none; }
-        @keyframes toast-in { from { opacity:0; transform:translateX(-50%) translateY(-20px) scale(0.95); } to { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } }
-        @keyframes toast-out { from { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } to { opacity:0; transform:translateX(-50%) translateY(-20px) scale(0.95); } }
-        .toast-enter { animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .toast-leave { animation: toast-out 0.25s ease-in forwards; }
+
+        /* 引いたカードストリップ */
+        .drawn-dot {
+            width:10px; height:10px; border-radius:50%; display:inline-block;
+            transition:all 0.3s ease;
+        }
+        .drawn-dot-good { background:#22c55e; box-shadow:0 0 6px rgba(34,197,94,0.5); }
+        .drawn-dot-bad { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.5); }
+        .drawn-dot-neutral { background:#6b7280; box-shadow:0 0 4px rgba(107,114,128,0.4); }
+
+        /* コンフetti */
+        #confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:45; }
+
+        /* 大勝利テキスト */
+        @keyframes big-win-text {
+            0% { opacity:0; transform:scale(0.3) rotate(-10deg); }
+            50% { opacity:1; transform:scale(1.15) rotate(2deg); }
+            70% { transform:scale(0.95) rotate(-1deg); }
+            100% { opacity:1; transform:scale(1) rotate(0deg); }
+        }
+        .big-win-text { animation:big-win-text 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        /* ステークスバー */
+        .stakes-bar {
+            height:4px; border-radius:2px; background:rgba(255,255,255,0.05);
+            overflow:hidden; position:relative;
+        }
+        .stakes-fill {
+            height:100%; border-radius:2px; transition:all 0.5s ease;
+        }
     </style>
 </head>
 <body class="font-body min-h-screen flex flex-col">
 
     <!-- Toast通知 -->
+    <div id="confetti-canvas"></div>
     <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none" style="display:none;">
-        <div class="glass-card px-6 py-3.5 rounded-2xl text-sm font-bold shadow-2xl flex items-center gap-3" style="background: rgba(14, 14, 26, 0.95); border: 1px solid rgba(234, 88, 12, 0.35); backdrop-filter: blur(20px); pointer-events: auto;">
+        <div class="glass-card px-6 py-3.5 rounded-2xl text-sm font-bold shadow-2xl flex items-center gap-3" style="background:rgba(14,14,26,0.95); border:1px solid rgba(234,88,12,0.35); backdrop-filter:blur(20px); pointer-events:auto;">
             <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
             <span id="toast-message" class="text-gray-200"></span>
         </div>
@@ -187,7 +228,7 @@
     <div id="login-section" class="flex-grow flex items-center justify-center p-4 login-bg relative overflow-hidden">
         <div class="orb w-64 h-64 bg-purple-600/20 top-10 -left-20" style="position:absolute;"></div>
         <div class="orb w-96 h-96 bg-violet-800/10 -bottom-20 -right-20" style="position:absolute;"></div>
-        <div class="glass-card gradient-border p-8 sm:p-10 rounded-3xl w-full max-w-md relative z-10 animate-fade-up" style="background: rgba(14, 14, 26, 0.85); backdrop-filter: blur(40px);">
+        <div class="glass-card gradient-border p-8 sm:p-10 rounded-3xl w-full max-w-md relative z-10 animate-fade-up" style="background:rgba(14,14,26,0.85); backdrop-filter:blur(40px);">
             <div class="flex flex-col items-center mb-8">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center mb-4 animate-pulse-glow">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -197,11 +238,9 @@
             </div>
             <div class="mb-5">
                 <label for="user-id-input" class="block text-xs font-semibold text-purple-300/70 mb-2 uppercase tracking-widest">ユーザーID</label>
-                <input type="text" id="user-id-input" onkeypress="if(event.key === 'Enter') login()" class="input-field w-full px-4 py-3 rounded-xl text-base" placeholder="IDを入力してください">
+                <input type="text" id="user-id-input" onkeypress="if(event.key==='Enter') login()" class="input-field w-full px-4 py-3 rounded-xl text-base" placeholder="IDを入力してください">
             </div>
-            <button id="login-button" onclick="login()" class="btn-primary w-full py-3.5 rounded-xl text-base font-bold flex justify-center items-center tracking-wide">
-                <span>ログイン</span>
-            </button>
+            <button id="login-button" onclick="login()" class="btn-primary w-full py-3.5 rounded-xl text-base font-bold flex justify-center items-center tracking-wide"><span>ログイン</span></button>
             <p id="login-message" class="mt-4 text-center text-sm text-red-400 hidden"></p>
         </div>
     </div>
@@ -225,7 +264,7 @@
 
         <!-- タブ -->
         <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 mt-6 relative z-10">
-            <div class="flex gap-1 p-1 rounded-2xl" style="background: rgba(14, 14, 26, 0.5);">
+            <div class="flex gap-1 p-1 rounded-2xl" style="background:rgba(14,14,26,0.5);">
                 <button id="tab-shop" onclick="switchTab('shop')" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/30 relative z-10 transition-all text-sm tracking-wide tab-active">ショップ</button>
                 <button id="tab-gamble" onclick="switchTab('gamble')" class="flex-1 py-3 rounded-xl text-gray-400 font-bold hover:text-gray-200 transition-all text-sm tracking-wide">ミニゲーム</button>
             </div>
@@ -242,8 +281,8 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <!-- 商品1 -->
-                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-1 relative" style="background: rgba(19, 19, 42, 0.6);">
-                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.1));">
+                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-1 relative" style="background:rgba(19,19,42,0.6);">
+                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(168,85,247,0.1));">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#13132a] to-transparent opacity-60"></div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-400/80 relative z-10 animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     </div>
@@ -258,8 +297,8 @@
                     <div class="preparing-overlay"><div class="preparing-badge">準備中</div></div>
                 </div>
                 <!-- 商品2 -->
-                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-2 relative" style="background: rgba(19, 19, 42, 0.6);">
-                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(20,184,166,0.1));">
+                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-2 relative" style="background:rgba(19,19,42,0.6);">
+                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(20,184,166,0.1));">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#13132a] to-transparent opacity-60"></div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-emerald-400/80 relative z-10 animate-float" style="animation-delay:0.5s" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     </div>
@@ -274,8 +313,8 @@
                     <div class="preparing-overlay"><div class="preparing-badge">準備中</div></div>
                 </div>
                 <!-- 商品3 -->
-                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-3 relative" style="background: rgba(19, 19, 42, 0.6);">
-                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(234,88,12,0.1));">
+                <div class="shop-card glass-card rounded-2xl overflow-hidden flex flex-col animate-fade-up stagger-3 relative" style="background:rgba(19,19,42,0.6);">
+                    <div class="h-36 flex items-center justify-center relative overflow-hidden" style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(234,88,12,0.1));">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#13132a] to-transparent opacity-60"></div>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-amber-400/80 relative z-10 animate-float" style="animation-delay:1s" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     </div>
@@ -298,8 +337,10 @@
                 <h2 class="text-2xl font-bold text-white font-display tracking-wider">運試しカードゲーム</h2>
                 <p class="text-gray-500 mt-2 text-sm">カードを引いてポイントを増やそう！「終」を引くまで続く！</p>
             </div>
+
+            <!-- セットアップ -->
             <div id="gamble-setup" class="flex flex-col items-center justify-center py-6">
-                <div class="glass-card rounded-2xl p-8 w-full max-w-sm text-center" style="background: rgba(19, 19, 42, 0.5);">
+                <div class="glass-card rounded-2xl p-8 w-full max-w-sm text-center" style="background:rgba(19,19,42,0.5);">
                     <p class="mb-5 text-sm font-semibold text-purple-300/70 uppercase tracking-widest">賭けポイント</p>
                     <p class="text-xs text-gray-500 mb-6">50 〜 500 pt</p>
                     <div class="flex items-center justify-center gap-6 mb-8">
@@ -311,14 +352,32 @@
                     <p id="gamble-error" class="mt-4 text-red-400 text-sm font-bold hidden"></p>
                 </div>
             </div>
+
+            <!-- プレイ中 -->
             <div id="gamble-play" class="hidden flex-col items-center w-full">
-                <div class="glass-card rounded-2xl px-8 py-5 mb-8 w-full max-w-md text-center" style="background:rgba(19,19,42,0.5);">
+                <!-- プライズ表示 -->
+                <div class="glass-card rounded-2xl px-8 py-5 mb-4 w-full max-w-md text-center" style="background:rgba(19,19,42,0.5);">
                     <p class="text-xs text-purple-300/60 font-bold mb-1 uppercase tracking-widest">獲得予定ポイント</p>
-                    <p class="text-4xl font-display font-bold text-amber-300 text-glow-gold transition-all duration-300" id="current-prize-display"><span id="current-prize">50</span> <span class="text-lg text-amber-400/60">pt</span></p>
+                    <p class="text-4xl font-display font-bold text-amber-300 text-glow-gold transition-all duration-300" id="current-prize-display">
+                        <span id="current-prize">50</span> <span class="text-lg text-amber-400/60">pt</span>
+                    </p>
                 </div>
+                <!-- ステークスバー -->
+                <div class="w-full max-w-md mb-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="remaining-badge" id="remaining-badge">残り <span id="remaining-count">10</span> 枚</span>
+                        <span class="text-xs text-gray-600" id="drawn-strip"></span>
+                    </div>
+                    <div class="stakes-bar">
+                        <div class="stakes-fill" id="stakes-fill" style="width:100%; background:linear-gradient(90deg, #a855f7, #22d3ee);"></div>
+                    </div>
+                </div>
+                <!-- カードグリッド -->
                 <div id="cards-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 w-full max-w-3xl mb-6"></div>
-                <p class="text-sm text-gray-600 mt-4">カードをタップしてめくってください</p>
+                <p class="text-sm text-gray-600 mt-2">カードをタップしてめくってください</p>
             </div>
+
+            <!-- リザルト -->
             <div id="gamble-result" class="hidden flex-col items-center py-10 w-full max-w-md mx-auto">
                 <div id="result-card" class="glass-card w-full rounded-3xl p-8 text-center mb-6 result-draw" style="background:rgba(19,19,42,0.5);">
                     <h3 class="text-2xl font-bold mb-6 font-display tracking-wider" id="result-title">結果発表</h3>
@@ -338,7 +397,7 @@
         </footer>
     </div>
 
-    <!-- ローディングオーバーレイ -->
+    <!-- ローディング -->
     <div id="loading-overlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center" style="background:rgba(6,6,14,0.7);backdrop-filter:blur(8px);">
         <div class="glass-card p-6 rounded-2xl flex items-center gap-4" style="background:rgba(19,19,42,0.9);border:1px solid rgba(168,85,247,0.2);">
             <svg class="animate-spin h-7 w-7 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -353,7 +412,7 @@
             <div class="p-7">
                 <h3 class="text-lg font-bold mb-5 text-center text-white font-display tracking-wider">購入の確認</h3>
                 <div class="text-center mb-6">
-                    <p class="text-gray-400 mb-3"><span id="modal-item-name" class="font-bold text-white border-b border-purple-500/30 pb-1">アイテム名</span> を購入しますか？</p>
+                    <p class="text-gray-400 mb-3"><span id="modal-item-name" class="font-bold text-white border-b border-purple-500/30 pb-1"></span> を購入しますか？</p>
                     <div class="inline-flex items-center gap-2 points-badge px-4 py-2 rounded-full">
                         <span class="text-xs text-amber-400/70">消費</span>
                         <span id="modal-item-price" class="font-bold text-amber-300 font-mono text-lg">0 pt</span>
@@ -361,462 +420,644 @@
                 </div>
                 <div class="flex gap-3">
                     <button onclick="closeModal()" class="flex-1 btn-secondary py-3 rounded-xl font-semibold text-sm">キャンセル</button>
-                    <button id="btn-confirm-purchase" onclick="processPurchase()" class="flex-1 btn-primary py-3 rounded-xl font-semibold text-sm">確定する</button>
+                    <button onclick="processPurchase()" class="flex-1 btn-primary py-3 rounded-xl font-semibold text-sm">確定する</button>
                 </div>
-            </div>
-            <div id="modal-overlay-message" class="absolute inset-0 flex flex-col items-center justify-center hidden" style="background:rgba(19,19,42,0.98);">
-                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4" style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(20,184,166,0.1));border:1px solid rgba(16,185,129,0.3);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <p class="text-xl font-bold text-white mb-1">購入完了！</p>
-                <p class="text-sm text-gray-500 mb-6">アイテムを獲得しました</p>
-                <button onclick="closeModal(true)" class="btn-secondary px-8 py-3 rounded-xl font-semibold text-sm">閉じる</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
     <script>
-        // ============================================================
-        // 共通設定
-        // ============================================================
-        var scriptUrl = 'https://script.google.com/macros/s/AKfycbyzfzAN4jFXJMgdvO2AazFwYboZa4edtWQBrRwDwSsjyHvTGyPyP-v1YcxIEDld7KhowA/exec';
-        var userId = null;
-        var currentPoints = 0;
+    // ============================================================
+    // 共通設定
+    // ============================================================
+    var scriptUrl = 'https://script.google.com/macros/s/AKfycbyzfzAN4jFXJMgdvO2AazFwYboZa4edtWQBrRwDwSsjyHvTGyPyP-v1YcxIEDld7KhowA/exec';
+    var userId = null;
+    var currentPoints = 0;
 
-        // ============================================================
-        // デバッグ用ログ（ブラウザのF12コンソールで確認）
-        // ============================================================
-        function debugLog(label, data) {
-            console.log('[PORTAL DEBUG] ' + label + ':', data);
+    function debugLog(label, data) { console.log('[PORTAL] ' + label + ':', data); }
+
+    // ============================================================
+    // Toast
+    // ============================================================
+    var toastTimer = null;
+    function showToast(msg, dur) {
+        dur = dur || 3000;
+        var c = document.getElementById('toast-container'), m = document.getElementById('toast-message');
+        if (toastTimer) clearTimeout(toastTimer);
+        c.style.display = 'none'; void c.offsetWidth;
+        m.textContent = msg; c.style.display = 'block';
+        c.firstElementChild.classList.remove('toast-leave');
+        c.firstElementChild.classList.add('toast-enter');
+        toastTimer = setTimeout(function() {
+            c.firstElementChild.classList.remove('toast-enter');
+            c.firstElementChild.classList.add('toast-leave');
+            setTimeout(function() { c.style.display = 'none'; }, 300);
+        }, dur);
+    }
+    function showPreparingToast() { showToast('準備中のため購入できません', 2500); }
+
+    // ============================================================
+    // UIユーティリティ
+    // ============================================================
+    function updatePointsDisplay() { document.getElementById('user-points').textContent = currentPoints + ' pt'; }
+    function showGlobalLoading(show, text) {
+        text = text || '通信中...';
+        var o = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').innerText = text;
+        if (show) { o.classList.remove('hidden'); o.classList.add('flex'); }
+        else { o.classList.add('hidden'); o.classList.remove('flex'); }
+    }
+    function showLoginError(msg) { var el = document.getElementById('login-message'); el.textContent = msg; el.classList.remove('hidden'); }
+    function hideLoginError() { document.getElementById('login-message').classList.add('hidden'); }
+    function enterMainApp() {
+        updatePointsDisplay();
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('flex');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('flex');
+    }
+
+    // ============================================================
+    // 通常ログイン
+    // ============================================================
+    async function login() {
+        var idInput = document.getElementById('user-id-input').value.trim();
+        var loginBtn = document.getElementById('login-button');
+        debugLog('通常ログイン', idInput);
+        if (!idInput) { showLoginError('IDを入力してください。'); return; }
+        hideLoginError();
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>読み込み中...';
+        try {
+            var response = await fetch(scriptUrl + '?id=' + encodeURIComponent(idInput));
+            var responseText = await response.text();
+            debugLog('レスポンス', responseText);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            var data = JSON.parse(responseText);
+            if (data.value !== undefined) {
+                userId = data.id || idInput;
+                currentPoints = data.value;
+                enterMainApp();
+            } else { throw new Error(data.error || 'データ取得失敗'); }
+        } catch (e) {
+            debugLog('失敗', e.message);
+            showLoginError('ログインに失敗しました: ' + e.message);
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<span>ログイン</span>';
+        }
+    }
+
+    // ============================================================
+    // URLパラメータ自動ログイン（修正版）
+    // ============================================================
+    async function autoLoginByParam() {
+        var params = new URLSearchParams(window.location.search);
+        var combinedId = params.get('id');
+        debugLog('URLパラメータ', { combinedId: combinedId, url: window.location.href });
+        if (!combinedId) { debugLog('パラメータなし', '通常ログイン画面'); return; }
+
+        combinedId = combinedId.trim();
+
+        // ★ 修正ポイント：結合IDから最後の4桁（時刻）を切り取り、ベースIDを抽出
+        if (combinedId.length < 5) {
+            showLoginError('IDが不正です。');
+            return;
         }
 
-        // ============================================================
-        // Toast通知
-        // ============================================================
-        var toastTimer = null;
-        function showToast(message, duration) {
-            duration = duration || 3000;
-            var container = document.getElementById('toast-container');
-            var msgEl = document.getElementById('toast-message');
-            if (toastTimer) clearTimeout(toastTimer);
-            container.style.display = 'none';
-            void container.offsetWidth;
-            msgEl.textContent = message;
-            container.style.display = 'block';
-            container.firstElementChild.classList.remove('toast-leave');
-            container.firstElementChild.classList.add('toast-enter');
-            toastTimer = setTimeout(function() {
-                container.firstElementChild.classList.remove('toast-enter');
-                container.firstElementChild.classList.add('toast-leave');
-                setTimeout(function() { container.style.display = 'none'; }, 300);
-            }, duration);
-        }
-        function showPreparingToast() { showToast('準備中のため購入できません', 2500); }
+        var timeCode = combinedId.slice(-4);   // 例: "1330"
+        var baseId = combinedId.slice(0, -4);  // 例: "699230580071464982"
 
-        // ============================================================
-        // UIユーティリティ
-        // ============================================================
-        function updatePointsDisplay() {
-            document.getElementById('user-points').textContent = currentPoints + ' pt';
-        }
-        function showGlobalLoading(show, text) {
-            text = text || '通信中...';
-            var overlay = document.getElementById('loading-overlay');
-            document.getElementById('loading-text').innerText = text;
-            if (show) { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
-            else { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-        }
-        function showLoginError(msg) {
-            var el = document.getElementById('login-message');
-            el.textContent = msg;
-            el.classList.remove('hidden');
-        }
-        function hideLoginError() {
-            document.getElementById('login-message').classList.add('hidden');
+        debugLog('ID解析', { combinedId: combinedId, timeCode: timeCode, baseId: baseId });
+
+        // 時刻検証
+        var now = new Date();
+        var hh = String(now.getHours()).padStart(2, '0');
+        var mm = String(now.getMinutes()).padStart(2, '0');
+        var currentTimeCode = hh + mm;
+
+        debugLog('時刻検証', { timeCode: timeCode, currentTimeCode: currentTimeCode, match: timeCode === currentTimeCode });
+
+        if (timeCode !== currentTimeCode) {
+            showLoginError('認証コードの有効期限が切れています（' + currentTimeCode + ' に更新が必要）');
+            return;
         }
 
-        // ============================================================
-        // メインアプリへの遷入
-        // ============================================================
-        function enterMainApp() {
-            updatePointsDisplay();
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('login-section').classList.remove('flex');
-            document.getElementById('main-app').classList.remove('hidden');
-            document.getElementById('main-app').classList.add('flex');
+        // 時刻OK → ベースIDでAPIに送信
+        showGlobalLoading(true, '認証中...');
+        try {
+            var url = scriptUrl + '?id=' + encodeURIComponent(baseId);
+            debugLog('API呼出', url);
+            var response = await fetch(url);
+            var responseText = await response.text();
+            debugLog('APIレスポンス', responseText);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            var data = JSON.parse(responseText);
+            if (data.value !== undefined) {
+                userId = baseId;
+                currentPoints = data.value;
+                debugLog('自動ログイン成功', { userId: userId, points: currentPoints });
+                enterMainApp();
+            } else { throw new Error(data.error || 'ID NOT FOUND'); }
+        } catch (e) {
+            debugLog('自動ログイン失敗', e.message);
+            showLoginError('認証に失敗しました: ' + e.message);
+        } finally {
+            showGlobalLoading(false);
         }
+    }
 
-        // ============================================================
-        // 通常ログイン（フォーム）
-        // ============================================================
-        async function login() {
-            var idInput = document.getElementById('user-id-input').value.trim();
-            var loginBtn = document.getElementById('login-button');
+    // ============================================================
+    // タブ
+    // ============================================================
+    function switchTab(tabName) {
+        if (isGambling) { alert("ゲームプレイ中は移動できません！"); return; }
+        var tS = document.getElementById('tab-shop'), tG = document.getElementById('tab-gamble');
+        var sS = document.getElementById('shop-section'), sG = document.getElementById('gamble-section');
+        if (tabName === 'shop') {
+            tS.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/30 relative z-10 transition-all text-sm tracking-wide tab-active";
+            tG.className = "flex-1 py-3 rounded-xl text-gray-400 font-bold hover:text-gray-200 transition-all text-sm tracking-wide";
+            sS.classList.remove('hidden'); sS.classList.add('flex'); sG.classList.add('hidden'); sG.classList.remove('flex');
+        } else {
+            tG.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/30 relative z-10 transition-all text-sm tracking-wide tab-active";
+            tS.className = "flex-1 py-3 rounded-xl text-gray-400 font-bold hover:text-gray-200 transition-all text-sm tracking-wide";
+            sG.classList.remove('hidden'); sG.classList.add('flex'); sS.classList.add('hidden'); sS.classList.remove('flex');
+        }
+    }
 
-            debugLog('通常ログイン開始', 'ID=' + idInput);
+    // ============================================================
+    // ショップモーダル
+    // ============================================================
+    var selectedItem = null, selectedPrice = 0;
+    var modal = document.getElementById('purchase-modal');
+    var modalContent = document.getElementById('modal-content');
+    function openModal(n, p) {
+        selectedItem = n; selectedPrice = p;
+        document.getElementById('modal-item-name').textContent = n;
+        document.getElementById('modal-item-price').textContent = p + ' pt';
+        modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
+    function closeModal() { modal.classList.remove('flex'); modal.classList.add('hidden'); }
+    function processPurchase() {
+        if (currentPoints >= selectedPrice) { currentPoints -= selectedPrice; updatePointsDisplay(); closeModal(); }
+        else { alert('ポイントが不足しています！'); closeModal(); }
+    }
 
-            if (!idInput) {
-                showLoginError('IDを入力してください。');
-                return;
+    // ============================================================
+    // ★★★ ミニゲーム - エンハンスメント
+    // ============================================================
+
+    // --- 音声システム (Web Audio API) ---
+    var audioCtx = null;
+    function initAudio() {
+        if (!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            catch(e) { debugLog('Audio', '対応していません'); }
+        }
+    }
+    function playSound(type) {
+        if (!audioCtx) return;
+        try {
+            var t = audioCtx.currentTime;
+            if (type === 'flip') {
+                var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(1200, t);
+                o.frequency.exponentialRampToValueAtTime(600, t + 0.08);
+                o.type = 'sine';
+                g.gain.setValueAtTime(0.08, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                o.start(t); o.stop(t + 0.1);
+            } else if (type === 'good') {
+                [523, 659, 784].forEach(function(f, i) {
+                    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.value = f; o.type = 'triangle';
+                    g.gain.setValueAtTime(0.1, t + i * 0.08);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.2);
+                    o.start(t + i * 0.08); o.stop(t + i * 0.08 + 0.2);
+                });
+            } else if (type === 'bad') {
+                var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(300, t);
+                o.frequency.exponentialRampToValueAtTime(100, t + 0.25);
+                o.type = 'sawtooth';
+                g.gain.setValueAtTime(0.07, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                o.start(t); o.stop(t + 0.3);
+            } else if (type === 'multi') {
+                [523, 659, 784, 1047].forEach(function(f, i) {
+                    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.value = f; o.type = 'sine';
+                    g.gain.setValueAtTime(0.1, t + i * 0.07);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.2);
+                    o.start(t + i * 0.07); o.stop(t + i * 0.07 + 0.2);
+                });
+            } else if (type === 'end') {
+                var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.setValueAtTime(200, t);
+                o.frequency.exponentialRampToValueAtTime(80, t + 0.6);
+                o.type = 'sawtooth';
+                g.gain.setValueAtTime(0.1, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+                o.start(t); o.stop(t + 0.6);
+            } else if (type === 'win') {
+                [523, 659, 784, 1047, 1319].forEach(function(f, i) {
+                    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.value = f; o.type = 'triangle';
+                    g.gain.setValueAtTime(0.08, t + i * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.25);
+                    o.start(t + i * 0.1); o.stop(t + i * 0.1 + 0.25);
+                });
             }
+        } catch(e) {}
+    }
 
-            hideLoginError();
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>読み込み中...';
-
-            try {
-                var url = scriptUrl + '?id=' + encodeURIComponent(idInput);
-                debugLog('API呼出', url);
-
-                var response = await fetch(url);
-                debugLog('レスポンスステータス', response.status);
-
-                var responseText = await response.text();
-                debugLog('レスポンス本文(生)', responseText);
-
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
-
-                var data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch(parseErr) {
-                    debugLog('JSONパースエラー', parseErr.message);
-                    throw new Error('レスポンスの形式が正しくありません');
-                }
-
-                debugLog('パース済データ', data);
-
-                // レスポンス形式を確認
-                if (data.value !== undefined) {
-                    userId = data.id || idInput;
-                    currentPoints = data.value;
-                    debugLog('ログイン成功', { userId: userId, points: currentPoints });
-                    enterMainApp();
-                } else if (data.error !== undefined) {
-                    debugLog('APIエラー', data.error);
-                    throw new Error(data.error);
-                } else {
-                    debugLog('予期しない形式', data);
-                    throw new Error('データ取得失敗: 予期しないレスポンス形式');
-                }
-            } catch (error) {
-                debugLog('ログイン失敗', error.message);
-                showLoginError('ログインに失敗しました: ' + error.message);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<span>ログイン</span>';
-            }
+    // --- パーティクルシステム ---
+    function createParticles(x, y, color, count) {
+        for (var i = 0; i < count; i++) {
+            var p = document.createElement('div');
+            p.className = 'card-particle';
+            var angle = (Math.PI * 2 / count) * i + (Math.random() * 0.5);
+            var dist = 25 + Math.random() * 45;
+            var px = Math.cos(angle) * dist, py = Math.sin(angle) * dist;
+            var size = 3 + Math.random() * 5;
+            p.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + size + 'px;height:' + size + 'px;background:' + color + ';--px:' + px + 'px;--py:' + py + 'px;';
+            document.body.appendChild(p);
+            setTimeout(function(el) { return function() { el.remove(); }; }(p), 700);
         }
+    }
 
-        // ============================================================
-        // URLパラメータ自動ログイン
-        // ============================================================
-        async function autoLoginByParam() {
-            var params = new URLSearchParams(window.location.search);
-            var rawId = params.get('id');
+    // --- フロートテキスト ---
+    function createFloatText(x, y, text, color, size) {
+        var el = document.createElement('div');
+        el.className = 'float-text';
+        el.textContent = text;
+        el.style.cssText = 'left:' + (x - 20) + 'px;top:' + y + 'px;color:' + color + ';font-size:' + (size || '1.8rem') + ';text-shadow:0 0 15px ' + color + ';';
+        document.body.appendChild(el);
+        setTimeout(function() { el.remove(); }, 1200);
+    }
 
-            debugLog('URLパラメータ確認', { rawId: rawId, fullUrl: window.location.href });
+    // --- 画面フラッシュ ---
+    function screenFlash(type) {
+        var el = document.createElement('div');
+        el.className = 'screen-flash ' + type;
+        document.body.appendChild(el);
+        setTimeout(function() { el.remove(); }, 500);
+    }
 
-            if (!rawId) {
-                debugLog('パラメータなし', '通常ログイン画面を表示');
-                return;
-            }
+    // --- 画面シェイク ---
+    function screenShake() {
+        document.body.classList.add('screen-shake');
+        setTimeout(function() { document.body.classList.remove('screen-shake'); }, 350);
+    }
 
-            rawId = rawId.trim();
-            debugLog('トリム後ID', rawId);
-
-            // 現在時刻の下4桁 HHMM
-            var now = new Date();
-            var hh = String(now.getHours()).padStart(2, '0');
-            var mm = String(now.getMinutes()).padStart(2, '0');
-            var timeCode = hh + mm;
-            var combinedId = rawId + timeCode;
-
-            debugLog('認証情報', {
-                rawId: rawId,
-                timeCode: timeCode,
-                combinedId: combinedId,
-                currentTime: now.toLocaleTimeString('ja-JP')
+    // --- コンフetti ---
+    var confettiCanvas, confettiCtx, confettiParticles = [], confettiFrame = null;
+    function startConfetti() {
+        if (!confettiCanvas) {
+            confettiCanvas = document.createElement('canvas');
+            confettiCanvas.id = 'confetti-canvas';
+            confettiCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:45;';
+            document.body.appendChild(confettiCanvas);
+            confettiCtx = confettiCanvas.getContext('2d');
+        }
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+        confettiParticles = [];
+        var colors = ['#f59e0b','#ef4444','#a855f7','#22d3ee','#10b981','#f472b6','#818cf8'];
+        for (var i = 0; i < 120; i++) {
+            confettiParticles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: -10 - Math.random() * 200,
+                w: 4 + Math.random() * 7, h: 8 + Math.random() * 12,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 5, vy: 2 + Math.random() * 5,
+                rot: Math.random() * 360, rotV: (Math.random() - 0.5) * 12, opacity: 1
             });
+        }
+        if (confettiFrame) cancelAnimationFrame(confettiFrame);
+        var start = Date.now();
+        function draw() {
+            var elapsed = Date.now() - start;
+            if (elapsed > 3500) { confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height); return; }
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            confettiParticles.forEach(function(p) {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.rot += p.rotV;
+                p.opacity = Math.max(0, 1 - elapsed / 3500);
+                confettiCtx.save();
+                confettiCtx.translate(p.x, p.y);
+                confettiCtx.rotate(p.rot * Math.PI / 180);
+                confettiCtx.globalAlpha = p.opacity;
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                confettiCtx.restore();
+            });
+            confettiFrame = requestAnimationFrame(draw);
+        }
+        draw();
+    }
 
-            showGlobalLoading(true, '認証中...');
+    // --- カード情報取得 ---
+    function getCardInfo(val) {
+        var info = {};
+        if (val === '×2' || val === '×2.0') {
+            info.text = '×' + val.replace('×','');
+            info.color = '#ef4444'; info.glow = 'glow-red'; info.frontClass = 'card-front-multi';
+            info.category = 'multi';
+        } else if (val === '×1.5') {
+            info.text = '×1.5'; info.color = '#f59e0b'; info.glow = 'glow-gold'; info.frontClass = 'card-front-multi';
+            info.category = 'multi';
+        } else if (val === '+10' || val === '+25') {
+            info.text = val; info.color = '#22c55e'; info.glow = 'glow-green'; info.frontClass = 'card-front-plus';
+            info.category = 'good';
+        } else if (val === '1/5' || val === '1/2') {
+            info.text = val; info.color = '#3b82f6'; info.glow = 'glow-blue'; info.frontClass = 'card-front-div';
+            info.category = 'bad';
+        } else if (val === '-10' || val === '-20') {
+            info.text = val; info.color = '#22d3ee'; info.glow = 'glow-cyan'; info.frontClass = 'card-front-minus';
+            info.category = 'bad';
+        } else if (val === '終') {
+            info.text = '終'; info.color = '#6b7280'; info.glow = 'glow-dark'; info.frontClass = 'card-front-end';
+            info.category = 'end';
+        }
+        return info;
+    }
 
-            try {
-                var url = scriptUrl + '?id=' + encodeURIComponent(combinedId);
-                debugLog('自動ログインAPI呼出', url);
+    // --- 引いたカードストリップ更新 ---
+    function updateDrawnStrip() {
+        var strip = document.getElementById('drawn-strip');
+        var html = '';
+        drawnHistory.forEach(function(h) {
+            var cls = h.category === 'good' || h.category === 'multi' ? 'drawn-dot-good' :
+                     h.category === 'bad' ? 'drawn-dot-bad' : 'drawn-dot-neutral';
+            html += '<span class="drawn-dot ' + cls + '"></span> ';
+        });
+        strip.innerHTML = html;
+    }
 
-                var response = await fetch(url);
-                debugLog('レスポンスステータス', response.status);
+    // ============================================================
+    // ゲーム本体
+    // ============================================================
+    var deckTemplate = ['1/5','1/2','×2','-10','-20','+10','+25','×1.5','×2.0','終'];
+    var currentDeck = [], isGambling = false, isDrawing = false;
+    var currentPrize = 0, betAmount = 50;
+    var drawnHistory = []; // 引いたカード履歴
 
-                var responseText = await response.text();
-                debugLog('レスポンス本文(生)', responseText);
+    function changeBet(amount) {
+        betAmount += amount;
+        if (betAmount < 50) betAmount = 50;
+        if (betAmount > 500) betAmount = 500;
+        document.getElementById('bet-amount').innerText = betAmount;
+    }
+    function showGambleSection(id) {
+        ['gamble-setup','gamble-play','gamble-result'].forEach(function(s) {
+            document.getElementById(s).classList.add('hidden');
+            document.getElementById(s).classList.remove('flex');
+        });
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById(id).classList.add('flex');
+    }
 
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+    async function startGamble() {
+        initAudio(); // ユーザー操作でAudioContext初期化
+        var errorEl = document.getElementById('gamble-error');
+        errorEl.classList.add('hidden');
+        if (currentPoints < betAmount) { errorEl.innerText = "所持ポイントが足りません。"; errorEl.classList.remove('hidden'); return; }
+        showGlobalLoading(true, 'ポイントを消費中...');
+        try {
+            var res = await fetch(scriptUrl + '?id=' + encodeURIComponent(userId) + '&controle=' + (-betAmount));
+            var data = await res.json();
+            if (data.value !== undefined) {
+                currentPoints = data.value; updatePointsDisplay();
+                isGambling = true; currentPrize = betAmount;
+                drawnHistory = [];
+                updatePrizeDisplay(true);
+                updateRemainingDisplay();
+                currentDeck = deckTemplate.slice().sort(function() { return Math.random() - 0.5; });
+                renderCards();
+                document.getElementById('drawn-strip').innerHTML = '';
+                showGambleSection('gamble-play');
+            } else { throw new Error(); }
+        } catch (e) {
+            errorEl.innerText = "通信エラーが発生しました。"; errorEl.classList.remove('hidden');
+        } finally { showGlobalLoading(false); }
+    }
 
-                var data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch(parseErr) {
-                    debugLog('JSONパースエラー', parseErr.message);
-                    throw new Error('レスポンスの形式が正しくありません');
-                }
+    function renderCards() {
+        var c = document.getElementById('cards-container');
+        c.innerHTML = '';
+        for (var i = 0; i < 10; i++) {
+            var d = document.createElement('div');
+            d.className = 'relative w-full h-32 sm:h-36 perspective game-card';
+            d.setAttribute('onclick', 'drawCard(' + i + ')');
+            d.innerHTML =
+                '<div class="w-full h-full absolute transition-transform duration-500 preserve-3d" id="card-inner-' + i + '">' +
+                    '<div class="card-back-side absolute w-full h-full rounded-xl backface-hidden flex items-center justify-center transition-shadow duration-300" style="background:linear-gradient(135deg,#2d1b69,#1a0f3c);border:1px solid rgba(168,85,247,0.25);border-bottom:3px solid rgba(168,85,247,0.4);">' +
+                        '<div class="absolute inset-2 rounded-lg border border-purple-500/10"></div>' +
+                        '<span class="text-purple-400/30 text-3xl font-display font-bold">?</span>' +
+                    '</div>' +
+                    '<div class="absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex flex-col items-center justify-center border-2 shadow-inner transition-all duration-300" style="background:rgba(19,19,42,0.9);" id="card-front-' + i + '">' +
+                        '<span class="text-2xl sm:text-3xl font-black font-display" id="card-value-' + i + '"></span>' +
+                        '<span class="text-[10px] mt-1 font-bold uppercase tracking-wider opacity-50" id="card-label-' + i + '"></span>' +
+                    '</div>' +
+                '</div>';
+            c.appendChild(d);
+        }
+    }
 
-                debugLog('パース済データ', data);
+    function updatePrizeDisplay(instant) {
+        var el = document.getElementById('current-prize');
+        el.innerText = currentPrize;
+        if (!instant) {
+            el.parentElement.classList.remove('prize-bump');
+            void el.parentElement.offsetWidth;
+            el.parentElement.classList.add('prize-bump');
+        }
+    }
 
-                if (data.value !== undefined) {
-                    userId = data.id || combinedId;
-                    currentPoints = data.value;
-                    debugLog('自動ログイン成功', { userId: userId, points: currentPoints });
-                    enterMainApp();
-                } else if (data.error !== undefined) {
-                    debugLog('APIエラー', data.error);
-                    throw new Error(data.error);
+    function updateRemainingDisplay() {
+        var remaining = 10 - drawnHistory.length;
+        document.getElementById('remaining-count').textContent = remaining;
+        var badge = document.getElementById('remaining-badge');
+        if (remaining <= 2) badge.className = 'remaining-badge danger';
+        else badge.className = 'remaining-badge';
+        // ステークスバー
+        var fill = document.getElementById('stakes-fill');
+        var pct = (remaining / 10) * 100;
+        fill.style.width = pct + '%';
+        if (remaining <= 2) fill.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+        else if (remaining <= 5) fill.style.background = 'linear-gradient(90deg, #f59e0b, #a855f7)';
+        else fill.style.background = 'linear-gradient(90deg, #a855f7, #22d3ee)';
+    }
+
+    function drawCard(index) {
+        if (!isGambling || isDrawing) return;
+        var cardInner = document.getElementById('card-inner-' + index);
+        if (cardInner.classList.contains('rotate-y-180')) return;
+        isDrawing = true;
+
+        var cardValue = currentDeck[index];
+        var info = getCardInfo(cardValue);
+        var oldPrize = currentPrize;
+
+        // カードをめくる
+        document.getElementById('card-value-' + index).textContent = info.text;
+        document.getElementById('card-label-' + index).textContent = info.category;
+        var frontEl = document.getElementById('card-front-' + index);
+        frontEl.className = 'absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex flex-col items-center justify-center border-2 shadow-inner transition-all duration-300 ' + info.frontClass + ' ' + info.glow;
+        document.getElementById('card-value-' + index).style.color = info.color;
+        cardInner.classList.add('rotate-y-180');
+
+        // 音声
+        playSound('flip');
+
+        // カード中央座標を取得
+        var rect = frontEl.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+
+        // パーティクル
+        setTimeout(function() {
+            createParticles(cx, cy, info.color, info.category === 'multi' ? 16 : 10);
+        }, 200);
+
+        // 数値変化
+        if (cardValue === '1/5') currentPrize = Math.floor(currentPrize / 5);
+        else if (cardValue === '1/2') currentPrize = Math.floor(currentPrize / 2);
+        else if (cardValue === '×2') currentPrize = currentPrize * 2;
+        else if (cardValue === '×1.5') currentPrize = Math.floor(currentPrize * 1.5);
+        else if (cardValue === '×2.0') currentPrize = currentPrize * 2;
+        else if (cardValue === '-10') currentPrize = currentPrize - 10;
+        else if (cardValue === '-20') currentPrize = currentPrize - 20;
+        else if (cardValue === '+10') currentPrize = currentPrize + 10;
+        else if (cardValue === '+25') currentPrize = currentPrize + 25;
+        if (currentPrize < 0) currentPrize = 0;
+
+        var diff = currentPrize - oldPrize;
+
+        setTimeout(function() {
+            // フロートテキスト
+            if (cardValue !== '終') {
+                if (diff > 0) {
+                    createFloatText(cx, cy - 20, '+' + diff, '#22c55e', diff >= 50 ? '2.2rem' : '1.6rem');
+                    playSound('good');
+                    screenFlash('flash-good');
+                } else if (diff < 0) {
+                    createFloatText(cx, cy - 20, String(diff), '#ef4444', Math.abs(diff) >= 50 ? '2.2rem' : '1.6rem');
+                    playSound('bad');
+                    screenFlash('flash-bad');
+                    if (Math.abs(diff) >= 30) screenShake();
                 } else {
-                    debugLog('予期しない形式', data);
-                    throw new Error('データ取得失敗');
+                    // 変化なし（÷1等）
+                    createFloatText(cx, cy - 20, '0', '#6b7280', '1.2rem');
                 }
-            } catch (error) {
-                debugLog('自動ログイン失敗', error.message);
-                showLoginError('自動認証に失敗しました: ' + error.message);
-            } finally {
+
+                // 倍率系は追加エフェクト
+                if (info.category === 'multi') {
+                    setTimeout(function() {
+                        playSound('multi');
+                        screenFlash('flash-multi');
+                    }, 150);
+                }
+            }
+
+            updatePrizeDisplay(false);
+            updateRemainingDisplay();
+
+            // 履歴に追加
+            drawnHistory.push({ value: cardValue, category: info.category });
+            updateDrawnStrip();
+
+            if (cardValue === '終') {
+                playSound('end');
+                screenFlash('flash-end');
+                screenShake();
+                setTimeout(function() { endGamble(); }, 400);
+            } else {
+                isDrawing = false;
+            }
+        }, 300);
+    }
+
+    async function endGamble() {
+        isGambling = false;
+        // 残りカード全めくり
+        for (var i = 0; i < 10; i++) {
+            var ci = document.getElementById('card-inner-' + i);
+            if (!ci.classList.contains('rotate-y-180')) {
+                var cv = currentDeck[i];
+                var inf = getCardInfo(cv);
+                document.getElementById('card-value-' + i).textContent = inf.text;
+                document.getElementById('card-label-' + i).textContent = inf.category;
+                document.getElementById('card-value-' + i).style.color = inf.color;
+                var fe = document.getElementById('card-front-' + i);
+                fe.className = 'absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex flex-col items-center justify-center border-2 shadow-inner transition-all duration-300 opacity-30 ' + inf.frontClass;
+                ci.classList.add('rotate-y-180');
+            }
+        }
+
+        setTimeout(async function() {
+            if (currentPrize > 0) {
+                showGlobalLoading(true, '結果を保存中...');
+                try {
+                    var res = await fetch(scriptUrl + '?id=' + encodeURIComponent(userId) + '&controle=' + currentPrize);
+                    var data = await res.json();
+                    if (data.value !== undefined) { currentPoints = data.value; updatePointsDisplay(); }
+                } catch (e) { alert("通信エラーで獲得ポイントが正しく反映されませんでした。"); }
                 showGlobalLoading(false);
             }
-        }
 
-        // ============================================================
-        // タブ切り替え
-        // ============================================================
-        function switchTab(tabName) {
-            if (isGambling) { alert("ゲームプレイ中は移動できません！"); return; }
-            var tabShop = document.getElementById('tab-shop');
-            var tabGamble = document.getElementById('tab-gamble');
-            var secShop = document.getElementById('shop-section');
-            var secGamble = document.getElementById('gamble-section');
-            if (tabName === 'shop') {
-                tabShop.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/30 relative z-10 transition-all text-sm tracking-wide tab-active";
-                tabGamble.className = "flex-1 py-3 rounded-xl text-gray-400 font-bold hover:text-gray-200 transition-all text-sm tracking-wide";
-                secShop.classList.remove('hidden'); secShop.classList.add('flex');
-                secGamble.classList.add('hidden'); secGamble.classList.remove('flex');
+            document.getElementById('result-prize').innerText = currentPrize + ' pt';
+            var titleEl = document.getElementById('result-title');
+            var diffEl = document.getElementById('result-diff');
+            var resultCard = document.getElementById('result-card');
+            var prizeEl = document.getElementById('result-prize');
+
+            if (currentPrize > betAmount) {
+                titleEl.innerHTML = '<span class="big-win-text">大勝利！</span>';
+                titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-red-400';
+                diffEl.innerText = '+' + (currentPrize - betAmount) + ' pt の利益！';
+                diffEl.className = 'text-sm font-bold text-red-400';
+                resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-win';
+                prizeEl.style.textShadow = '0 0 30px rgba(239,68,68,0.5)';
+                playSound('win');
+                setTimeout(function() { startConfetti(); }, 300);
+            } else if (currentPrize === betAmount) {
+                titleEl.innerText = '引き分け';
+                titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-purple-300';
+                diffEl.innerText = '±0 pt';
+                diffEl.className = 'text-sm font-bold text-gray-500';
+                resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-draw';
+                prizeEl.style.textShadow = '0 0 30px rgba(168,85,247,0.4)';
             } else {
-                tabGamble.className = "flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-lg shadow-purple-900/30 relative z-10 transition-all text-sm tracking-wide tab-active";
-                tabShop.className = "flex-1 py-3 rounded-xl text-gray-400 font-bold hover:text-gray-200 transition-all text-sm tracking-wide";
-                secGamble.classList.remove('hidden'); secGamble.classList.add('flex');
-                secShop.classList.add('hidden'); secShop.classList.remove('flex');
+                titleEl.innerText = '残念...';
+                titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-cyan-300';
+                diffEl.innerText = (currentPrize - betAmount) + ' pt の損失';
+                diffEl.className = 'text-sm font-bold text-cyan-400';
+                resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-lose';
+                prizeEl.style.textShadow = '0 0 30px rgba(34,211,238,0.4)';
             }
-        }
 
-        // ============================================================
-        // ショップモーダル
-        // ============================================================
-        var selectedItem = null;
-        var selectedPrice = 0;
-        var modal = document.getElementById('purchase-modal');
-        var modalContent = document.getElementById('modal-content');
-        var overlayMessage = document.getElementById('modal-overlay-message');
+            showGambleSection('gamble-result');
+            isDrawing = false;
+        }, 1200);
+    }
 
-        function openModal(itemName, price) {
-            selectedItem = itemName; selectedPrice = price;
-            document.getElementById('modal-item-name').textContent = itemName;
-            document.getElementById('modal-item-price').textContent = price + ' pt';
-            overlayMessage.classList.add('hidden');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            modalContent.classList.remove('modal-leave'); modalContent.classList.add('modal-enter');
-        }
-        function closeModal(isAfterPurchase) {
-            modalContent.classList.remove('modal-enter'); modalContent.classList.add('modal-leave');
-            setTimeout(function() {
-                modal.classList.remove('flex'); modal.classList.add('hidden');
-                if (isAfterPurchase) overlayMessage.classList.add('hidden');
-            }, 200);
-        }
-        function processPurchase() {
-            if (currentPoints >= selectedPrice) {
-                currentPoints -= selectedPrice; updatePointsDisplay();
-                overlayMessage.classList.remove('hidden'); overlayMessage.classList.add('modal-enter');
-            } else { alert('ポイントが不足しています！'); closeModal(); }
-        }
+    function resetGamble() {
+        showGambleSection('gamble-setup');
+        document.getElementById('gamble-error').classList.add('hidden');
+    }
 
-        // ============================================================
-        // ギャンブル
-        // ============================================================
-        var deckTemplate = ['1/5', '1/2', '×2', '-10', '-20', '+10', '+25', '×1.5', '×2.0', '終'];
-        var currentDeck = [];
-        var isGambling = false;
-        var isDrawing = false;
-        var currentPrize = 0;
-        var betAmount = 50;
-
-        function changeBet(amount) {
-            betAmount += amount;
-            if (betAmount < 50) betAmount = 50;
-            if (betAmount > 500) betAmount = 500;
-            document.getElementById('bet-amount').innerText = betAmount;
-        }
-        function showGambleSection(sectionId) {
-            ['gamble-setup', 'gamble-play', 'gamble-result'].forEach(function(id) {
-                document.getElementById(id).classList.add('hidden');
-                document.getElementById(id).classList.remove('flex');
-            });
-            document.getElementById(sectionId).classList.remove('hidden');
-            document.getElementById(sectionId).classList.add('flex');
-        }
-
-        async function startGamble() {
-            var errorEl = document.getElementById('gamble-error');
-            errorEl.classList.add('hidden');
-            if (currentPoints < betAmount) {
-                errorEl.innerText = "所持ポイントが足りません。";
-                errorEl.classList.remove('hidden'); return;
-            }
-            showGlobalLoading(true, 'ポイントを消費中...');
-            try {
-                var res = await fetch(scriptUrl + '?id=' + encodeURIComponent(userId) + '&controle=' + (-betAmount));
-                var data = await res.json();
-                if (data.value !== undefined) {
-                    currentPoints = data.value; updatePointsDisplay();
-                    isGambling = true; currentPrize = betAmount;
-                    updatePrizeDisplay();
-                    currentDeck = deckTemplate.slice().sort(function() { return Math.random() - 0.5; });
-                    renderCards();
-                    showGambleSection('gamble-play');
-                } else { throw new Error(); }
-            } catch (e) {
-                errorEl.innerText = "通信エラーが発生しました。";
-                errorEl.classList.remove('hidden');
-            } finally { showGlobalLoading(false); }
-        }
-
-        function renderCards() {
-            var container = document.getElementById('cards-container');
-            container.innerHTML = '';
-            for (var i = 0; i < 10; i++) {
-                var div = document.createElement('div');
-                div.className = 'relative w-full h-32 sm:h-36 perspective game-card';
-                div.setAttribute('onclick', 'drawCard(' + i + ')');
-                div.innerHTML =
-                    '<div class="w-full h-full absolute transition-transform duration-500 preserve-3d" id="card-inner-' + i + '">' +
-                        '<div class="card-back-side absolute w-full h-full rounded-xl backface-hidden flex items-center justify-center transition-shadow duration-300" style="background:linear-gradient(135deg,#2d1b69,#1a0f3c);border:1px solid rgba(168,85,247,0.25);border-bottom:3px solid rgba(168,85,247,0.4);">' +
-                            '<div class="absolute inset-2 rounded-lg border border-purple-500/10"></div>' +
-                            '<span class="text-purple-400/30 text-3xl font-display font-bold">?</span>' +
-                        '</div>' +
-                        '<div class="absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex items-center justify-center border-2 shadow-inner" style="background:rgba(19,19,42,0.9);" id="card-front-' + i + '">' +
-                            '<span class="text-2xl sm:text-3xl font-black font-display" id="card-value-' + i + '"></span>' +
-                        '</div>' +
-                    '</div>';
-                container.appendChild(div);
-            }
-        }
-
-        function getCardStyleClasses(val) {
-            if (val === '終') return 'text-gray-300 border-gray-500/30';
-            if (['1/5', '1/2', '-10', '-20'].indexOf(val) !== -1) return 'text-cyan-300 border-cyan-500/30';
-            return 'text-red-400 border-red-500/30';
-        }
-
-        function updatePrizeDisplay() {
-            var el = document.getElementById('current-prize');
-            el.innerText = currentPrize;
-            el.parentElement.classList.add('scale-110');
-            setTimeout(function() { el.parentElement.classList.remove('scale-110'); }, 200);
-        }
-
-        function drawCard(index) {
-            if (!isGambling || isDrawing) return;
-            var cardInner = document.getElementById('card-inner-' + index);
-            if (cardInner.classList.contains('rotate-y-180')) return;
-            isDrawing = true;
-            var cardValue = currentDeck[index];
-
-            document.getElementById('card-value-' + index).innerText = cardValue;
-            var frontEl = document.getElementById('card-front-' + index);
-            frontEl.className = 'absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex items-center justify-center border-2 shadow-inner ' + getCardStyleClasses(cardValue);
-            cardInner.classList.add('rotate-y-180');
-
-            if (cardValue === '1/5') currentPrize = Math.floor(currentPrize / 5);
-            else if (cardValue === '1/2') currentPrize = Math.floor(currentPrize / 2);
-            else if (cardValue === '×2') currentPrize = currentPrize * 2;
-            else if (cardValue === '×1.5') currentPrize = Math.floor(currentPrize * 1.5);
-            else if (cardValue === '×2.0') currentPrize = currentPrize * 2;
-            else if (cardValue === '-10') currentPrize = currentPrize - 10;
-            else if (cardValue === '-20') currentPrize = currentPrize - 20;
-            else if (cardValue === '+10') currentPrize = currentPrize + 10;
-            else if (cardValue === '+25') currentPrize = currentPrize + 25;
-            if (currentPrize < 0) currentPrize = 0;
-
-            setTimeout(function() {
-                updatePrizeDisplay();
-                if (cardValue === '終') endGamble(); else isDrawing = false;
-            }, 300);
-        }
-
-        async function endGamble() {
-            isGambling = false;
-            for (var i = 0; i < 10; i++) {
-                var cardInner = document.getElementById('card-inner-' + i);
-                if (!cardInner.classList.contains('rotate-y-180')) {
-                    var cardValue = currentDeck[i];
-                    document.getElementById('card-value-' + i).innerText = cardValue;
-                    var frontEl = document.getElementById('card-front-' + i);
-                    frontEl.className = 'absolute w-full h-full rounded-xl backface-hidden rotate-y-180 flex items-center justify-center border-2 shadow-inner opacity-30 ' + getCardStyleClasses(cardValue);
-                    cardInner.classList.add('rotate-y-180');
-                }
-            }
-            setTimeout(async function() {
-                if (currentPrize > 0) {
-                    showGlobalLoading(true, '結果を保存中...');
-                    try {
-                        var res = await fetch(scriptUrl + '?id=' + encodeURIComponent(userId) + '&controle=' + currentPrize);
-                        var data = await res.json();
-                        if (data.value !== undefined) { currentPoints = data.value; updatePointsDisplay(); }
-                    } catch (e) { alert("通信エラーで獲得ポイントが正しく反映されませんでした。"); }
-                    showGlobalLoading(false);
-                }
-                document.getElementById('result-prize').innerText = currentPrize + ' pt';
-                var titleEl = document.getElementById('result-title');
-                var diffEl = document.getElementById('result-diff');
-                var resultCard = document.getElementById('result-card');
-                if (currentPrize > betAmount) {
-                    titleEl.innerText = '大勝利！';
-                    titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-red-400';
-                    diffEl.innerText = '+' + (currentPrize - betAmount) + ' pt の利益！';
-                    diffEl.className = 'text-sm font-bold text-red-400';
-                    resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-win';
-                    document.getElementById('result-prize').style.textShadow = '0 0 30px rgba(239,68,68,0.5)';
-                } else if (currentPrize === betAmount) {
-                    titleEl.innerText = '引き分け';
-                    titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-purple-300';
-                    diffEl.innerText = '±0 pt';
-                    diffEl.className = 'text-sm font-bold text-gray-500';
-                    resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-draw';
-                    document.getElementById('result-prize').style.textShadow = '0 0 30px rgba(168,85,247,0.4)';
-                } else {
-                    titleEl.innerText = '残念...';
-                    titleEl.className = 'text-2xl font-bold mb-6 font-display tracking-wider text-cyan-300';
-                    diffEl.innerText = (currentPrize - betAmount) + ' pt の損失';
-                    diffEl.className = 'text-sm font-bold text-cyan-400';
-                    resultCard.className = 'glass-card w-full rounded-3xl p-8 text-center mb-6 result-lose';
-                    document.getElementById('result-prize').style.textShadow = '0 0 30px rgba(34,211,238,0.4)';
-                }
-                showGambleSection('gamble-result');
-                isDrawing = false;
-            }, 1200);
-        }
-
-        function resetGamble() {
-            showGambleSection('gamble-setup');
-            document.getElementById('gamble-error').classList.add('hidden');
-        }
-
-        // ============================================================
-        // 初期化（DOMContentLoaded を使わず直接実行）
-        // ============================================================
-        debugLog('スクリプト読み込み完了', new Date().toLocaleTimeString('ja-JP'));
-        autoLoginByParam();
+    // ============================================================
+    // 初期化
+    // ============================================================
+    debugLog('初期化', new Date().toLocaleTimeString('ja-JP'));
+    autoLoginByParam();
     </script>
 </body>
 </html>
