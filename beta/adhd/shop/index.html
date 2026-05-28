@@ -539,7 +539,7 @@
         debugLog('時刻検証', { timeCode: timeCode, currentTimeCode: currentTimeCode, match: timeCode === currentTimeCode });
 
         if (timeCode !== currentTimeCode) {
-            showLoginError('認証コードの有効期限が切れています（' + currentTimeCode + ' に更新が必要）');
+            showLoginError('このリンクは期限切れで無効です。再作成してください。');
             return;
         }
 
