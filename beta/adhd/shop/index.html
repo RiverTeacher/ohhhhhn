@@ -342,11 +342,11 @@
             <div id="gamble-setup" class="flex flex-col items-center justify-center py-6">
                 <div class="glass-card rounded-2xl p-8 w-full max-w-sm text-center" style="background:rgba(19,19,42,0.5);">
                     <p class="mb-5 text-sm font-semibold text-purple-300/70 uppercase tracking-widest">賭けポイント</p>
-                    <p class="text-xs text-gray-500 mb-6">50 〜 500 pt</p>
+                    <p class="text-xs text-gray-500 mb-6">今だけ最低賭けポイント半額！ (50→25)</p>
                     <div class="flex items-center justify-center gap-6 mb-8">
-                        <button onclick="changeBet(-50)" class="bet-btn btn-secondary">-</button>
+                        <button onclick="changeBet(-25)" class="bet-btn btn-secondary">-</button>
                         <div class="text-5xl font-bold font-display w-28 text-center text-purple-300 text-glow-purple"><span id="bet-amount">50</span></div>
-                        <button onclick="changeBet(50)" class="bet-btn" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:var(--accent-purple);">+</button>
+                        <button onclick="changeBet(25)" class="bet-btn" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:var(--accent-purple);">+</button>
                     </div>
                     <button id="btn-start-gamble" onclick="startGamble()" class="btn-primary px-10 py-4 rounded-xl text-lg w-full flex items-center justify-center font-display tracking-wider">START</button>
                     <p id="gamble-error" class="mt-4 text-red-400 text-sm font-bold hidden"></p>
