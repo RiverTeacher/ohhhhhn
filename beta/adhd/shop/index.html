@@ -805,12 +805,12 @@
     // ============================================================
     var deckTemplate = ['1/5','1/2','×2','-10','-20','+10','+25','×1.5','×2.0','終'];
     var currentDeck = [], isGambling = false, isDrawing = false;
-    var currentPrize = 0, betAmount = 50;
+    var currentPrize = 0, betAmount = 25;
     var drawnHistory = []; // 引いたカード履歴
 
     function changeBet(amount) {
         betAmount += amount;
-        if (betAmount < 50) betAmount = 50;
+        if (betAmount < 25) betAmount = 25;
         if (betAmount > 500) betAmount = 500;
         document.getElementById('bet-amount').innerText = betAmount;
     }
