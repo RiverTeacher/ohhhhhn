@@ -494,9 +494,11 @@
             debugLog('レスポンス', responseText);
             if (!response.ok) throw new Error('HTTP ' + response.status);
             var data = JSON.parse(responseText);
-            if (data.value !== undefined) {
+            const userData = data.data || data;
+
+            if (userData.value !== undefined) {
                 userId = data.id || idInput;
-                currentPoints = data.value;
+                currentPoints = userData.value;
                 enterMainApp();
             } else { throw new Error(data.error || 'データ取得失敗'); }
         } catch (e) {
@@ -553,9 +555,11 @@
             debugLog('APIレスポンス', responseText);
             if (!response.ok) throw new Error('HTTP ' + response.status);
             var data = JSON.parse(responseText);
-            if (data.value !== undefined) {
+            const userData = data.data || data;
+
+            if (userData.value !== undefined) {
                 userId = baseId;
-                currentPoints = data.value;
+                currentPoints = userData.value;
                 debugLog('自動ログイン成功', { userId: userId, points: currentPoints });
                 enterMainApp();
             } else { throw new Error(data.error || 'ID NOT FOUND'); }
